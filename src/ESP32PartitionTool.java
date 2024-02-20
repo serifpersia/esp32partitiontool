@@ -34,6 +34,9 @@ public class ESP32PartitionTool implements Tool {
 
 		// Add panel to frame
 		frame.getContentPane().add(contentPane);
+
+		new UIController(contentPane);
+		
 		frame.setVisible(true);
 	}
 
