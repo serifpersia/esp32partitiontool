@@ -15,6 +15,5 @@ mkdir "%tool_folder%\ESP32PartitionTool\tool" 2>nul
 jar cvf "%tool_folder%\ESP32PartitionTool\tool\ESP32PartitionTool.jar" -C "%bin_folder%" .
 rmdir /s /q "%bin_folder%"
 
-echo JAR file created successfully.
 pause
 endlocal

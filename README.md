@@ -1,6 +1,6 @@
 # ESP32 Partition Tool
  Arduino IDE 1.8.X Partition Utility
-Currently in WIP state, Grahpical Interface mostly finished
+Currently in WIP state, Graphical Interface mostly finished
 
 To Build the plugin you need jdk8 installed anything newer and arduino ide will crash. 
 

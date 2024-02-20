@@ -20,5 +20,3 @@ jar cvf "$tool_folder/ESP32PartitionTool/tool/ESP32PartitionTool.jar" -C "$bin_f
 
 # Remove bin folder
 rm -rf "$bin_folder"
-
-echo "JAR file created successfully."
