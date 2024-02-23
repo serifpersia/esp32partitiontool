@@ -1,9 +1,12 @@
 package com.serifpersia.esp32partitiontool;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -35,8 +38,9 @@ public class UI extends JPanel {
 	private JPanel csv_PartitionOffsetsInnerPanel;
 
 	private JPanel csv_PartitionsVisual;
-	private JPanel partitions_UtilButtonsPanel;
 	private JPanel partitions_FlashPartitionsVisualsPanel;
+	private JPanel partitions_UtilButtonsPanel;
+	private JPanel csv_partitionsCenterVisualPanel;
 
 	private JPanel SPIFFS_GenPanel;
 	private JPanel SPIFFS_GenInnerPanel;
@@ -84,6 +88,7 @@ public class UI extends JPanel {
 		createPartitionsSize();
 		createPartitionsSizeHex();
 		createPartitionsOffsets();
+		createPartitionFlashVisualPanel();
 	}
 
 	private void createPanels() {
@@ -187,13 +192,6 @@ public class UI extends JPanel {
 		csv_PartitionsVisual = new JPanel();
 		csv_GenPanel.add(csv_PartitionsVisual, BorderLayout.SOUTH);
 		csv_PartitionsVisual.setLayout(new BorderLayout(0, 0));
-
-		partitions_FlashPartitionsVisualsPanel = new JPanel();
-		csv_PartitionsVisual.add(partitions_FlashPartitionsVisualsPanel, BorderLayout.SOUTH);
-
-		JLabel tempVisualsLabel = new JLabel("Visuals TO DO:");
-		tempVisualsLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
-		partitions_FlashPartitionsVisualsPanel.add(tempVisualsLabel);
 
 		partitions_UtilButtonsPanel = new JPanel();
 		csv_PartitionsVisual.add(partitions_UtilButtonsPanel, BorderLayout.NORTH);
@@ -494,6 +492,130 @@ public class UI extends JPanel {
 				partitionsOffsets[i].setText(Long.toHexString(newOffset));
 			}
 		}
+	}
+
+	private Color[] partitionColors = { new Color(255, 102, 102), // A darker shade of red
+			new Color(102, 153, 255), // A darker shade of blue
+			new Color(102, 204, 102), // A darker shade of green
+			new Color(178, 102, 255), // A darker shade of purple
+			new Color(255, 153, 51), // A darker shade of orange
+			new Color(204, 102, 204) // A darker shade of magenta
+	};
+
+	private void createPartitionFlashVisualPanel() {
+		partitions_FlashPartitionsVisualsPanel = new JPanel(new BorderLayout());
+
+		csv_partitionsCenterVisualPanel = new JPanel(new GridBagLayout());
+		partitions_FlashPartitionsVisualsPanel.add(csv_partitionsCenterVisualPanel, BorderLayout.CENTER);
+
+		csv_PartitionsVisual.add(partitions_FlashPartitionsVisualsPanel, BorderLayout.SOUTH);
+
+		// Call the method to initially populate the center panel
+		updatePartitionFlashVisual();
+	}
+
+	public void updatePartitionFlashVisual() {
+		// Clear the center panel before updating
+		csv_partitionsCenterVisualPanel.removeAll();
+
+		int FLASH_SIZE = flashSizeMB * 1024;
+		int RESERVED_SPACE = 36;
+
+		int totalPartitionSize = 0;
+		int selectedPartitions = 0;
+
+		for (int i = 0; i < NUM_ITEMS; i++) {
+			if (partitions_EnableChckb[i].isSelected()) {
+				selectedPartitions++;
+				try {
+					totalPartitionSize += Integer.parseInt(partitionsSize[i].getText());
+				} catch (NumberFormatException e) {
+					// Handle parsing errors gracefully
+					System.err.println("Error parsing partition size: " + e.getMessage());
+				}
+			}
+		}
+
+		System.out.println("Selected Partitions: " + selectedPartitions);
+		System.out.println("Total Partition Size: " + totalPartitionSize);
+
+		int remainingSpace = FLASH_SIZE - RESERVED_SPACE - totalPartitionSize;
+
+		JPanel initialPanel = new JPanel(new BorderLayout());
+		initialPanel.setBackground(Color.DARK_GRAY);
+		JLabel initialLabel = new JLabel("0x9000");
+		initialLabel.setForeground(Color.WHITE);
+		initialLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		initialPanel.add(initialLabel, BorderLayout.CENTER);
+
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+
+		initialPanel.setPreferredSize(new Dimension(50, 26));
+		csv_partitionsCenterVisualPanel.add(initialPanel, gbc);
+
+		if (remainingSpace > 0) {
+			System.out.println("Free space available: " + remainingSpace);
+
+			for (int i = 0; i < NUM_ITEMS; i++) {
+				if (partitions_EnableChckb[i].isSelected()) {
+					try {
+						int partitionSize = Integer.parseInt(partitionsSize[i].getText());
+						double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
+						JPanel partitionPanel = new JPanel();
+						partitionPanel.setBackground(partitionColors[i % partitionColors.length]);
+
+						// Set the text color to white
+						JLabel label = new JLabel(getPartitionSubType(i).getText());
+						label.setForeground(Color.WHITE);
+						partitionPanel.add(label);
+
+						gbc.weightx = weight;
+						csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
+					} catch (NumberFormatException e) {
+						// Handle parsing errors gracefully
+						System.err.println("Error parsing partition size: " + e.getMessage());
+					}
+				}
+			}
+
+			JPanel unusedSpacePanel = new JPanel();
+			unusedSpacePanel.setBackground(Color.GRAY);
+			gbc.weightx = (double) remainingSpace / (FLASH_SIZE - RESERVED_SPACE);
+			// Set the text color to white
+			JLabel label = new JLabel("Free Space");
+			label.setForeground(Color.WHITE);
+			unusedSpacePanel.add(label);
+
+			csv_partitionsCenterVisualPanel.add(unusedSpacePanel, gbc);
+		} else {
+			System.out.println("No free space available.");
+			for (int i = 0; i < NUM_ITEMS; i++) {
+				if (partitions_EnableChckb[i].isSelected()) {
+					try {
+						int partitionSize = Integer.parseInt(partitionsSize[i].getText());
+						double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
+						JPanel partitionPanel = new JPanel();
+						partitionPanel.setBackground(partitionColors[i % partitionColors.length]);
+
+						// Set the text color to white
+						JLabel label = new JLabel(getPartitionSubType(i).getText());
+						label.setForeground(Color.WHITE);
+						partitionPanel.add(label);
+
+						gbc.weightx = weight;
+						csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
+					} catch (NumberFormatException e) {
+						// Handle parsing errors gracefully
+						System.err.println("Error parsing partition size: " + e.getMessage());
+					}
+				}
+			}
+		}
+
+		// Revalidate and repaint the center panel to reflect changes
+		csv_partitionsCenterVisualPanel.revalidate();
+		csv_partitionsCenterVisualPanel.repaint();
 	}
 
 	public JLabel getFlashFreeLabel() {

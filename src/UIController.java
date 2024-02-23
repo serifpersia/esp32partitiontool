@@ -62,6 +62,7 @@ public class UIController implements ActionListener {
 		ui.getPartitionSubType(toggleID).setEnabled(isSelected);
 		ui.getPartitionSize(toggleID).setEnabled(isSelected);
 		ui.getPartitionOffsets(toggleID).setEnabled(isSelected);
+		ui.updatePartitionFlashVisual();
 		System.out.println("Toggle " + toggleID + ": State " + (isSelected ? "Enabled" : "Disabled"));
 	}
 
@@ -72,6 +73,7 @@ public class UIController implements ActionListener {
 
 		ui.calculateSizeHex();
 		ui.calculateOffsets();
+		ui.updatePartitionFlashVisual();
 	}
 
 	private void handleComboBoxAction(JComboBox<?> comboBox) {
@@ -82,34 +84,8 @@ public class UIController implements ActionListener {
 			// Convert the selected item to an integer
 			ui.flashSizeMB = Integer.parseInt(selectedItem);
 
-			ui.FlashSizeBytes = ui.flashSizeMB * 1024 * 1024 - 36864;
-
-			// Iterate through all text fields to calculate the total size
-			for (int i = 0; i < ui.getNumOfItems(); i++) {
-				if (!ui.getPartitionSize(i).getText().isEmpty()) {
-					try {
-						int partitionTotalSize = Integer.parseInt(ui.getPartitionSize(i).getText()) * 1024;
-
-						// Round up to the nearest multiple of 4096
-						int partitionRoundedSize = (partitionTotalSize + 4095) / 4096 * 4096;
-
-						ui.FlashSizeBytes -= partitionRoundedSize;
-
-						// Set the rounded value back to the text field
-						ui.getPartitionSize(i).setText(Integer.toString(partitionRoundedSize / 1024)); // Convert
-																										// back to
-																										// kilobytes
-					} catch (NumberFormatException e) {
-						// Handle parsing errors if necessary
-						System.out.println("Invalid input in text field " + i);
-					}
-				}
-			}
-			// Set the text of the label
-			String labelText = "Free Space: " + ui.FlashSizeBytes + " bytes";
-			ui.getFlashFreeLabel().setText(labelText);
-
-			System.out.println(labelText);
+			ui.calculateSizeHex();
+			ui.updatePartitionFlashVisual();
 		}
 		System.out.println("Item Data: " + comboBox.getSelectedItem());
 	}
