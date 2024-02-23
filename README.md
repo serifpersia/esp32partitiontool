@@ -18,7 +18,7 @@ The ESP32 Partition Tool is a utility designed to facilitate creating custom par
 
 - [x] Partitions CSV Export
 - [ ] Partitions Bin Export
-- [ ] Create SPIFFS
+- [ ] SPIFFS Export
 - [ ] Auto Merge & Flash at 0x0 Offset
 - [ ] Public Tool Release
 
