@@ -12,6 +12,8 @@ import java.awt.Frame;
 import java.io.FileWriter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UIController implements ActionListener {
 	private UI ui;
@@ -40,7 +42,7 @@ public class UIController implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == ui.getGenCSVButton()) {
 			// Handle CSV export
-			exportToCSV();
+			exportCSV();
 		} else if (e.getSource() instanceof JCheckBox) {
 			handleCheckBoxAction((JCheckBox) e.getSource());
 		} else if (e.getSource() instanceof JTextField) {
@@ -124,22 +126,42 @@ public class UIController implements ActionListener {
 		return -1;
 	}
 
-	private void exportToCSV() {
+	private void exportCSV() {
+		int numOfItems = ui.getNumOfItems();
+		List<String> exportedData = new ArrayList<>();
+		exportedData.add("# Name,   Type, SubType,  Offset,   Size,  Flags");
+
+		for (int i = 0; i < numOfItems; i++) {
+			JCheckBox checkBox = ui.getCheckBox(i);
+			JTextField partitionNameField = ui.getPartitionName(i);
+			JComboBox<?> partitionTypeComboBox = ui.getPartitionType(i);
+			JTextField partitionSubTypeField = ui.getPartitionSubType(i);
+			JTextField partitionSizeField = ui.getPartitionSizeHex(i);
+			JTextField partitionOffset = ui.getPartitionOffsets(i);
+
+			if (checkBox.isSelected()) {
+				String name = partitionNameField.getText();
+				String type = (String) partitionTypeComboBox.getSelectedItem();
+				String subType = partitionSubTypeField.getText();
+				String size = partitionSizeField.getText();
+				String offset = "0x" + partitionOffset.getText(); // Assuming offset is same as size
+
+				String exported_csvPartition = name + ", " + type + ", " + subType + ", " + offset + ", " + "0x" + size;
+				exportedData.add(exported_csvPartition);
+			}
+		}
+
+		// Export to CSV
 		FileDialog dialog = new FileDialog(new Frame(), "Export Partitions CSV", FileDialog.SAVE);
-		// Set default filename to partitions.csv
 		dialog.setFile("partitions.csv");
 		dialog.setVisible(true);
 		String fileName = dialog.getFile();
 		if (fileName != null) {
 			String filePath = dialog.getDirectory() + fileName;
 			try (FileWriter writer = new FileWriter(filePath)) {
-				// Write the exact text structure as requested, with spaces after commas
-				String[] lines = new String[] { "# Name,   Type, SubType,  Offset,   Size,  Flags",
-						"nvs, data, nvs, 0x9000, 0x5000", "otadata, data, ota, 0xE000, 0x2000",
-						"app0, app, ota_0, 0x10000, 0x190000", "app1, app, ota_1, 0x1A0000, 0x190000",
-						"spiffs, data, spiffs, 0x330000, 0x80000", "coredump, data, coredump, 0x3B0000, 0x10000" };
-				for (String line : lines) {
-					writer.write(line + "\n");
+				// Write the exported data to the CSV file
+				for (String partitionData : exportedData) {
+					writer.write(partitionData + "\n");
 				}
 				System.out.println("CSV exported successfully to: " + filePath);
 			} catch (IOException ex) {

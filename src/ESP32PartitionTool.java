@@ -20,8 +20,6 @@ public class ESP32PartitionTool implements Tool {
 	}
 
 	private void initGUI() {
-		System.out.println("Hello World!");
-
 		// Create and show the JFrame
 		JFrame frame = new JFrame("ESP32 Partition Tool");
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);

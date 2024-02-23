@@ -335,7 +335,7 @@ public class UI extends JPanel {
 	}
 
 	private void createPartitionsSize() {
-		String[] initialPartitionSizeArray = { "20", "8", "1536", "1536", "896", "64" };
+		String[] initialPartitionSizeArray = { "20", "8", "1280", "1280", "1408", "64" };
 		for (int i = 0; i < NUM_ITEMS; i++) {
 			String value = (i < initialPartitionSizeArray.length) ? initialPartitionSizeArray[i] : "";
 			partitionsSize[i] = new JTextField(value);
@@ -474,7 +474,6 @@ public class UI extends JPanel {
 	}
 
 	public void calculateOffsets() {
-		System.out.println("Calculating offsets...");
 		partitionsOffsets[0].setText("9000"); // Offset for the first index is hard coded as 9000 hex
 
 		for (int i = 1; i < NUM_ITEMS; i++) {
@@ -492,7 +491,7 @@ public class UI extends JPanel {
 
 				// Convert the new offset back to hexadecimal and set it to the current offset
 				// field
-				partitionsOffsets[i].setText(Long.toHexString(newOffset).toUpperCase());
+				partitionsOffsets[i].setText(Long.toHexString(newOffset));
 			}
 		}
 	}
