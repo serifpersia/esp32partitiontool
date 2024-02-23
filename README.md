@@ -8,10 +8,6 @@ Arduino IDE 1.8.X Partition Utility
 
 The ESP32 Partition Tool is a utility designed to facilitate creating custom partition scheme in the Arduino IDE 1.8.X environment. This tool aims to simplify the process of creating custom partition schemes for ESP32 projects.
 
-## Build Requirements
-
-To build the plugin, you need JDK 8 installed. Note that anything newer will cause the Arduino IDE to crash since its only supporting java class files compiled with JDK 8 version of Java.
-
 ## Screenshots
 
 ![Screenshot 1](https://github.com/serifpersia/esp32partitiontool/assets/62844718/8724d57c-ebb5-404f-97f1-fe09134f53b5)
@@ -25,12 +21,20 @@ To build the plugin, you need JDK 8 installed. Note that anything newer will cau
 - [ ] Auto Merge & Flash at 0x0 Offset
 - [ ] Public Tool Release
 
-## Usage
+## Build Requirements
 
-1. Clone the repository.
-2. Build the tool using JDK 8.
-3. Install the plugin in your Arduino IDE.
-4. Access partitioning options through the IDE interface.
+To build the plugin, you need JDK 8 installed. Note that anything newer will cause the Arduino IDE to crash since its only supporting java class files compiled with JDK 8 version of Java.
+
+## Installation
+- Download the tool from releases or build it yourself.
+- In your Arduino sketchbook directory, create tools directory if it doesn't exist yet.
+- Unpack the tool into tools directory (the path will look like <home_dir>/Arduino/tools/ESP32PartitionTool/tool/ESP32PartitionTool.jar).
+- Restart Arduino IDE
+
+## Usage
+- Select Tools > ESP32 Partition Tool menu item.
+- Customize partition scheme.
+- Export the custom partitions CSV file.
 
 ## Issues and Contributions
 
