@@ -551,7 +551,7 @@ public class UI extends JPanel {
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 
-		initialPanel.setPreferredSize(new Dimension(50, 26));
+		initialPanel.setPreferredSize(new Dimension(50, 24));
 		csv_partitionsCenterVisualPanel.add(initialPanel, gbc);
 
 		if (remainingSpace > 0) {
