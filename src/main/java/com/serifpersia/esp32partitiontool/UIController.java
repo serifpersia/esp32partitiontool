@@ -7,19 +7,14 @@ import javax.swing.JComboBox;
 import javax.swing.JTextField;
 
 import java.awt.Component;
-import java.awt.FileDialog;
-import java.awt.Frame;
-import java.io.FileWriter;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class UIController implements ActionListener {
 	private UI ui;
+	private FileManager fileManager;
 
-	public UIController(UI ui) {
+	public UIController(UI ui, FileManager fileManager) {
 		this.ui = ui;
+		this.fileManager = fileManager;
 		attachListeners();
 	}
 
@@ -36,21 +31,26 @@ public class UIController implements ActionListener {
 			ui.getPartitionSize(i).addActionListener(this);
 		}
 		ui.getFlashSize().addActionListener(this);
+		ui.getSpiffsBlockSize().addActionListener(this);
+		ui.getFlashSPIFFSButton().addActionListener(this);
+		ui.getGenerateSPIFFSButton().addActionListener(this);
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == ui.getGenCSVButton()) {
 			// Handle CSV export
-			exportCSV();
+			fileManager.exportCSV();
 		} else if (e.getSource() instanceof JCheckBox) {
 			handleCheckBoxAction((JCheckBox) e.getSource());
 		} else if (e.getSource() instanceof JTextField) {
 			handleTextFieldAction((JTextField) e.getSource());
 		} else if (e.getSource() instanceof JComboBox<?>) {
 			handleComboBoxAction((JComboBox<?>) e.getSource());
-		} else if (e.getSource() instanceof JComboBox<?>) {
-			handleComboBoxAction((JComboBox<?>) e.getSource());
+		} else if (e.getSource() == ui.getGenerateSPIFFSButton()) {
+			fileManager.createSPIFFS();
+		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
+			fileManager.uploadSPIFFS();
 		}
 	}
 
@@ -86,6 +86,8 @@ public class UIController implements ActionListener {
 
 			ui.calculateSizeHex();
 			ui.updatePartitionFlashVisual();
+		} else if (comboBox == ui.getSpiffsBlockSize()) {
+			fileManager.test();
 		}
 		System.out.println("Item Data: " + comboBox.getSelectedItem());
 	}
@@ -102,47 +104,4 @@ public class UIController implements ActionListener {
 		return -1;
 	}
 
-	private void exportCSV() {
-		int numOfItems = ui.getNumOfItems();
-		List<String> exportedData = new ArrayList<>();
-		exportedData.add("# Name,   Type, SubType,  Offset,   Size,  Flags");
-
-		for (int i = 0; i < numOfItems; i++) {
-			JCheckBox checkBox = ui.getCheckBox(i);
-			JTextField partitionNameField = ui.getPartitionName(i);
-			JComboBox<?> partitionTypeComboBox = ui.getPartitionType(i);
-			JTextField partitionSubTypeField = ui.getPartitionSubType(i);
-			JTextField partitionSizeField = ui.getPartitionSizeHex(i);
-			JTextField partitionOffset = ui.getPartitionOffsets(i);
-
-			if (checkBox.isSelected()) {
-				String name = partitionNameField.getText();
-				String type = (String) partitionTypeComboBox.getSelectedItem();
-				String subType = partitionSubTypeField.getText();
-				String size = partitionSizeField.getText();
-				String offset = "0x" + partitionOffset.getText(); // Assuming offset is same as size
-
-				String exported_csvPartition = name + ", " + type + ", " + subType + ", " + offset + ", " + "0x" + size;
-				exportedData.add(exported_csvPartition);
-			}
-		}
-
-		// Export to CSV
-		FileDialog dialog = new FileDialog(new Frame(), "Export Partitions CSV", FileDialog.SAVE);
-		dialog.setFile("partitions.csv");
-		dialog.setVisible(true);
-		String fileName = dialog.getFile();
-		if (fileName != null) {
-			String filePath = dialog.getDirectory() + fileName;
-			try (FileWriter writer = new FileWriter(filePath)) {
-				// Write the exported data to the CSV file
-				for (String partitionData : exportedData) {
-					writer.write(partitionData + "\n");
-				}
-				System.out.println("CSV exported successfully to: " + filePath);
-			} catch (IOException ex) {
-				System.err.println("Error exporting CSV: " + ex.getMessage());
-			}
-		}
-	}
 }

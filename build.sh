@@ -4,7 +4,7 @@
 script_dir="$(dirname "$(readlink -f "$0")")"
 
 # Define folder names
-source_folder="$script_dir/src"
+source_folder="$script_dir/src/main/java/com/serifpersia/esp32partitiontool"
 dependencies_folder="$script_dir/dependencies"
 bin_folder="$script_dir/bin"
 tool_folder="$script_dir/tool"

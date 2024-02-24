@@ -2,7 +2,7 @@
 setlocal
 
 set "script_dir=%~dp0"
-set "source_folder=%script_dir%src"
+set "source_folder=%script_dir%src/main/java/com/serifpersia/esp32partitiontool"
 set "dependencies_folder=%script_dir%dependencies"
 set "bin_folder=%script_dir%bin"
 set "tool_folder=%script_dir%tool"

@@ -1,0 +1,32 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<dependencies>
+		<dependency>
+			<groupId>processing</groupId>
+			<artifactId>pde</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${pom.basedir}/dependencies/pde.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>arduino</groupId>
+			<artifactId>arduino-core</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${pom.basedir}/dependencies/arduino-core.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>commons</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.7</version>
+			<scope>system</scope>
+			<systemPath>${pom.basedir}/dependencies/commons-codec-1.7.jar</systemPath>
+		</dependency>
+	</dependencies>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.github.serifpersia</groupId>
+	<artifactId>esp32-partitions-tool</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>ESP32 Partition Tool</name>
+</project>

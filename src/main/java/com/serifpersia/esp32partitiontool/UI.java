@@ -3,7 +3,6 @@ package com.serifpersia.esp32partitiontool;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -38,16 +37,11 @@ public class UI extends JPanel {
 	private JPanel csv_PartitionOffsetsInnerPanel;
 
 	private JPanel csv_PartitionsVisual;
-	private JPanel partitions_FlashPartitionsVisualsPanel;
 	private JPanel partitions_UtilButtonsPanel;
 	private JPanel csv_partitionsCenterVisualPanel;
 
-	private JPanel SPIFFS_GenPanel;
-	private JPanel SPIFFS_GenInnerPanel;
-	private JPanel SPIFFS_BlockSizePanel;
-	private JPanel SPIFFS_PageSizePanel;
-	private JPanel SPIFFS_OffsetsPanel;
-	private JPanel SPIFFS_OutputPanel;
+	private JPanel SPIFFS_AND_MERGE_AND_FLASH_RootPanel;
+	private JPanel SPIFFS_AND_MERGE_AND_FLASH_InnerPanel;
 
 	private JCheckBox[] partitions_EnableChckb = new JCheckBox[NUM_ITEMS];
 	private JTextField[] partitionsNames = new JTextField[NUM_ITEMS];
@@ -64,15 +58,36 @@ public class UI extends JPanel {
 
 	private JButton partitions_GenerateCSVButton;
 	private JButton partitions_GenerateBinButton;
-	private JButton SPIFFS_GenerateSPIFFSButton;
-
-	private JTextField SPIFFS_BlockSizes;
-	private JTextField SPIFFS_PageSizes;
-	private JTextField SPIFFS_Offsets;
 	private JPanel csv_PartitionSizeHexPanel;
 	private JLabel csv_PartitionSizeHexLabel;
 	private JPanel csv_PartitionSizeHexInnerPanel;
 	private JLabel csv_partitionFlashFreeSpace;
+
+	private Color[] partitionColors = { new Color(255, 102, 102), // A darker shade of red
+			new Color(102, 153, 255), // A darker shade of blue
+			new Color(102, 204, 102), // A darker shade of green
+			new Color(178, 102, 255), // A darker shade of purple
+			new Color(255, 153, 51), // A darker shade of orange
+			new Color(204, 102, 204) // A darker shade of magenta
+	};
+	private JPanel SPIFFS_InnerPanel;
+	private JLabel lb_blockSize;
+	private JComboBox<?> spiffs_blockSize;
+	private JLabel lb_pageSize;
+	private JTextField spiffs_pageSize;
+	private JLabel lb_offset;
+	private JTextField spiffs_offset;
+	private JPanel SPIFFS_AND_MERGE_AND_FLASH_Panel;
+	private JPanel panel_2;
+	private JButton btn_generateSPIFFS;
+	private JButton btn_flashSPIFFS;
+	private JPanel panel_3;
+	private JLabel lblNewLabel_3;
+	private JPanel panel_4;
+	private JPanel panel_5;
+	private JButton btnNewButton_2;
+	private JButton btnNewButton_3;
+	private JButton btnNewButton_4;
 
 	public UI() {
 		setLayout(new BorderLayout(0, 0));
@@ -196,7 +211,7 @@ public class UI extends JPanel {
 		partitions_UtilButtonsPanel = new JPanel();
 		csv_PartitionsVisual.add(partitions_UtilButtonsPanel, BorderLayout.NORTH);
 
-		JLabel csv_FlashSizeLabel = new JLabel("Flash Size:");
+		JLabel csv_FlashSizeLabel = new JLabel("Flash Size: MB");
 		csv_FlashSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		partitions_UtilButtonsPanel.add(csv_FlashSizeLabel);
 
@@ -209,72 +224,89 @@ public class UI extends JPanel {
 		partitions_GenerateBinButton = new JButton("Generate Bin");
 		partitions_UtilButtonsPanel.add(partitions_GenerateBinButton);
 
-		SPIFFS_GenPanel = new JPanel();
-		add(SPIFFS_GenPanel, BorderLayout.EAST);
-		SPIFFS_GenPanel.setLayout(new BorderLayout(0, 0));
+		SPIFFS_AND_MERGE_AND_FLASH_RootPanel = new JPanel();
+		add(SPIFFS_AND_MERGE_AND_FLASH_RootPanel, BorderLayout.EAST);
+		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.setLayout(new BorderLayout(0, 0));
 
 		JLabel SPIFFS_GenLabel = new JLabel("SPIFFS");
 		SPIFFS_GenLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		SPIFFS_GenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
-		SPIFFS_GenPanel.add(SPIFFS_GenLabel, BorderLayout.NORTH);
+		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.add(SPIFFS_GenLabel, BorderLayout.NORTH);
 
-		SPIFFS_GenInnerPanel = new JPanel();
+		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel = new JPanel();
 
-		SPIFFS_GenPanel.add(SPIFFS_GenInnerPanel, BorderLayout.CENTER);
-		SPIFFS_GenInnerPanel.setLayout(new GridLayout(4, 0, 0, 0));
+		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.add(SPIFFS_AND_MERGE_AND_FLASH_InnerPanel, BorderLayout.CENTER);
+		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.setLayout(new BorderLayout(0, 0));
 
-		SPIFFS_BlockSizePanel = new JPanel();
-		FlowLayout fl_SPIFFS_BlockSizePanel = (FlowLayout) SPIFFS_BlockSizePanel.getLayout();
-		fl_SPIFFS_BlockSizePanel.setVgap(30);
-		SPIFFS_GenInnerPanel.add(SPIFFS_BlockSizePanel);
+		GridLayout gl_SPIFFS_InnerPanel = new GridLayout(0, 2);
+		gl_SPIFFS_InnerPanel.setHgap(5);
+		SPIFFS_InnerPanel = new JPanel(gl_SPIFFS_InnerPanel); // 0 rows means any number of rows, 2 columns
+		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.add(SPIFFS_InnerPanel, BorderLayout.NORTH);
 
-		JLabel SPIFFS_BlockSizeInnerLabel = new JLabel("Block Size");
-		SPIFFS_BlockSizeInnerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_BlockSizePanel.add(SPIFFS_BlockSizeInnerLabel);
+		lb_blockSize = new JLabel("Block Size:");
+		lb_blockSize.setHorizontalAlignment(SwingConstants.CENTER);
+		SPIFFS_InnerPanel.add(lb_blockSize);
 
-		SPIFFS_BlockSizes = new JTextField();
-		SPIFFS_BlockSizes.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_BlockSizePanel.add(SPIFFS_BlockSizes);
-		SPIFFS_BlockSizes.setColumns(5);
-		SPIFFS_BlockSizes.setPreferredSize(new Dimension(SPIFFS_BlockSizes.getPreferredSize().width, 30));
+		spiffs_blockSize = new JComboBox<>(new String[] { "64", "128", "256", "512", "1024" });
+		spiffs_blockSize.setSelectedItem("256");
+		SPIFFS_InnerPanel.add(spiffs_blockSize);
 
-		SPIFFS_PageSizePanel = new JPanel();
-		FlowLayout fl_SPIFFS_PageSizePanel = (FlowLayout) SPIFFS_PageSizePanel.getLayout();
-		fl_SPIFFS_PageSizePanel.setVgap(30);
-		SPIFFS_GenInnerPanel.add(SPIFFS_PageSizePanel);
+		lb_pageSize = new JLabel("Page Size:");
+		lb_pageSize.setHorizontalAlignment(SwingConstants.CENTER);
+		SPIFFS_InnerPanel.add(lb_pageSize);
 
-		JLabel SPIFFS_PageSizeInnerLabel = new JLabel("Page Size");
-		SPIFFS_PageSizeInnerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_PageSizePanel.add(SPIFFS_PageSizeInnerLabel);
+		spiffs_pageSize = new JTextField("4096");
+		spiffs_pageSize.setEditable(false);
+		SPIFFS_InnerPanel.add(spiffs_pageSize);
 
-		SPIFFS_PageSizes = new JTextField();
-		SPIFFS_PageSizes.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_PageSizes.setColumns(5);
-		SPIFFS_PageSizes.setPreferredSize(new Dimension(SPIFFS_PageSizes.getPreferredSize().width, 30));
-		SPIFFS_PageSizePanel.add(SPIFFS_PageSizes);
+		lb_offset = new JLabel("Offset");
+		lb_offset.setHorizontalAlignment(SwingConstants.CENTER);
+		SPIFFS_InnerPanel.add(lb_offset);
 
-		SPIFFS_OffsetsPanel = new JPanel();
-		FlowLayout fl_SPIFFS_OffsetsPanel = (FlowLayout) SPIFFS_OffsetsPanel.getLayout();
-		fl_SPIFFS_OffsetsPanel.setVgap(30);
-		SPIFFS_GenInnerPanel.add(SPIFFS_OffsetsPanel);
+		spiffs_offset = new JTextField("3f0000");
+		spiffs_offset.setEditable(false);
+		SPIFFS_InnerPanel.add(spiffs_offset);
 
-		JLabel SPIFFS_OffsetsInnerLabel = new JLabel("Offset(x)");
-		SPIFFS_OffsetsInnerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_OffsetsPanel.add(SPIFFS_OffsetsInnerLabel);
+		SPIFFS_AND_MERGE_AND_FLASH_Panel = new JPanel();
+		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.add(SPIFFS_AND_MERGE_AND_FLASH_Panel, BorderLayout.CENTER);
+		SPIFFS_AND_MERGE_AND_FLASH_Panel.setLayout(new BorderLayout(0, 0));
 
-		SPIFFS_Offsets = new JTextField();
-		SPIFFS_Offsets.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_Offsets.setColumns(5);
-		SPIFFS_Offsets.setPreferredSize(new Dimension(SPIFFS_Offsets.getPreferredSize().width, 30));
-		SPIFFS_OffsetsPanel.add(SPIFFS_Offsets);
+		panel_2 = new JPanel();
+		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel_2, BorderLayout.NORTH);
+		panel_2.setLayout(new GridLayout(2, 0, 0, 0));
 
-		SPIFFS_OutputPanel = new JPanel();
-		FlowLayout fl_SPIFFS_OutputPanel = (FlowLayout) SPIFFS_OutputPanel.getLayout();
-		fl_SPIFFS_OutputPanel.setVgap(30);
-		SPIFFS_GenInnerPanel.add(SPIFFS_OutputPanel);
+		btn_generateSPIFFS = new JButton("Generate SPIFFS");
+		panel_2.add(btn_generateSPIFFS);
 
-		SPIFFS_GenerateSPIFFSButton = new JButton("Generate SPIFFS");
-		SPIFFS_OutputPanel.add(SPIFFS_GenerateSPIFFSButton);
+		btn_flashSPIFFS = new JButton("Flash SPIFFS");
+		panel_2.add(btn_flashSPIFFS);
+
+		panel_3 = new JPanel();
+		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel_3, BorderLayout.CENTER);
+		panel_3.setLayout(new BorderLayout(0, 0));
+
+		lblNewLabel_3 = new JLabel("Merge & Flash");
+		lblNewLabel_3.setFont(new Font("Tahoma", Font.PLAIN, 18));
+		lblNewLabel_3.setHorizontalAlignment(SwingConstants.CENTER);
+		panel_3.add(lblNewLabel_3, BorderLayout.NORTH);
+
+		panel_4 = new JPanel();
+		panel_3.add(panel_4, BorderLayout.CENTER);
+		panel_4.setLayout(new BorderLayout(0, 0));
+
+		panel_5 = new JPanel();
+		panel_4.add(panel_5, BorderLayout.NORTH);
+		panel_5.setLayout(new GridLayout(3, 0, 0, 0));
+
+		btnNewButton_2 = new JButton("Flash Sketch");
+		panel_5.add(btnNewButton_2);
+
+		btnNewButton_3 = new JButton("Generate Merged Binary");
+		panel_5.add(btnNewButton_3);
+
+		btnNewButton_4 = new JButton("Merge & Flash");
+		panel_5.add(btnNewButton_4);
+
 	}
 
 	private void createPartitionsEnableToggles() {
@@ -494,21 +526,11 @@ public class UI extends JPanel {
 		}
 	}
 
-	private Color[] partitionColors = { new Color(255, 102, 102), // A darker shade of red
-			new Color(102, 153, 255), // A darker shade of blue
-			new Color(102, 204, 102), // A darker shade of green
-			new Color(178, 102, 255), // A darker shade of purple
-			new Color(255, 153, 51), // A darker shade of orange
-			new Color(204, 102, 204) // A darker shade of magenta
-	};
-
 	private void createPartitionFlashVisualPanel() {
-		partitions_FlashPartitionsVisualsPanel = new JPanel(new BorderLayout());
 
 		csv_partitionsCenterVisualPanel = new JPanel(new GridBagLayout());
-		partitions_FlashPartitionsVisualsPanel.add(csv_partitionsCenterVisualPanel, BorderLayout.CENTER);
 
-		csv_PartitionsVisual.add(partitions_FlashPartitionsVisualsPanel, BorderLayout.SOUTH);
+		csv_PartitionsVisual.add(csv_partitionsCenterVisualPanel, BorderLayout.SOUTH);
 
 		// Call the method to initially populate the center panel
 		updatePartitionFlashVisual();
@@ -542,9 +564,7 @@ public class UI extends JPanel {
 		int remainingSpace = FLASH_SIZE - RESERVED_SPACE - totalPartitionSize;
 
 		JPanel initialPanel = new JPanel(new BorderLayout());
-		initialPanel.setBackground(Color.DARK_GRAY);
 		JLabel initialLabel = new JLabel("0x9000");
-		initialLabel.setForeground(Color.WHITE);
 		initialLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		initialPanel.add(initialLabel, BorderLayout.CENTER);
 
@@ -634,6 +654,14 @@ public class UI extends JPanel {
 		return partitions_GenerateCSVButton;
 	}
 
+	public JButton getGenerateSPIFFSButton() {
+		return btn_generateSPIFFS;
+	}
+
+	public JButton getFlashSPIFFSButton() {
+		return btn_flashSPIFFS;
+	}
+
 	public int getNumOfItems() {
 		return NUM_ITEMS;
 	}
@@ -690,5 +718,9 @@ public class UI extends JPanel {
 			return partitionsOffsets[index];
 		}
 		return null;
+	}
+
+	public JComboBox<?> getSpiffsBlockSize() {
+		return spiffs_blockSize;
 	}
 }
