@@ -71,21 +71,18 @@ public class UI extends JPanel {
 			new Color(204, 102, 204) // A darker shade of magenta
 	};
 	private JPanel SPIFFS_InnerPanel;
-	private JLabel lb_pageSize;
-	private JComboBox<?> spiffs_pageSize;
 	private JLabel lb_blockSize;
 	private JTextField spiffs_blockSize;
 	private JPanel SPIFFS_AND_MERGE_AND_FLASH_Panel;
 	private JPanel panel_2;
-	private JButton btn_createSPIFFS;
 	private JButton btn_flashSPIFFS;
 	private JPanel panel_3;
 	private JLabel lblNewLabel_3;
 	private JPanel panel_4;
 	private JPanel panel_5;
-	private JButton btnNewButton_2;
-	private JButton btnNewButton_3;
-	private JButton btnNewButton_4;
+	private JButton btn_flashSketch;
+	private JButton btn_createMergedBin;
+	private JButton btn_flashMergedBin;
 
 	public UI() {
 		setLayout(new BorderLayout(0, 0));
@@ -241,14 +238,6 @@ public class UI extends JPanel {
 		SPIFFS_InnerPanel = new JPanel(gl_SPIFFS_InnerPanel); // 0 rows means any number of rows, 2 columns
 		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.add(SPIFFS_InnerPanel, BorderLayout.NORTH);
 
-		lb_pageSize = new JLabel("Page Size:");
-		lb_pageSize.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_InnerPanel.add(lb_pageSize);
-
-		spiffs_pageSize = new JComboBox<>(new String[] { "64", "128", "256", "512", "1024" });
-		spiffs_pageSize.setSelectedItem("256");
-		SPIFFS_InnerPanel.add(spiffs_pageSize);
-
 		lb_blockSize = new JLabel("Block Size:");
 		lb_blockSize.setHorizontalAlignment(SwingConstants.CENTER);
 		SPIFFS_InnerPanel.add(lb_blockSize);
@@ -263,10 +252,7 @@ public class UI extends JPanel {
 
 		panel_2 = new JPanel();
 		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel_2, BorderLayout.NORTH);
-		panel_2.setLayout(new GridLayout(2, 0, 0, 0));
-
-		btn_createSPIFFS = new JButton("Create SPIFFS");
-		panel_2.add(btn_createSPIFFS);
+		panel_2.setLayout(new BorderLayout(0, 0));
 
 		btn_flashSPIFFS = new JButton("Flash SPIFFS");
 		panel_2.add(btn_flashSPIFFS);
@@ -288,14 +274,14 @@ public class UI extends JPanel {
 		panel_4.add(panel_5, BorderLayout.NORTH);
 		panel_5.setLayout(new GridLayout(3, 0, 0, 0));
 
-		btnNewButton_2 = new JButton("Flash Sketch");
-		panel_5.add(btnNewButton_2);
+		btn_flashSketch = new JButton("Flash Sketch");
+		panel_5.add(btn_flashSketch);
 
-		btnNewButton_3 = new JButton("Generate Merged Binary");
-		panel_5.add(btnNewButton_3);
+		btn_createMergedBin = new JButton("Create Merged Bin");
+		panel_5.add(btn_createMergedBin);
 
-		btnNewButton_4 = new JButton("Merge & Flash");
-		panel_5.add(btnNewButton_4);
+		btn_flashMergedBin = new JButton("Flash Merged Bin");
+		panel_5.add(btn_flashMergedBin);
 
 	}
 
@@ -439,17 +425,11 @@ public class UI extends JPanel {
 			if (!getPartitionSize(i).getText().isEmpty()) {
 				try {
 					int partitionTotalSize = Integer.parseInt(getPartitionSize(i).getText()) * 1024;
-					// Round up to the nearest multiple of 4096
-					int partitionRoundedSize = (partitionTotalSize + 4095) / 4096 * 4096;
 
-					FlashSizeBytes -= partitionRoundedSize;
-
-					// Set the rounded value back to the text field
-					getPartitionSize(i).setText(Integer.toString(partitionRoundedSize / 1024)); // Convert back to
-																								// kilobytes
+					FlashSizeBytes -= partitionTotalSize;
 
 					// Store partition size in kilobytes
-					partitionSizes[i] = partitionRoundedSize / 1024;
+					partitionSizes[i] = partitionTotalSize / 1024;
 				} catch (NumberFormatException e) {
 					// Handle parsing errors if necessary
 					System.out.println("Invalid input in text field " + i);
@@ -634,12 +614,20 @@ public class UI extends JPanel {
 		return partitions_BinButton;
 	}
 
-	public JButton getCreateSPIFFSButton() {
-		return btn_createSPIFFS;
-	}
-
 	public JButton getFlashSPIFFSButton() {
 		return btn_flashSPIFFS;
+	}
+
+	public JButton getFlashSketchButton() {
+		return btn_flashSketch;
+	}
+
+	public JButton getCreateMergedBin() {
+		return btn_createMergedBin;
+	}
+
+	public JButton getFlashMergedBin() {
+		return btn_flashMergedBin;
 	}
 
 	public int getNumOfItems() {
@@ -698,10 +686,6 @@ public class UI extends JPanel {
 			return partitionsOffsets[index];
 		}
 		return null;
-	}
-
-	public JComboBox<?> getSpiffsPageSize() {
-		return spiffs_pageSize;
 	}
 
 	public JTextField getSpiffsBlockSize() {

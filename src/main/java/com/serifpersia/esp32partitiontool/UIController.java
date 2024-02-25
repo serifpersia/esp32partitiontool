@@ -31,10 +31,11 @@ public class UIController implements ActionListener {
 			ui.getPartitionSize(i).addActionListener(this);
 		}
 		ui.getCreatePartitionsBin().addActionListener(this);
-		ui.getSpiffsPageSize().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
 		ui.getFlashSPIFFSButton().addActionListener(this);
-		ui.getCreateSPIFFSButton().addActionListener(this);
+		ui.getFlashSketchButton().addActionListener(this);
+		ui.getCreateMergedBin().addActionListener(this);
+		ui.getFlashMergedBin().addActionListener(this);
 	}
 
 	@Override
@@ -50,10 +51,14 @@ public class UIController implements ActionListener {
 			handleComboBoxAction((JComboBox<?>) e.getSource());
 		} else if (e.getSource() == ui.getCreatePartitionsBin()) {
 			fileManager.createPartitionsBin();
-		} else if (e.getSource() == ui.getCreateSPIFFSButton()) {
-			fileManager.createSPIFFS();
 		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
 			fileManager.uploadSPIFFS();
+		} else if (e.getSource() == ui.getFlashSketchButton()) {
+			fileManager.flashCompiledSketch();
+		} else if (e.getSource() == ui.getCreateMergedBin()) {
+			System.out.println("test");
+		} else if (e.getSource() == ui.getFlashMergedBin()) {
+			System.out.println("test");
 		}
 	}
 
