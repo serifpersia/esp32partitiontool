@@ -20,7 +20,7 @@ public class UIController implements ActionListener {
 
 	private void attachListeners() {
 		// Attach listener to the "Generate CSV" button
-		ui.getGenCSVButton().addActionListener(this);
+		ui.getCreatePartitionsCSV().addActionListener(this);
 		int numOfItems = ui.getNumOfItems();
 		for (int i = 0; i < numOfItems; i++) {
 			JCheckBox checkBox = ui.getCheckBox(i);
@@ -30,24 +30,27 @@ public class UIController implements ActionListener {
 			ui.getPartitionSubType(i).addActionListener(this);
 			ui.getPartitionSize(i).addActionListener(this);
 		}
+		ui.getCreatePartitionsBin().addActionListener(this);
+		ui.getSpiffsPageSize().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
-		ui.getSpiffsBlockSize().addActionListener(this);
 		ui.getFlashSPIFFSButton().addActionListener(this);
-		ui.getGenerateSPIFFSButton().addActionListener(this);
+		ui.getCreateSPIFFSButton().addActionListener(this);
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == ui.getGenCSVButton()) {
+		if (e.getSource() == ui.getCreatePartitionsCSV()) {
 			// Handle CSV export
-			fileManager.exportCSV();
+			fileManager.generateCSV();
 		} else if (e.getSource() instanceof JCheckBox) {
 			handleCheckBoxAction((JCheckBox) e.getSource());
 		} else if (e.getSource() instanceof JTextField) {
 			handleTextFieldAction((JTextField) e.getSource());
 		} else if (e.getSource() instanceof JComboBox<?>) {
 			handleComboBoxAction((JComboBox<?>) e.getSource());
-		} else if (e.getSource() == ui.getGenerateSPIFFSButton()) {
+		} else if (e.getSource() == ui.getCreatePartitionsBin()) {
+			fileManager.createPartitionsBin();
+		} else if (e.getSource() == ui.getCreateSPIFFSButton()) {
 			fileManager.createSPIFFS();
 		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
 			fileManager.uploadSPIFFS();
@@ -57,13 +60,12 @@ public class UIController implements ActionListener {
 	private void handleCheckBoxAction(JCheckBox checkBox) {
 		int toggleID = getIndexForComponent(checkBox);
 		boolean isSelected = checkBox.isSelected();
-		ui.getPartitionName(toggleID).setEnabled(isSelected);
+		ui.getPartitionName(toggleID).setEditable(isSelected);
 		ui.getPartitionType(toggleID).setEnabled(isSelected);
-		ui.getPartitionSubType(toggleID).setEnabled(isSelected);
-		ui.getPartitionSize(toggleID).setEnabled(isSelected);
-		ui.getPartitionOffsets(toggleID).setEnabled(isSelected);
+		ui.getPartitionSubType(toggleID).setEditable(isSelected);
+		ui.getPartitionSize(toggleID).setEditable(isSelected);
+		ui.getPartitionOffsets(toggleID).setEditable(isSelected);
 		ui.updatePartitionFlashVisual();
-		System.out.println("Toggle " + toggleID + ": State " + (isSelected ? "Enabled" : "Disabled"));
 	}
 
 	private void handleTextFieldAction(JTextField textField) {
@@ -86,10 +88,19 @@ public class UIController implements ActionListener {
 
 			ui.calculateSizeHex();
 			ui.updatePartitionFlashVisual();
-		} else if (comboBox == ui.getSpiffsBlockSize()) {
-			fileManager.test();
+
+			int spiffs_setBlockSize = 0;
+
+			if (ui.flashSizeMB == 4 || ui.flashSizeMB == 8 || ui.flashSizeMB == 16) {
+				spiffs_setBlockSize = ui.flashSizeMB * 1024;
+			} else {
+				// Handle other cases or provide a default value if necessary
+			}
+
+			String blockSizeText = String.valueOf(spiffs_setBlockSize);
+			ui.getSpiffsBlockSize().setText(blockSizeText);
+
 		}
-		System.out.println("Item Data: " + comboBox.getSelectedItem());
 	}
 
 	private int getIndexForComponent(Component component) {

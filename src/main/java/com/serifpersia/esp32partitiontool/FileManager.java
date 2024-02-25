@@ -5,8 +5,6 @@ import java.awt.Frame;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JTextField;
@@ -38,6 +36,7 @@ public class FileManager {
 	private String serialPort;
 	File espota;
 	File esptool;
+	File gen_esp32part;
 	String pythonCmd;
 	String uploadSpeed;
 	long spiStart;
@@ -46,6 +45,7 @@ public class FileManager {
 	long spiSize;
 	int spiPage;
 	int spiBlock;
+	private ArrayList<String> createdPartitionsData;
 
 	// Constructor to initialize FileManager with UI instance and Editor instance
 	public FileManager(UI ui, Editor editor) {
@@ -57,11 +57,11 @@ public class FileManager {
 		System.out.println("filemanager test");
 	}
 
-	public void exportCSV() {
+	private void calculateCSV() {
 		// Now you can use 'ui' to access UI components
 		int numOfItems = ui.getNumOfItems();
-		List<String> exportedData = new ArrayList<>();
-		exportedData.add("# Name,   Type, SubType,  Offset,   Size,  Flags");
+		createdPartitionsData = new ArrayList<>();
+		createdPartitionsData.add("# Name,   Type, SubType,  Offset,   Size,  Flags");
 
 		for (int i = 0; i < numOfItems; i++) {
 			JCheckBox checkBox = ui.getCheckBox(i);
@@ -79,12 +79,16 @@ public class FileManager {
 				String offset = "0x" + partitionOffset.getText(); // Assuming offset is same as size
 
 				String exported_csvPartition = name + ", " + type + ", " + subType + ", " + offset + ", " + "0x" + size;
-				exportedData.add(exported_csvPartition);
+				createdPartitionsData.add(exported_csvPartition);
 			}
 		}
+	}
 
+	public void generateCSV() {
+
+		calculateCSV();
 		// Export to CSV
-		FileDialog dialog = new FileDialog(new Frame(), "Export Partitions CSV", FileDialog.SAVE);
+		FileDialog dialog = new FileDialog(new Frame(), "Create Partitions CSV", FileDialog.SAVE);
 		dialog.setFile("partitions.csv");
 		dialog.setVisible(true);
 		String fileName = dialog.getFile();
@@ -92,12 +96,12 @@ public class FileManager {
 			String filePath = dialog.getDirectory() + fileName;
 			try (FileWriter writer = new FileWriter(filePath)) {
 				// Write the exported data to the CSV file
-				for (String partitionData : exportedData) {
+				for (String partitionData : createdPartitionsData) {
 					writer.write(partitionData + "\n");
 				}
-				System.out.println("CSV exported successfully to: " + filePath);
+				System.out.println("partititons.csv created at: " + filePath);
 			} catch (IOException ex) {
-				System.err.println("Error exporting CSV: " + ex.getMessage());
+				System.err.println("Error creating CSV: " + ex.getMessage());
 			}
 		}
 	}
@@ -138,7 +142,7 @@ public class FileManager {
 					if (listenOnProcess(arguments) != 0) {
 						editor.statusError("SPIFFS Upload failed!");
 					} else {
-						editor.statusNotice("SPIFFS Image Uploaded");
+						editor.statusNotice("SPIFFS Uploaded");
 					}
 				} catch (Exception e) {
 					editor.statusError("SPIFFS Upload failed!");
@@ -185,28 +189,64 @@ public class FileManager {
 		return "";
 	}
 
-	private long parseInt(String value) {
-		if (value.startsWith("0x"))
-			return Long.parseLong(value.substring(2), 16);
-		else
-			return Integer.parseInt(value);
-	}
+	public void createPartitionsBin() {
+		TargetPlatform platform = BaseNoGui.getTargetPlatform();
 
-	private long getIntPref(String name) {
-		String data = BaseNoGui.getBoardPreferences().get(name);
-		if (data == null || data.contentEquals(""))
-			return 0;
-		return parseInt(data);
+		String gen_esp32partCmd = "gen_esp32part.py";
+		gen_esp32part = new File(platform.getFolder() + "/tools", gen_esp32partCmd);
+		if (!gen_esp32part.exists() || !gen_esp32part.isFile()) {
+			System.err.println();
+			editor.statusError("Partitions Bin Generate Error: gen_esp32part not found!");
+			return;
+		}
+
+		editor.statusNotice("Creating partitions.bin...");
+
+		String buildPath = getBuildFolderPath(editor.getSketch());
+		String csvFilePath = buildPath + "/partitions.csv";
+
+		// Assuming you have access to the UI components
+		calculateCSV();
+
+		try (FileWriter writer = new FileWriter(csvFilePath)) {
+			// Write the exported data to the CSV file
+			for (String partitionData : createdPartitionsData) {
+				writer.write(partitionData + "\n");
+			}
+			System.out.println("partitions.scv successfully created at: " + csvFilePath);
+		} catch (IOException ex) {
+			System.err.println("Error exporting CSV: " + ex.getMessage());
+		}
+
+		String partitionsBinPath = buildPath + "/partitions.bin";
+		// Command to generate partitions.bin
+		String[] command = { "python", gen_esp32part.getAbsolutePath(), buildPath + "/partitions.csv",
+				partitionsBinPath };
+
+		try {
+			// Execute the command
+			int exitCode = listenOnProcess(command);
+			if (exitCode == 0) {
+				editor.statusNotice("partitions.bin created successfully.");
+				System.out.println("partitions.bin created successfully.");
+			} else {
+				editor.statusError("Failed to create partitions.bin.");
+			}
+		} catch (Exception e) {
+			editor.statusError("An error occurred while creating partitions.bin.");
+			e.printStackTrace(); // Print the stack trace for debugging
+		}
+
 	}
 
 	public void createSPIFFS() {
-		System.out.println("creating spiffs button pressed!");
+		String spiPageSizeSelected = ui.getSpiffsPageSize().getSelectedItem().toString();
+		String spiPageBlockSizeSelected = ui.getSpiffsBlockSize().getText();
+
 		spiStart = 0;
 		spiSize = 0;
-		spiPage = 256;
-		spiBlock = 4096;
-
-		String partitions = "";
+		spiPage = Integer.parseInt(spiPageSizeSelected);
+		spiBlock = Integer.parseInt(spiPageBlockSizeSelected);
 
 		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
 			System.err.println();
@@ -249,41 +289,33 @@ public class FileManager {
 			return;
 		}
 
-		try {
-			partitions = BaseNoGui.getBoardPreferences().get("build.partitions");
-			if (partitions == null || partitions.contentEquals("")) {
-				editor.statusError("Partitions Not Found for " + BaseNoGui.getBoardPreferences().get("name"));
-				return;
+		String buildPath = getBuildFolderPath(editor.getSketch());
+		String csvFilePath = buildPath + "/partitions.csv";
+
+		calculateCSV();
+
+		try (FileWriter writer = new FileWriter(csvFilePath)) {
+			// Write the exported data to the CSV file
+			for (String partitionData : createdPartitionsData) {
+				writer.write(partitionData + "\n");
 			}
-		} catch (Exception e) {
-			editor.statusError(e);
-			return;
+			System.out.println("CSV exported successfully to: " + csvFilePath);
+		} catch (IOException ex) {
+			System.err.println("Error exporting CSV: " + ex.getMessage());
 		}
 
-		File partitionsFile = new File(platform.getFolder() + "/tools/partitions", partitions + ".csv");
-		if (!partitionsFile.exists() || !partitionsFile.isFile()) {
-			System.err.println();
-			editor.statusError("SPIFFS Error: partitions file " + partitions + ".csv not found!");
-			return;
-		}
-
-		try {
-			BufferedReader partitionsReader = new BufferedReader(new FileReader(partitionsFile));
+		// Read the partitions.csv file
+		try (BufferedReader partitionsReader = new BufferedReader(new FileReader(csvFilePath))) {
 			String partitionsLine = "";
 			while ((partitionsLine = partitionsReader.readLine()) != null) {
 				if (partitionsLine.contains("spiffs")) {
-					partitionsLine = partitionsLine.substring(partitionsLine.indexOf(",") + 1);
-					partitionsLine = partitionsLine.substring(partitionsLine.indexOf(",") + 1);
-					partitionsLine = partitionsLine.substring(partitionsLine.indexOf(",") + 1);
-					while (partitionsLine.startsWith(" "))
-						partitionsLine = partitionsLine.substring(1);
-					String pStart = partitionsLine.substring(0, partitionsLine.indexOf(","));
-					partitionsLine = partitionsLine.substring(partitionsLine.indexOf(",") + 1);
-					while (partitionsLine.startsWith(" "))
-						partitionsLine = partitionsLine.substring(1);
-					String pSize = partitionsLine.substring(0, partitionsLine.indexOf(","));
-					spiStart = parseInt(pStart);
-					spiSize = parseInt(pSize);
+					String[] partitionsData = partitionsLine.split(",\\s*"); // Split by comma with optional spaces
+					if (partitionsData.length >= 5) { // Ensure there are enough elements
+						String pStart = partitionsData[3].trim(); // Offset value
+						String pSize = partitionsData[4].trim(); // Size value
+						spiStart = Integer.parseInt(pStart.substring(2), 16); // Convert hex to int
+						spiSize = Integer.parseInt(pSize.substring(2), 16); // Convert hex to int
+					}
 				}
 			}
 			if (spiSize == 0) {
@@ -364,7 +396,7 @@ public class FileManager {
 		uploadSpeed = BaseNoGui.getBoardPreferences().get("upload.speed");
 
 		Object[] options = { "Yes", "No" };
-		String title = "SPIFFS Create";
+		String title = "Create SPIFFS";
 		String message = "No files have been found in your data folder!\nAre you sure you want to create an empty SPIFFS image?";
 
 		if (fileCount == 0 && JOptionPane.showOptionDialog(editor, message, title, JOptionPane.YES_NO_OPTION,
@@ -374,29 +406,40 @@ public class FileManager {
 			return;
 		}
 
-		editor.statusNotice("SPIFFS Creating Image...");
+		editor.statusNotice("Creating SPIFFS...");
 		System.out.println("[SPIFFS] data   : " + dataPath);
-		System.out.println("[SPIFFS] start  : " + spiStart);
-		System.out.println("[SPIFFS] size   : " + (spiSize / 1024));
-		System.out.println("[SPIFFS] page   : " + spiPage);
-		System.out.println("[SPIFFS] block  : " + spiBlock);
+		System.out.println("[SPIFFS] start (kB)  : " + spiStart / 1024);
+		System.out.println("[SPIFFS] size (kB)   : " + (spiSize / 1024));
+		System.out.println("[SPIFFS] page (kB)   : " + spiPage);
+		System.out.println("[SPIFFS] block (kB)  : " + spiBlock);
 
 		try {
 			if (listenOnProcess(new String[] { toolPath, "-c", dataPath, "-p", spiPage + "", "-b", spiBlock + "", "-s",
 					spiSize + "", imagePath }) != 0) {
 				System.err.println();
-				editor.statusError("SPIFFS Create Failed!");
+				editor.statusError("Failed to create SPIFFS!");
 				return;
 			}
 		} catch (Exception e) {
 			editor.statusError(e);
-			editor.statusError("SPIFFS Create Failed!");
+			editor.statusError("Failed to create SPIFFS!");
 			return;
+		} finally {
+			editor.statusNotice("Completed creating SPIFFS");
+			System.out.println("SPIFFS successfully created");
+			// Delete the partitions.csv file after reading its contents
+			File csvFile = new File(csvFilePath);
+			if (csvFile.exists()) {
+				if (csvFile.delete()) {
+				} else {
+					System.err.println("Failed to delete partitions.csv file");
+				}
+			}
 		}
 	}
 
 	public void uploadSPIFFS() {
-		editor.statusNotice("SPIFFS Uploading Image...");
+		editor.statusNotice("Uploading SPIFFS...");
 		System.out.println("[SPIFFS] upload : " + imagePath);
 
 		if (isNetwork) {

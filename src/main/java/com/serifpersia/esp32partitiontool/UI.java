@@ -56,8 +56,8 @@ public class UI extends JPanel {
 	int flashSizeMB = 4;
 	// long FlashSizeBytes = 0;
 
-	private JButton partitions_GenerateCSVButton;
-	private JButton partitions_GenerateBinButton;
+	private JButton partitions_CSVButton;
+	private JButton partitions_BinButton;
 	private JPanel csv_PartitionSizeHexPanel;
 	private JLabel csv_PartitionSizeHexLabel;
 	private JPanel csv_PartitionSizeHexInnerPanel;
@@ -71,15 +71,13 @@ public class UI extends JPanel {
 			new Color(204, 102, 204) // A darker shade of magenta
 	};
 	private JPanel SPIFFS_InnerPanel;
-	private JLabel lb_blockSize;
-	private JComboBox<?> spiffs_blockSize;
 	private JLabel lb_pageSize;
-	private JTextField spiffs_pageSize;
-	private JLabel lb_offset;
-	private JTextField spiffs_offset;
+	private JComboBox<?> spiffs_pageSize;
+	private JLabel lb_blockSize;
+	private JTextField spiffs_blockSize;
 	private JPanel SPIFFS_AND_MERGE_AND_FLASH_Panel;
 	private JPanel panel_2;
-	private JButton btn_generateSPIFFS;
+	private JButton btn_createSPIFFS;
 	private JButton btn_flashSPIFFS;
 	private JPanel panel_3;
 	private JLabel lblNewLabel_3;
@@ -218,11 +216,11 @@ public class UI extends JPanel {
 		partitions_FlashSizes = new JComboBox<>(new String[] { "4", "8", "16" });
 		partitions_UtilButtonsPanel.add(partitions_FlashSizes);
 
-		partitions_GenerateCSVButton = new JButton("Generate CSV");
-		partitions_UtilButtonsPanel.add(partitions_GenerateCSVButton);
+		partitions_CSVButton = new JButton("Create CSV");
+		partitions_UtilButtonsPanel.add(partitions_CSVButton);
 
-		partitions_GenerateBinButton = new JButton("Generate Bin");
-		partitions_UtilButtonsPanel.add(partitions_GenerateBinButton);
+		partitions_BinButton = new JButton("Create Bin");
+		partitions_UtilButtonsPanel.add(partitions_BinButton);
 
 		SPIFFS_AND_MERGE_AND_FLASH_RootPanel = new JPanel();
 		add(SPIFFS_AND_MERGE_AND_FLASH_RootPanel, BorderLayout.EAST);
@@ -243,29 +241,21 @@ public class UI extends JPanel {
 		SPIFFS_InnerPanel = new JPanel(gl_SPIFFS_InnerPanel); // 0 rows means any number of rows, 2 columns
 		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.add(SPIFFS_InnerPanel, BorderLayout.NORTH);
 
-		lb_blockSize = new JLabel("Block Size:");
-		lb_blockSize.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_InnerPanel.add(lb_blockSize);
-
-		spiffs_blockSize = new JComboBox<>(new String[] { "64", "128", "256", "512", "1024" });
-		spiffs_blockSize.setSelectedItem("256");
-		SPIFFS_InnerPanel.add(spiffs_blockSize);
-
 		lb_pageSize = new JLabel("Page Size:");
 		lb_pageSize.setHorizontalAlignment(SwingConstants.CENTER);
 		SPIFFS_InnerPanel.add(lb_pageSize);
 
-		spiffs_pageSize = new JTextField("4096");
-		spiffs_pageSize.setEditable(false);
+		spiffs_pageSize = new JComboBox<>(new String[] { "64", "128", "256", "512", "1024" });
+		spiffs_pageSize.setSelectedItem("256");
 		SPIFFS_InnerPanel.add(spiffs_pageSize);
 
-		lb_offset = new JLabel("Offset");
-		lb_offset.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_InnerPanel.add(lb_offset);
+		lb_blockSize = new JLabel("Block Size:");
+		lb_blockSize.setHorizontalAlignment(SwingConstants.CENTER);
+		SPIFFS_InnerPanel.add(lb_blockSize);
 
-		spiffs_offset = new JTextField("3f0000");
-		spiffs_offset.setEditable(false);
-		SPIFFS_InnerPanel.add(spiffs_offset);
+		spiffs_blockSize = new JTextField("4096");
+		spiffs_blockSize.setEditable(false);
+		SPIFFS_InnerPanel.add(spiffs_blockSize);
 
 		SPIFFS_AND_MERGE_AND_FLASH_Panel = new JPanel();
 		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.add(SPIFFS_AND_MERGE_AND_FLASH_Panel, BorderLayout.CENTER);
@@ -275,8 +265,8 @@ public class UI extends JPanel {
 		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel_2, BorderLayout.NORTH);
 		panel_2.setLayout(new GridLayout(2, 0, 0, 0));
 
-		btn_generateSPIFFS = new JButton("Generate SPIFFS");
-		panel_2.add(btn_generateSPIFFS);
+		btn_createSPIFFS = new JButton("Create SPIFFS");
+		panel_2.add(btn_createSPIFFS);
 
 		btn_flashSPIFFS = new JButton("Flash SPIFFS");
 		panel_2.add(btn_flashSPIFFS);
@@ -329,7 +319,7 @@ public class UI extends JPanel {
 			csv_PartitionNameInnerPanel.add(partitionsNames[i]);
 			// Set enabled property to false for items 6-10
 			if (i >= 6 && i <= 10) {
-				partitionsNames[i].setEnabled(false);
+				partitionsNames[i].setEditable(false);
 			}
 		}
 	}
@@ -359,7 +349,7 @@ public class UI extends JPanel {
 			csv_PartitionSubTypeInnerPanel.add(partitionsSubType[i]);
 			// Set enabled property to false for items 6-10
 			if (i >= 6 && i <= 10) {
-				partitionsSubType[i].setEnabled(false);
+				partitionsSubType[i].setEditable(false);
 			}
 		}
 	}
@@ -374,7 +364,7 @@ public class UI extends JPanel {
 			csv_PartitionSizeInnerPanel.add(partitionsSize[i]);
 			// Set enabled property to false for items 6-10
 			if (i >= 6 && i <= 10) {
-				partitionsSize[i].setEnabled(false);
+				partitionsSize[i].setEditable(false);
 			}
 		}
 		// Iterate through all text fields to calculate the total size
@@ -494,7 +484,7 @@ public class UI extends JPanel {
 
 			// Set enabled property to false for items 6-10
 			if (i >= 6 && i <= 10) {
-				partitionsOffsets[i].setEnabled(false);
+				partitionsOffsets[i].setEditable(false);
 			}
 		}
 		// Offset for the first index is hard coded as 9000 hex
@@ -544,22 +534,15 @@ public class UI extends JPanel {
 		int RESERVED_SPACE = 36;
 
 		int totalPartitionSize = 0;
-		int selectedPartitions = 0;
 
 		for (int i = 0; i < NUM_ITEMS; i++) {
 			if (partitions_EnableChckb[i].isSelected()) {
-				selectedPartitions++;
 				try {
 					totalPartitionSize += Integer.parseInt(partitionsSize[i].getText());
 				} catch (NumberFormatException e) {
-					// Handle parsing errors gracefully
-					System.err.println("Error parsing partition size: " + e.getMessage());
 				}
 			}
 		}
-
-		System.out.println("Selected Partitions: " + selectedPartitions);
-		System.out.println("Total Partition Size: " + totalPartitionSize);
 
 		int remainingSpace = FLASH_SIZE - RESERVED_SPACE - totalPartitionSize;
 
@@ -575,8 +558,6 @@ public class UI extends JPanel {
 		csv_partitionsCenterVisualPanel.add(initialPanel, gbc);
 
 		if (remainingSpace > 0) {
-			System.out.println("Free space available: " + remainingSpace);
-
 			for (int i = 0; i < NUM_ITEMS; i++) {
 				if (partitions_EnableChckb[i].isSelected()) {
 					try {
@@ -593,8 +574,6 @@ public class UI extends JPanel {
 						gbc.weightx = weight;
 						csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
 					} catch (NumberFormatException e) {
-						// Handle parsing errors gracefully
-						System.err.println("Error parsing partition size: " + e.getMessage());
 					}
 				}
 			}
@@ -609,7 +588,6 @@ public class UI extends JPanel {
 
 			csv_partitionsCenterVisualPanel.add(unusedSpacePanel, gbc);
 		} else {
-			System.out.println("No free space available.");
 			for (int i = 0; i < NUM_ITEMS; i++) {
 				if (partitions_EnableChckb[i].isSelected()) {
 					try {
@@ -626,8 +604,6 @@ public class UI extends JPanel {
 						gbc.weightx = weight;
 						csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
 					} catch (NumberFormatException e) {
-						// Handle parsing errors gracefully
-						System.err.println("Error parsing partition size: " + e.getMessage());
 					}
 				}
 			}
@@ -650,12 +626,16 @@ public class UI extends JPanel {
 		return partitions_FlashSizes;
 	}
 
-	public JButton getGenCSVButton() {
-		return partitions_GenerateCSVButton;
+	public JButton getCreatePartitionsCSV() {
+		return partitions_CSVButton;
 	}
 
-	public JButton getGenerateSPIFFSButton() {
-		return btn_generateSPIFFS;
+	public JButton getCreatePartitionsBin() {
+		return partitions_BinButton;
+	}
+
+	public JButton getCreateSPIFFSButton() {
+		return btn_createSPIFFS;
 	}
 
 	public JButton getFlashSPIFFSButton() {
@@ -720,7 +700,11 @@ public class UI extends JPanel {
 		return null;
 	}
 
-	public JComboBox<?> getSpiffsBlockSize() {
+	public JComboBox<?> getSpiffsPageSize() {
+		return spiffs_pageSize;
+	}
+
+	public JTextField getSpiffsBlockSize() {
 		return spiffs_blockSize;
 	}
 }
