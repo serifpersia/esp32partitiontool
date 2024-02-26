@@ -282,7 +282,7 @@ public class FileManager {
 		}
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
-			pythonCmd = "python.exe";
+			pythonCmd = "python3.exe";
 
 		String mkspiffsCmd;
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
@@ -503,7 +503,7 @@ public class FileManager {
 		}
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
-			pythonCmd = "python.exe";
+			pythonCmd = "python3.exe";
 
 		String espotaCmd = "espota.py";
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
@@ -671,7 +671,7 @@ public class FileManager {
 		}
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
-			pythonCmd = "python.exe";
+			pythonCmd = "python3.exe";
 
 		String espotaCmd = "espota.py";
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
@@ -759,10 +759,15 @@ public class FileManager {
 					bootloaderOffset_esp32_esp32s3, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
 					bootImage, appOffset, appImage, spiffsOffset, spiffsImage };
 
+			String[] mergeWindowsCommand = { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o",
+					mergedImage, "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize,
+					bootloaderOffset_esp32_esp32s3, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
+					bootImage, appOffset, appImage, spiffsOffset, spiffsImage };
+
 			if (esptool.getAbsolutePath().endsWith(".py")) {
 				sysExec(mergeCommand);
 			} else {
-				sysExec(mergeCommand);
+				sysExec(mergeWindowsCommand);
 			}
 		} else {
 			System.out.println("[Merged bin] mcu: " + mcu);
@@ -775,11 +780,15 @@ public class FileManager {
 					mergedImage, "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize,
 					bootloaderOffset, bootloaderImage, partitionsOffset, partitionsImage, bootOffset, bootImage,
 					appOffset, appImage, spiffsOffset, spiffsImage };
+			String[] mergeWindowsCommand = { esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o", mergedImage,
+					"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize, bootloaderOffset,
+					bootloaderImage, partitionsOffset, partitionsImage, bootOffset, bootImage, appOffset, appImage,
+					spiffsOffset, spiffsImage };
 
 			if (esptool.getAbsolutePath().endsWith(".py")) {
 				sysExec(mergeCommand);
 			} else {
-				sysExec(mergeCommand);
+				sysExec(mergeWindowsCommand);
 			}
 		}
 	}
@@ -800,7 +809,7 @@ public class FileManager {
 		}
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
-			pythonCmd = "python.exe";
+			pythonCmd = "python3.exe";
 
 		String espotaCmd = "espota.py";
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
@@ -865,11 +874,13 @@ public class FileManager {
 
 				String[] writeFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232",
 						"-s", "-f", mergedImage };
+				String[] writeWindowsFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p",
+						"3232", "-s", "-f", mergedImage };
 
 				if (espota.getAbsolutePath().endsWith(".py")) {
 					sysExec(writeFlashCommand);
 				} else {
-					sysExec(writeFlashCommand);
+					sysExec(writeWindowsFlashCommand);
 				}
 			} else {
 				System.out.println("[Merged bin] mcu: " + mcu);
@@ -882,11 +893,15 @@ public class FileManager {
 						uploadSpeed, "--port", serialPort, "--before", "default_reset", "--after", "hard_reset",
 						"write_flash", "-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size",
 						"detect", mergedOffset, mergedImage };
+				String[] writeWindowsFlashCommand = { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+						"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
+						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
+						mergedImage };
 
 				if (esptool.getAbsolutePath().endsWith(".py")) {
 					sysExec(writeFlashCommand);
 				} else {
-					sysExec(writeFlashCommand);
+					sysExec(writeWindowsFlashCommand);
 				}
 			}
 		} else {
@@ -896,11 +911,13 @@ public class FileManager {
 
 				String[] writeFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232",
 						"-s", "-f", mergedImage };
+				String[] writeWindowsFlashCommand = { espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s",
+						"-f", mergedImage };
 
 				if (espota.getAbsolutePath().endsWith(".py")) {
 					sysExec(writeFlashCommand);
 				} else {
-					sysExec(writeFlashCommand);
+					sysExec(writeWindowsFlashCommand);
 				}
 			} else {
 				System.out.println("[Merged bin] mcu: " + mcu);
@@ -913,11 +930,15 @@ public class FileManager {
 						uploadSpeed, "--port", serialPort, "--before", "default_reset", "--after", "hard_reset",
 						"write_flash", "-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size",
 						"detect", mergedOffset, mergedImage };
+				String[] writeWindowsFlashCommand = { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+						"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
+						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
+						mergedImage };
 
 				if (esptool.getAbsolutePath().endsWith(".py")) {
 					sysExec(writeFlashCommand);
 				} else {
-					sysExec(writeFlashCommand);
+					sysExec(writeWindowsFlashCommand);
 				}
 			}
 		}
