@@ -214,7 +214,7 @@ public class FileManager {
 			for (String partitionData : createdPartitionsData) {
 				writer.write(partitionData + "\n");
 			}
-			System.out.println("partitions.scv successfully created at: " + csvFilePath);
+			System.out.println("partitions.csv successfully created at: " + csvFilePath);
 		} catch (IOException ex) {
 			System.err.println("Error exporting CSV: " + ex.getMessage());
 		}
@@ -276,9 +276,8 @@ public class FileManager {
 		String toolExtension = ".py";
 		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
 			toolExtension = ".exe";
-		} else if (PreferencesData.get("runtime.os").contentEquals("macosx")) {
+		} else
 			toolExtension = "";
-		}
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
 			pythonCmd = "python.exe";
@@ -525,9 +524,8 @@ public class FileManager {
 		String toolExtension = ".py";
 		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
 			toolExtension = ".exe";
-		} else if (PreferencesData.get("runtime.os").contentEquals("macosx")) {
+		} else
 			toolExtension = "";
-		}
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
 			pythonCmd = "python.exe";
@@ -699,9 +697,8 @@ public class FileManager {
 		String toolExtension = ".py";
 		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
 			toolExtension = ".exe";
-		} else if (PreferencesData.get("runtime.os").contentEquals("macosx")) {
+		} else
 			toolExtension = "";
-		}
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
 			pythonCmd = "python.exe";
@@ -866,9 +863,8 @@ public class FileManager {
 		String toolExtension = ".py";
 		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
 			toolExtension = ".exe";
-		} else if (PreferencesData.get("runtime.os").contentEquals("macosx")) {
+		} else
 			toolExtension = "";
-		}
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
 			pythonCmd = "python.exe";
