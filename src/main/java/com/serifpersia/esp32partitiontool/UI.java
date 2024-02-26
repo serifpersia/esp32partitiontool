@@ -20,6 +20,7 @@ public class UI extends JPanel {
 	private static final long serialVersionUID = 1L;
 
 	private static final int NUM_ITEMS = 10;
+	public boolean eraseFlash = false;
 
 	private JPanel csv_GenPanel;
 	private JPanel csv_RootPanel;
@@ -81,8 +82,8 @@ public class UI extends JPanel {
 	private JPanel panel_4;
 	private JPanel panel_5;
 	private JButton btn_flashSketch;
-	private JButton btn_createMergedBin;
 	private JButton btn_flashMergedBin;
+	private JButton btn_help;
 
 	public UI() {
 		setLayout(new BorderLayout(0, 0));
@@ -272,13 +273,10 @@ public class UI extends JPanel {
 
 		panel_5 = new JPanel();
 		panel_4.add(panel_5, BorderLayout.NORTH);
-		panel_5.setLayout(new GridLayout(3, 0, 0, 0));
+		panel_5.setLayout(new GridLayout(2, 0, 0, 0));
 
 		btn_flashSketch = new JButton("Flash Sketch");
 		panel_5.add(btn_flashSketch);
-
-		btn_createMergedBin = new JButton("Create Merged Bin");
-		panel_5.add(btn_createMergedBin);
 
 		btn_flashMergedBin = new JButton("Flash Merged Bin");
 		panel_5.add(btn_flashMergedBin);
@@ -357,18 +355,19 @@ public class UI extends JPanel {
 		for (int i = 0; i < getNumOfItems(); i++) {
 			if (!getPartitionSize(i).getText().isEmpty()) {
 				try {
-					int partitionRoundedSize = Integer.parseInt(getPartitionSize(i).getText()) * 1024;
-					FlashSizeBytes -= partitionRoundedSize;
-					partitionRoundedSize = (partitionRoundedSize + 4095) / 4096 * 4096;
-
+					int partitionsTotalSize = Integer.parseInt(getPartitionSize(i).getText()) * 1024;
+					FlashSizeBytes -= partitionsTotalSize;
 				} catch (NumberFormatException e) {
 					// Handle parsing errors if necessary
 					System.out.println("Invalid input in text field " + i);
 				}
 			}
 		}
-		csv_partitionFlashFreeSpace = new JLabel("Free Space: " + FlashSizeBytes + " bytes");
+		csv_partitionFlashFreeSpace = new JLabel("Free Space: " + FlashSizeBytes / 1024 + " bytes");
 		partitions_UtilButtonsPanel.add(csv_partitionFlashFreeSpace);
+
+		btn_help = new JButton("Help");
+		partitions_UtilButtonsPanel.add(btn_help);
 	}
 
 	public String[] convertKbToHex(int[] sizes) {
@@ -438,7 +437,7 @@ public class UI extends JPanel {
 		}
 
 		// Update the free space label
-		getFlashFreeLabel().setText("Free Space: " + FlashSizeBytes + " bytes");
+		getFlashFreeLabel().setText("Free Space: " + FlashSizeBytes / 1024 + " bytes");
 
 		// Convert partition sizes to hexadecimal strings
 		String[] hexStrings = convertKbToHex(partitionSizes);
@@ -622,12 +621,12 @@ public class UI extends JPanel {
 		return btn_flashSketch;
 	}
 
-	public JButton getCreateMergedBin() {
-		return btn_createMergedBin;
-	}
-
 	public JButton getFlashMergedBin() {
 		return btn_flashMergedBin;
+	}
+
+	public JButton getHelpButton() {
+		return btn_help;
 	}
 
 	public int getNumOfItems() {
@@ -691,4 +690,29 @@ public class UI extends JPanel {
 	public JTextField getSpiffsBlockSize() {
 		return spiffs_blockSize;
 	}
+
+	public String getSpiffsOffset() {
+		String result = "";
+		int spiffsIndex = -1; // Initialize spiffsIndex to -1 to indicate not found
+
+		// Iterate through the partition subtypes to find the SPIFFS partition
+		for (int i = 0; i < NUM_ITEMS; i++) {
+			JTextField partitionSubType = getPartitionSubType(i);
+			if (partitionSubType != null && partitionSubType.getText().equals("spiffs")) {
+				spiffsIndex = i;
+				break; // Exit the loop once SPIFFS partition subtype is found
+			}
+		}
+
+		if (spiffsIndex != -1) {
+			// Retrieve the partition offset using the SPIFFS partition subtype index
+			String partitionOffset = getPartitionOffsets(spiffsIndex).getText();
+			result = "0x" + partitionOffset;
+		} else {
+			result = "SPIFFS partition not found.";
+		}
+
+		return result;
+	}
+
 }

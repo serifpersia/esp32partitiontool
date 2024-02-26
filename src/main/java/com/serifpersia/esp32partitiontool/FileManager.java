@@ -76,7 +76,7 @@ public class FileManager {
 				String type = (String) partitionTypeComboBox.getSelectedItem();
 				String subType = partitionSubTypeField.getText();
 				String size = partitionSizeField.getText();
-				String offset = "0x" + partitionOffset.getText(); // Assuming offset is same as size
+				String offset = partitionOffset.getText(); // Assuming offset is same as size
 
 				String exported_csvPartition = name + ", " + type + ", " + subType + ", " + offset + ", " + "0x" + size;
 				createdPartitionsData.add(exported_csvPartition);
@@ -236,11 +236,28 @@ public class FileManager {
 		} catch (Exception e) {
 			editor.statusError("An error occurred while creating partitions.bin.");
 			e.printStackTrace(); // Print the stack trace for debugging
+			return;
 		}
 
 	}
 
-	public void uploadSPIFFS() {
+	public void handleSPIFFS() {
+
+		// Create a JOptionPane to prompt the user
+		int option = JOptionPane.showConfirmDialog(null, "Do you want to flash SPIFFS after it has been created?",
+				"Flash SPIFFS", JOptionPane.YES_NO_OPTION);
+
+		// Check user's choice
+		if (option == JOptionPane.YES_OPTION) {
+			createSPIFFS();
+			uploadSPIFFS();
+
+		} else {
+			createSPIFFS();
+		}
+	}
+
+	private void createSPIFFS() {
 		String spiPageBlockSizeSelected = ui.getSpiffsBlockSize().getText();
 
 		spiStart = 0;
@@ -436,7 +453,9 @@ public class FileManager {
 				}
 			}
 		}
+	}
 
+	private void uploadSPIFFS() {
 		editor.statusNotice("Uploading SPIFFS...");
 		System.out.println("[SPIFFS] upload : " + imagePath);
 
@@ -473,6 +492,27 @@ public class FileManager {
 	}
 
 	public void flashCompiledSketch() {
+
+		// Create a JOptionPane to prompt the user
+		int option = JOptionPane.showConfirmDialog(null,
+				"Do you want to erase flash memory before uploading Sketch to ESP32 board?", "Flash Merged bin",
+				JOptionPane.YES_NO_OPTION);
+
+		// Check user's choice
+		if (option == JOptionPane.YES_OPTION) {
+			ui.eraseFlash = true;
+
+		} else {
+			ui.eraseFlash = false;
+		}
+
+		String eraseFlash;
+
+		if (ui.eraseFlash == true) {
+			eraseFlash = "erase_all";
+		} else {
+			eraseFlash = "";
+		}
 
 		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
 			System.err.println();
@@ -549,8 +589,8 @@ public class FileManager {
 		String partitionsImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".partitions.bin";
 		String bootImage = platform.getFolder() + "/tools/partitions/boot_app0.bin";
 		String appImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bin";
-		String bootloaderOffset_esp32_esp32s2 = "0x1000";
-		String bootloaderOffset_esp32_sp32s3 = "0x0";
+		String bootloaderOffset = "0x1000";
+		String bootloaderOffset_esp32_esp32s3 = "0x0";
 		String partitionsOffset = "0x8000";
 		String bootOffset = "0xe000";
 		String appOffset = "0x10000";
@@ -564,51 +604,24 @@ public class FileManager {
 		editor.statusNotice("Uploading Sketch...");
 		System.out.println("[Sketch] upload:");
 
-		if (mcu.equals("esp32") || mcu.equals("esp32s2")) {
-			if (isNetwork) {
-				System.out.println("[Sketch] IP: " + serialPort);
-				System.out.println();
-				if (espota.getAbsolutePath().endsWith(".py"))
-					sysExec(new String[] { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s",
-							"-f", imagePath });
-				else
-					sysExec(new String[] { espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s", "-f",
-							imagePath });
-			} else {
-				if (esptool.getAbsolutePath().endsWith(".py"))
-					sysExec(new String[] { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
-							"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash",
-							"-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect",
-							"" + spiStart, imagePath });
-				else
-					System.out.println("[Sketch] mcu: " + mcu);
-				System.out.println("[Sketch] port   : " + serialPort);
-				System.out.println("[Sketch] speed  : " + uploadSpeed);
-				System.out.println("[Sketch] mode   : " + flashMode);
-				System.out.println("[Sketch] freq   : " + flashFreq);
-				sysExec(new String[] { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed, "--port",
-						serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
-						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect",
-						bootloaderOffset_esp32_esp32s2, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
-						bootImage, appOffset, appImage });
-			}
-		} else if (mcu.equals("esp32s3")) {
+		if (mcu.contains("s3")) {
 
 			if (isNetwork) {
 				System.out.println("[Sketch] IP: " + serialPort);
 				System.out.println();
 				if (espota.getAbsolutePath().endsWith(".py"))
 					sysExec(new String[] { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s",
-							"-f", imagePath });
+							"-f", appImage });
 				else
 					sysExec(new String[] { espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s", "-f",
-							imagePath });
+							appImage });
 			} else {
 				if (esptool.getAbsolutePath().endsWith(".py"))
 					sysExec(new String[] { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
-							"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash",
-							"-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect",
-							"" + spiStart, imagePath });
+							"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", eraseFlash,
+							"write_flash", "-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size",
+							"detect", bootloaderOffset_esp32_esp32s3, bootloaderImage, partitionsOffset,
+							partitionsImage, bootOffset, bootImage, appOffset, appImage });
 				else
 					System.out.println("[Sketch] mcu: " + mcu);
 				System.out.println("[Sketch] port   : " + serialPort);
@@ -616,10 +629,379 @@ public class FileManager {
 				System.out.println("[Sketch] mode   : " + flashMode);
 				System.out.println("[Sketch] freq   : " + flashFreq);
 				sysExec(new String[] { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed, "--port",
-						serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
-						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect",
-						bootloaderOffset_esp32_sp32s3, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
+						serialPort, "--before", "default_reset", "--after", "hard_reset", eraseFlash, "write_flash",
+						"-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect",
+						bootloaderOffset_esp32_esp32s3, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
 						bootImage, appOffset, appImage });
+			}
+		} else {
+			if (isNetwork) {
+				System.out.println("[Sketch] IP: " + serialPort);
+				System.out.println();
+				if (espota.getAbsolutePath().endsWith(".py"))
+					sysExec(new String[] { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s",
+							"-f", appImage });
+				else
+					sysExec(new String[] { espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s", "-f",
+							appImage });
+			} else {
+				if (esptool.getAbsolutePath().endsWith(".py"))
+					sysExec(new String[] { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+							"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", eraseFlash,
+							"write_flash", "-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size",
+							"detect", bootloaderOffset, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
+							bootImage, appOffset, appImage });
+				else
+					System.out.println("[Sketch] mcu: " + mcu);
+				System.out.println("[Sketch] port   : " + serialPort);
+				System.out.println("[Sketch] speed  : " + uploadSpeed);
+				System.out.println("[Sketch] mode   : " + flashMode);
+				System.out.println("[Sketch] freq   : " + flashFreq);
+				sysExec(new String[] { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed, "--port",
+						serialPort, "--before", "default_reset", "--after", "hard_reset", eraseFlash, "write_flash",
+						"-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect",
+						bootloaderOffset, bootloaderImage, partitionsOffset, partitionsImage, bootOffset, bootImage,
+						appOffset, appImage });
+			}
+		}
+	}
+
+	public void handleMergedBin() {
+
+		// Create a JOptionPane to prompt the user
+		int option = JOptionPane.showConfirmDialog(null, "Do you want to flash Merged bin after it has been created?",
+				"Flash Merged bin", JOptionPane.YES_NO_OPTION);
+
+		// Check user's choice
+		if (option == JOptionPane.YES_OPTION) {
+			createMergedBin();
+			try {
+				Thread.sleep(1000);
+				uploadMergedBin();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} else {
+			createMergedBin();
+		}
+	}
+
+	private void createMergedBin() {
+
+		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
+			System.err.println();
+			editor.statusError("Tool Not Supported on " + PreferencesData.get("target_platform"));
+			return;
+		}
+
+		TargetPlatform platform = BaseNoGui.getTargetPlatform();
+
+		String toolExtension = ".py";
+		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
+			toolExtension = ".exe";
+		} else if (PreferencesData.get("runtime.os").contentEquals("macosx")) {
+			toolExtension = "";
+		}
+
+		if (PreferencesData.get("runtime.os").contentEquals("windows"))
+			pythonCmd = "python.exe";
+		else
+			pythonCmd = "python";
+
+		String espotaCmd = "espota.py";
+		if (PreferencesData.get("runtime.os").contentEquals("windows"))
+			espotaCmd = "espota.exe";
+
+		isNetwork = false;
+		espota = new File(platform.getFolder() + "/tools");
+		esptool = new File(platform.getFolder() + "/tools");
+		serialPort = PreferencesData.get("serial.port");
+
+		if (!BaseNoGui.getBoardPreferences().containsKey("build.partitions")) {
+			System.err.println();
+			editor.statusError("Partitions Not Defined for " + BaseNoGui.getBoardPreferences().get("name"));
+			return;
+		}
+
+		// make sure the serial port or IP is defined
+		if (serialPort == null || serialPort.isEmpty()) {
+			System.err.println();
+			editor.statusError("SPIFFS Error: serial port not defined!");
+			return;
+		}
+
+		// find espota if IP else find esptool
+		if (serialPort.split("\\.").length == 4) {
+			isNetwork = true;
+			espota = new File(platform.getFolder() + "/tools", espotaCmd);
+			if (!espota.exists() || !espota.isFile()) {
+				System.err.println();
+				editor.statusError("SPIFFS Error: espota not found!");
+				return;
+			}
+		} else {
+			String esptoolCmd = "esptool" + toolExtension;
+			esptool = new File(platform.getFolder() + "/tools", esptoolCmd);
+			if (!esptool.exists() || !esptool.isFile()) {
+				esptool = new File(platform.getFolder() + "/tools/esptool_py", esptoolCmd);
+				if (!esptool.exists()) {
+					esptool = new File(PreferencesData.get("runtime.tools.esptool_py.path"), esptoolCmd);
+					if (!esptool.exists()) {
+						System.err.println();
+						editor.statusError("SPIFFS Error: esptool not found!");
+						return;
+					}
+				}
+			}
+		}
+
+		String sketchName = editor.getSketch().getName();
+
+		String bootloaderImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bootloader.bin";
+		String partitionsImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".partitions.bin";
+		String bootImage = platform.getFolder() + "/tools/partitions/boot_app0.bin";
+		String appImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bin";
+		String spiffsImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".spiffs.bin";
+
+		String mergedImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + "merged" + ".bin";
+
+		String bootloaderOffset = "0x1000";
+		String bootloaderOffset_esp32_esp32s3 = "0x0";
+		String partitionsOffset = "0x8000";
+		String bootOffset = "0xe000";
+		String appOffset = "0x10000";
+		String spiffsOffset = ui.getSpiffsOffset();
+
+		String mcu = BaseNoGui.getBoardPreferences().get("build.mcu");
+		String serialPort = PreferencesData.get("serial.port");
+		String uploadSpeed = BaseNoGui.getBoardPreferences().get("upload.speed");
+		String flashMode = BaseNoGui.getBoardPreferences().get("build.flash_mode");
+		String flashFreq = BaseNoGui.getBoardPreferences().get("build.flash_freq");
+		String flashSize = ui.flashSizeMB + "MB";
+
+		editor.statusNotice("Creating Merged bin...");
+		System.out.println("[Merged bin] creation:");
+
+		if (mcu.contains("s3")) {
+
+			if (isNetwork) {
+				System.out.println("[Merged bin] IP: " + serialPort);
+				System.out.println();
+
+				String[] mergeCommand = { esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o", mergedImage,
+						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize,
+						bootloaderOffset_esp32_esp32s3, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
+						bootImage, appOffset, appImage, spiffsOffset, spiffsImage };
+
+				if (esptool.getAbsolutePath().endsWith(".py")) {
+					sysExec(mergeCommand);
+				} else {
+					sysExec(mergeCommand);
+				}
+
+			} else {
+				System.out.println("[Merged bin] mcu: " + mcu);
+				System.out.println("[Merged bin] port   : " + serialPort);
+				System.out.println("[Merged bin] speed  : " + uploadSpeed);
+				System.out.println("[Merged bin] mode   : " + flashMode);
+				System.out.println("[Merged bin] freq   : " + flashFreq);
+
+				String[] mergeCommand = { esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o", mergedImage,
+						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize,
+						bootloaderOffset_esp32_esp32s3, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
+						bootImage, appOffset, appImage, spiffsOffset, spiffsImage };
+
+				if (esptool.getAbsolutePath().endsWith(".py")) {
+					sysExec(mergeCommand);
+				} else {
+					sysExec(mergeCommand);
+				}
+			}
+		} else {
+			if (isNetwork) {
+				System.out.println("[Merged bin] IP: " + serialPort);
+				System.out.println();
+
+				String[] mergeCommand = { esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o", mergedImage,
+						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize,
+						bootloaderOffset, bootloaderImage, partitionsOffset, partitionsImage, bootOffset, bootImage,
+						appOffset, appImage, spiffsOffset, spiffsImage };
+
+				if (esptool.getAbsolutePath().endsWith(".py")) {
+					sysExec(mergeCommand);
+				} else {
+					sysExec(mergeCommand);
+				}
+			} else {
+				System.out.println("[Merged bin] mcu: " + mcu);
+				System.out.println("[Merged bin] port   : " + serialPort);
+				System.out.println("[Merged bin] speed  : " + uploadSpeed);
+				System.out.println("[Merged bin] mode   : " + flashMode);
+				System.out.println("[Merged bin] freq(exec)   : " + flashFreq);
+
+				String[] mergeCommand = { esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o", mergedImage,
+						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize,
+						bootloaderOffset, bootloaderImage, partitionsOffset, partitionsImage, bootOffset, bootImage,
+						appOffset, appImage, spiffsOffset, spiffsImage };
+
+				if (esptool.getAbsolutePath().endsWith(".py")) {
+					sysExec(mergeCommand);
+				} else {
+					sysExec(mergeCommand);
+				}
+			}
+		}
+	}
+
+	private void uploadMergedBin() {
+
+		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
+			System.err.println();
+			editor.statusError("Tool Not Supported on " + PreferencesData.get("target_platform"));
+			return;
+		}
+
+		TargetPlatform platform = BaseNoGui.getTargetPlatform();
+
+		String toolExtension = ".py";
+		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
+			toolExtension = ".exe";
+		} else if (PreferencesData.get("runtime.os").contentEquals("macosx")) {
+			toolExtension = "";
+		}
+
+		if (PreferencesData.get("runtime.os").contentEquals("windows"))
+			pythonCmd = "python.exe";
+		else
+			pythonCmd = "python";
+
+		String espotaCmd = "espota.py";
+		if (PreferencesData.get("runtime.os").contentEquals("windows"))
+			espotaCmd = "espota.exe";
+
+		isNetwork = false;
+		espota = new File(platform.getFolder() + "/tools");
+		esptool = new File(platform.getFolder() + "/tools");
+		serialPort = PreferencesData.get("serial.port");
+
+		if (!BaseNoGui.getBoardPreferences().containsKey("build.partitions")) {
+			System.err.println();
+			editor.statusError("Partitions Not Defined for " + BaseNoGui.getBoardPreferences().get("name"));
+			return;
+		}
+
+		// make sure the serial port or IP is defined
+		if (serialPort == null || serialPort.isEmpty()) {
+			System.err.println();
+			editor.statusError("SPIFFS Error: serial port not defined!");
+			return;
+		}
+
+		// find espota if IP else find esptool
+		if (serialPort.split("\\.").length == 4) {
+			isNetwork = true;
+			espota = new File(platform.getFolder() + "/tools", espotaCmd);
+			if (!espota.exists() || !espota.isFile()) {
+				System.err.println();
+				editor.statusError("SPIFFS Error: espota not found!");
+				return;
+			}
+		} else {
+			String esptoolCmd = "esptool" + toolExtension;
+			esptool = new File(platform.getFolder() + "/tools", esptoolCmd);
+			if (!esptool.exists() || !esptool.isFile()) {
+				esptool = new File(platform.getFolder() + "/tools/esptool_py", esptoolCmd);
+				if (!esptool.exists()) {
+					esptool = new File(PreferencesData.get("runtime.tools.esptool_py.path"), esptoolCmd);
+					if (!esptool.exists()) {
+						System.err.println();
+						editor.statusError("SPIFFS Error: esptool not found!");
+						return;
+					}
+				}
+			}
+		}
+
+		String sketchName = editor.getSketch().getName();
+
+		getBuildFolderPath(editor.getSketch());
+		platform.getFolder();
+		getBuildFolderPath(editor.getSketch());
+
+		String mergedImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + "merged" + ".bin";
+
+		String mergedOffset = "0x0";
+
+		String mcu = BaseNoGui.getBoardPreferences().get("build.mcu");
+		String serialPort = PreferencesData.get("serial.port");
+		String uploadSpeed = BaseNoGui.getBoardPreferences().get("upload.speed");
+		String flashMode = BaseNoGui.getBoardPreferences().get("build.flash_mode");
+		String flashFreq = BaseNoGui.getBoardPreferences().get("build.flash_freq");
+		editor.statusNotice("Creating Merged bin...");
+		System.out.println("[Merged bin] creation:");
+
+		if (mcu.contains("s3")) {
+
+			if (isNetwork) {
+				System.out.println("[Merged bin] IP: " + serialPort);
+				System.out.println();
+
+				String[] writeFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232",
+						"-s", "-f", mergedImage };
+
+				if (esptool.getAbsolutePath().endsWith(".py")) {
+					sysExec(writeFlashCommand);
+				} else {
+					sysExec(writeFlashCommand);
+				}
+			} else {
+				System.out.println("[Merged bin] mcu: " + mcu);
+				System.out.println("[Merged bin] port   : " + serialPort);
+				System.out.println("[Merged bin] speed  : " + uploadSpeed);
+				System.out.println("[Merged bin] mode   : " + flashMode);
+				System.out.println("[Merged bin] freq   : " + flashFreq);
+
+				String[] writeFlashCommand = { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+						"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
+						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
+						mergedImage };
+
+				if (esptool.getAbsolutePath().endsWith(".py")) {
+					sysExec(writeFlashCommand);
+				} else {
+					sysExec(writeFlashCommand);
+				}
+			}
+		} else {
+			if (isNetwork) {
+				System.out.println("[Merged bin] IP: " + serialPort);
+				System.out.println();
+
+				String[] writeFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232",
+						"-s", "-f", mergedImage };
+
+				if (esptool.getAbsolutePath().endsWith(".py")) {
+					sysExec(writeFlashCommand);
+				} else {
+					sysExec(writeFlashCommand);
+				}
+			} else {
+				System.out.println("[Merged bin] mcu: " + mcu);
+				System.out.println("[Merged bin] port   : " + serialPort);
+				System.out.println("[Merged bin] speed  : " + uploadSpeed);
+				System.out.println("[Merged bin] mode   : " + flashMode);
+				System.out.println("[Merged bin] freq(exec)   : " + flashFreq);
+
+				String[] writeFlashCommand = { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+						"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
+						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
+						mergedImage };
+
+				if (esptool.getAbsolutePath().endsWith(".py")) {
+					sysExec(writeFlashCommand);
+				} else {
+					sysExec(writeFlashCommand);
+				}
 			}
 		}
 	}

@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
 import java.awt.Component;
@@ -16,6 +17,18 @@ public class UIController implements ActionListener {
 		this.ui = ui;
 		this.fileManager = fileManager;
 		attachListeners();
+	}
+
+	private int getIndexForComponent(Component component) {
+		int numOfItems = ui.getNumOfItems();
+		for (int i = 0; i < numOfItems; i++) {
+			if (component == ui.getCheckBox(i) || component == ui.getPartitionName(i)
+					|| component == ui.getPartitionType(i) || component == ui.getPartitionSubType(i)
+					|| component == ui.getPartitionSize(i)) {
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	private void attachListeners() {
@@ -34,8 +47,8 @@ public class UIController implements ActionListener {
 		ui.getFlashSize().addActionListener(this);
 		ui.getFlashSPIFFSButton().addActionListener(this);
 		ui.getFlashSketchButton().addActionListener(this);
-		ui.getCreateMergedBin().addActionListener(this);
 		ui.getFlashMergedBin().addActionListener(this);
+		ui.getHelpButton().addActionListener(this);
 	}
 
 	@Override
@@ -52,14 +65,15 @@ public class UIController implements ActionListener {
 		} else if (e.getSource() == ui.getCreatePartitionsBin()) {
 			fileManager.createPartitionsBin();
 		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
-			fileManager.uploadSPIFFS();
+			fileManager.handleSPIFFS();
 		} else if (e.getSource() == ui.getFlashSketchButton()) {
 			fileManager.flashCompiledSketch();
-		} else if (e.getSource() == ui.getCreateMergedBin()) {
-			System.out.println("test");
 		} else if (e.getSource() == ui.getFlashMergedBin()) {
-			System.out.println("test");
+			fileManager.handleMergedBin();
+		} else if (e.getSource() == ui.getHelpButton()) {
+			handleHelpButton();
 		}
+
 	}
 
 	private void handleCheckBoxAction(JCheckBox checkBox) {
@@ -70,17 +84,46 @@ public class UIController implements ActionListener {
 		ui.getPartitionSubType(toggleID).setEditable(isSelected);
 		ui.getPartitionSize(toggleID).setEditable(isSelected);
 		ui.getPartitionOffsets(toggleID).setEditable(isSelected);
+
+		if (isSelected) {
+			// Set text if isSelected is true
+			String[] defaultPartitionNameText = { "nvs", "otadata", "app0", "app1", "spiffs", "coredump" };
+			int[] defaultPartitionTypeText = { 0, 0, 1, 1, 0, 0, 0, 0, 0, 0 };
+			String[] defaultPartitionSubTypeText = { "nvs", "ota", "ota_0", "ota_1", "spiffs", "coredump" };
+			String[] defaultPartitionSizeText = { "20", "8", "1280", "1280", "1408", "64" };
+
+			if (toggleID < defaultPartitionNameText.length) {
+				ui.getPartitionName(toggleID).setText(defaultPartitionNameText[toggleID]);
+				if (defaultPartitionTypeText[toggleID] < ui.getPartitionType(toggleID).getItemCount()) {
+					ui.getPartitionType(toggleID).setSelectedIndex(defaultPartitionTypeText[toggleID]);
+				}
+				ui.getPartitionSubType(toggleID).setText(defaultPartitionSubTypeText[toggleID]);
+				ui.getPartitionSize(toggleID).setText(defaultPartitionSizeText[toggleID]);
+				ui.calculateSizeHex();
+				ui.calculateOffsets();
+			}
+		} else {
+			// Make that index partitionSize an empty string if isSelected is false
+			ui.getPartitionSize(toggleID).setText("");
+			ui.getPartitionName(toggleID).setText("");
+			ui.getPartitionSubType(toggleID).setText("");
+			ui.calculateSizeHex();
+			ui.calculateOffsets();
+		}
 		ui.updatePartitionFlashVisual();
 	}
 
 	private void handleTextFieldAction(JTextField textField) {
-		int textFieldID = getIndexForComponent(textField);
-		String newText = textField.getText();
-		System.out.println("Text: " + newText + " PartitionNameID " + textFieldID);
+		int id = getIndexForComponent(textField);
 
-		ui.calculateSizeHex();
-		ui.calculateOffsets();
-		ui.updatePartitionFlashVisual();
+		JTextField partitionSizeField = ui.getPartitionSize(id);
+		if (partitionSizeField == textField) {
+			ui.calculateSizeHex();
+			ui.calculateOffsets();
+			ui.updatePartitionFlashVisual();
+		} else {
+			ui.updatePartitionFlashVisual();
+		}
 	}
 
 	private void handleComboBoxAction(JComboBox<?> comboBox) {
@@ -108,16 +151,23 @@ public class UIController implements ActionListener {
 		}
 	}
 
-	private int getIndexForComponent(Component component) {
-		int numOfItems = ui.getNumOfItems();
-		for (int i = 0; i < numOfItems; i++) {
-			if (component == ui.getCheckBox(i) || component == ui.getPartitionName(i)
-					|| component == ui.getPartitionType(i) || component == ui.getPartitionSubType(i)
-					|| component == ui.getPartitionSize(i)) {
-				return i;
+	private void handleHelpButton() {
+		int currentStep = 0;
+		String[] messages = {
+				"<html>Partitions like nvs or any other small partitions before the app partition<br>needs to be a multiple of 4.</html>",
+				"<html>Partitions before the first app partition should have a total of 28 kB so the offset<br>for the first app partition will always be correct at 0x10000 offset.<br>Any other configuration will cause the ESP32 board to not function properly.</html>",
+				"<html>The app partition needs to be at 0x10000, and following partitions have to be<br>a multiple of 64.</html>",
+				"<html>The app partition needs to be a minimum of 1024 kB in size.</html>" };
+		while (currentStep < messages.length) {
+			String message = messages[currentStep];
+			int option = JOptionPane.showConfirmDialog(null, message, "Tip " + (currentStep + 1),
+					JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+			if (option == JOptionPane.OK_OPTION) {
+				currentStep++;
+			} else {
+				break; // Exit the loop if the user cancels
 			}
 		}
-		return -1;
 	}
 
 }
