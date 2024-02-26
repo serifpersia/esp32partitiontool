@@ -277,7 +277,7 @@ public class FileManager {
 		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
 			toolExtension = ".exe";
 		} else
-			toolExtension = "";
+			toolExtension = ".py";
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
 			pythonCmd = "python.exe";
@@ -525,7 +525,7 @@ public class FileManager {
 		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
 			toolExtension = ".exe";
 		} else
-			toolExtension = "";
+			toolExtension = ".py";
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
 			pythonCmd = "python.exe";
@@ -698,7 +698,7 @@ public class FileManager {
 		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
 			toolExtension = ".exe";
 		} else
-			toolExtension = "";
+			toolExtension = ".py";
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
 			pythonCmd = "python.exe";
@@ -864,7 +864,7 @@ public class FileManager {
 		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
 			toolExtension = ".exe";
 		} else
-			toolExtension = "";
+			toolExtension = ".py";
 
 		if (PreferencesData.get("runtime.os").contentEquals("windows"))
 			pythonCmd = "python.exe";
