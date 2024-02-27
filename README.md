@@ -7,12 +7,15 @@ The ESP32 Partition Tool is a utility designed to facilitate creating custom par
 ![Screenshot 2](https://github.com/serifpersia/esp32partitiontool/assets/62844718/43414d8d-c9a3-4e61-8009-e1630c44f8b5)
 ## Functionality
 - [x] Create partitions csv
-- [ ] Import custom partitions csv
+- [x] Import custom partitions csv
 - [x] Create partitions bin
 - [x] Create & flash custom SPIFFS
 - [x] Flash sketch
 - [x] Create merged bin & flash merged bin at 0x0 offset
-- [ ] Public tool release
+      
+## Download
+ [![Release](https://img.shields.io/github/release/serifpersia/esp32partitiontool.svg?style=flat-square)](https://github.com/serifpersia/esp32partitiontool/releases)
+
 ## Build Requirements
 To build the plugin, you need JDK 8 installed. Note that anything newer will cause the Arduino IDE to crash since its only supporting java class files compiled with JDK 8 version of Java.
 ## Installation
