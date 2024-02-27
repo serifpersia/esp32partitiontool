@@ -86,7 +86,10 @@ public class FileManager {
 	}
 
 	public void importCSV() {
+		File defaultDirectory = editor.getSketch().getFolder();
+
 		FileDialog dialog = new FileDialog((Frame) null, "Select CSV File", FileDialog.LOAD);
+		dialog.setDirectory(defaultDirectory.getAbsolutePath());
 		dialog.setFile("*.csv");
 		dialog.setVisible(true);
 
