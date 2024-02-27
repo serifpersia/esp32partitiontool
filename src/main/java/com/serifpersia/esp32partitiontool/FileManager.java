@@ -90,21 +90,26 @@ public class FileManager {
 	}
 
 	public void generateCSV() {
-
 		calculateCSV();
+
+		// Get the default directory path
+		File defaultDirectory = editor.getSketch().getFolder();
+
 		// Export to CSV
 		FileDialog dialog = new FileDialog(new Frame(), "Create Partitions CSV", FileDialog.SAVE);
+		dialog.setDirectory(defaultDirectory.getAbsolutePath());
 		dialog.setFile("partitions.csv");
 		dialog.setVisible(true);
 		String fileName = dialog.getFile();
+
 		if (fileName != null) {
-			String filePath = dialog.getDirectory() + fileName;
+			String filePath = dialog.getDirectory() + fileName; // Construct the full file path
 			try (FileWriter writer = new FileWriter(filePath)) {
 				// Write the exported data to the CSV file
 				for (String partitionData : createdPartitionsData) {
 					writer.write(partitionData + "\n");
 				}
-				System.out.println("partititons.csv created at: " + filePath);
+				System.out.println("partitions.csv created at: " + filePath);
 			} catch (IOException ex) {
 				System.err.println("Error creating CSV: " + ex.getMessage());
 			}
