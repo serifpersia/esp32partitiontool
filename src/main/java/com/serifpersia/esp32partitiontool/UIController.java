@@ -10,6 +10,7 @@ import javax.swing.JTextField;
 import java.awt.Component;
 
 public class UIController implements ActionListener {
+	private static UIController instance;
 	private UI ui;
 	private FileManager fileManager;
 
@@ -17,6 +18,14 @@ public class UIController implements ActionListener {
 		this.ui = ui;
 		this.fileManager = fileManager;
 		attachListeners();
+	}
+
+	// Public method to get the singleton instance
+	public static UIController getInstance(UI ui, FileManager fileManager) {
+		if (instance == null) {
+			instance = new UIController(ui, fileManager);
+		}
+		return instance;
 	}
 
 	private int getIndexForComponent(Component component) {
@@ -33,6 +42,7 @@ public class UIController implements ActionListener {
 
 	private void attachListeners() {
 		// Attach listener to the "Generate CSV" button
+		ui.getImportCSVButton().addActionListener(this);
 		ui.getCreatePartitionsCSV().addActionListener(this);
 		int numOfItems = ui.getNumOfItems();
 		for (int i = 0; i < numOfItems; i++) {
@@ -53,7 +63,10 @@ public class UIController implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == ui.getCreatePartitionsCSV()) {
+		if (e.getSource() == ui.getImportCSVButton()) {
+			// Handle CSV export
+			fileManager.importCSV();
+		} else if (e.getSource() == ui.getCreatePartitionsCSV()) {
 			// Handle CSV export
 			fileManager.generateCSV();
 		} else if (e.getSource() instanceof JCheckBox) {
@@ -83,7 +96,6 @@ public class UIController implements ActionListener {
 		ui.getPartitionType(toggleID).setEnabled(isSelected);
 		ui.getPartitionSubType(toggleID).setEditable(isSelected);
 		ui.getPartitionSize(toggleID).setEditable(isSelected);
-		ui.getPartitionOffsets(toggleID).setEditable(isSelected);
 
 		if (isSelected) {
 			// Set text if isSelected is true

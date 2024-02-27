@@ -57,10 +57,6 @@ public class FileManager {
 		this.editor = editor;
 	}
 
-	public void test() {
-		System.out.println("filemanager test");
-	}
-
 	private void calculateCSV() {
 		// Now you can use 'ui' to access UI components
 		int numOfItems = ui.getNumOfItems();
@@ -86,6 +82,79 @@ public class FileManager {
 						+ size;
 				createdPartitionsData.add(exported_csvPartition);
 			}
+		}
+	}
+
+	public void importCSV() {
+		FileDialog dialog = new FileDialog((Frame) null, "Select CSV File", FileDialog.LOAD);
+		dialog.setFile("*.csv");
+		dialog.setVisible(true);
+
+		String directory = dialog.getDirectory();
+		String file = dialog.getFile();
+
+		if (file != null) {
+			try (BufferedReader reader = new BufferedReader(new FileReader(new File(directory, file)))) {
+				reader.readLine();
+
+				for (int i = 0; i < ui.getNumOfItems(); i++) {
+					setUIComponents(i, false);
+				}
+
+				int rowIndex = 0;
+				String line;
+				while ((line = reader.readLine()) != null && rowIndex < ui.getNumOfItems()) {
+					String[] columns = line.split(", ");
+					if (columns.length >= 5) {
+						setUIComponents(rowIndex, true);
+						updateUIComponents(columns, rowIndex);
+						rowIndex++;
+					}
+				}
+			} catch (IOException e) {
+				System.err.println("Error reading CSV file: " + e.getMessage());
+			}
+		} else {
+			System.out.println("No file selected.");
+		}
+		ui.updatePartitionFlashVisual();
+	}
+
+	private void setUIComponents(int index, boolean enabled) {
+		ui.getCheckBox(index).setSelected(enabled);
+		ui.getPartitionName(index).setEditable(enabled);
+		ui.getPartitionType(index).setEnabled(enabled);
+		ui.getPartitionSubType(index).setEditable(enabled);
+		ui.getPartitionSize(index).setEditable(enabled);
+	}
+
+	private void updateUIComponents(String[] columns, int rowIndex) {
+		JTextField partitionName = ui.getPartitionName(rowIndex);
+		JComboBox<?> partitionType = ui.getPartitionType(rowIndex);
+		JTextField partitionSubType = ui.getPartitionSubType(rowIndex);
+		JTextField partitionSize = ui.getPartitionSize(rowIndex);
+		JTextField partitionSizeHex = ui.getPartitionSizeHex(rowIndex);
+		JTextField partitionOffset = ui.getPartitionOffsets(rowIndex);
+
+		partitionName.setText(columns[0]);
+		partitionType.setSelectedItem(columns[1]);
+		partitionSubType.setText(columns[2]);
+		partitionOffset.setText(columns[3].substring(2));
+		String hexSize = columns[4].substring(2);
+		String kbSize = hexToKB(hexSize);
+		partitionSize.setText(kbSize);
+		partitionSizeHex.setText(hexSize);
+	}
+
+	private String hexToKB(String hexValue) {
+		int decimalValue = Integer.parseInt(hexValue, 16); // Convert hexadecimal to decimal
+		double kilobytes = decimalValue / 1024.0; // Convert bytes to kilobytes
+
+		// Check if the kilobytes value is a whole number
+		if (kilobytes % 1 == 0) {
+			return String.format("%.0f", kilobytes); // Format without decimal if it's a whole number
+		} else {
+			return String.format("%.2f", kilobytes); // Format with two decimal places otherwise
 		}
 	}
 

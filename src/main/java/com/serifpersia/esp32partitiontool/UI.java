@@ -20,7 +20,6 @@ public class UI extends JPanel {
 	private static final long serialVersionUID = 1L;
 
 	private static final int NUM_ITEMS = 10;
-	public boolean eraseFlash = false;
 
 	private JPanel csv_GenPanel;
 	private JPanel csv_RootPanel;
@@ -84,6 +83,7 @@ public class UI extends JPanel {
 	private JButton btn_flashSketch;
 	private JButton btn_flashMergedBin;
 	private JButton btn_help;
+	private JButton partitions_ImportCSVButton;
 
 	public UI() {
 		setLayout(new BorderLayout(0, 0));
@@ -214,7 +214,10 @@ public class UI extends JPanel {
 		partitions_FlashSizes = new JComboBox<>(new String[] { "4", "8", "16" });
 		partitions_UtilButtonsPanel.add(partitions_FlashSizes);
 
-		partitions_CSVButton = new JButton("Create CSV");
+		partitions_ImportCSVButton = new JButton("Import CSV");
+		partitions_UtilButtonsPanel.add(partitions_ImportCSVButton);
+
+		partitions_CSVButton = new JButton("Export CSV");
 		partitions_UtilButtonsPanel.add(partitions_CSVButton);
 
 		partitions_BinButton = new JButton("Create Bin");
@@ -603,6 +606,10 @@ public class UI extends JPanel {
 
 	public JComboBox<?> getFlashSize() {
 		return partitions_FlashSizes;
+	}
+
+	public JButton getImportCSVButton() {
+		return partitions_ImportCSVButton;
 	}
 
 	public JButton getCreatePartitionsCSV() {
