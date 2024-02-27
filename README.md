@@ -31,7 +31,7 @@ To build the plugin, you need JDK 8 installed. Note that anything newer will cau
 - Select Tools > Partition Scheme & select `Huge App (3MB APP/NO OTA/1MB SPIFFS)`*this will tell arduino ide to use our custom partitions.csv file thast located in sketch directory(export csv via the the tool first)
 - Compile the sketch
 - Flash Sketch from Arduino IDE or tool Flash Sketch button(Flash Sketch button will overwrite partitions file)
-- Other options such as SPIFFS create & upload as well as merged bin creation and upload is are left to users discretion(Merge Bin button will genereate SPIFFS) 
+- Other options such as SPIFFS create & upload as well as merged bin creation and upload are left to users discretion(Merge Bin button will genereate SPIFFS) 
 
 ##Supported boards
 - ESP32 Dev board
