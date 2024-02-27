@@ -4,7 +4,8 @@ Arduino IDE 1.8.X Partition Utility
 The ESP32 Partition Tool is a utility designed to facilitate creating custom partition schemes in the Arduino IDE 1.8.X environment. This tool aims to simplify the process of creating custom partition schemes for ESP32 projects.
 ## Screenshots
 ![Screenshot 1](https://github.com/serifpersia/esp32partitiontool/assets/62844718/8724d57c-ebb5-404f-97f1-fe09134f53b5)
-![Screenshot 2](https://github.com/serifpersia/esp32partitiontool/assets/62844718/43414d8d-c9a3-4e61-8009-e1630c44f8b5)
+![Screenshot 2](https://github.com/serifpersia/esp32partitiontool/assets/62844718/38889a7f-43e6-4a45-9b14-9d7951009ac2)
+
 ## Functionality
 - [x] Create partitions csv
 - [x] Import custom partitions csv
