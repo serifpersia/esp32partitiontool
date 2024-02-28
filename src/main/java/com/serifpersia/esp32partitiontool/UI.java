@@ -85,6 +85,8 @@ public class UI extends JPanel {
 	private JButton btn_help;
 	private JButton partitions_ImportCSVButton;
 
+	public int lastIndex;
+
 	public UI() {
 		setLayout(new BorderLayout(0, 0));
 		init();
@@ -478,7 +480,7 @@ public class UI extends JPanel {
 	public void calculateOffsets() {
 		partitionsOffsets[0].setText("9000"); // Offset for the first index is hard coded as 9000 hex
 
-		int lastIndex = -1; // Initialize to -1 indicating no selected index found yet
+		lastIndex = -1; // Initialize to -1 indicating no selected index found yet
 
 		// Find the last selected index
 		for (int i = 0; i < NUM_ITEMS; i++) {
@@ -507,11 +509,6 @@ public class UI extends JPanel {
 					partitionsOffsets[i].setText(Long.toHexString(newOffset));
 				}
 			}
-
-			// Print the offset for the last selected index in MB without decimal places
-			long lastOffset = Long.parseLong(partitionsOffsets[lastIndex + 1].getText(), 16);
-			long offsetInMB = lastOffset / (1024 * 1024);
-			flashSizeMB = (int) offsetInMB;
 		}
 	}
 

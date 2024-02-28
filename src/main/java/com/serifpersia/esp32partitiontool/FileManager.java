@@ -121,6 +121,20 @@ public class FileManager {
 		ui.calculateOffsets();
 		ui.updatePartitionFlashVisual();
 
+		JTextField lastPartitionOffsetField = ui.getPartitionOffsets(ui.lastIndex + 1);
+
+		// Print the offset for
+		if (lastPartitionOffsetField != null) {
+			// Get the text from the JTextField and parse it as hexadecimal
+			String hexOffset = lastPartitionOffsetField.getText();
+			long lastOffset = Long.parseLong(hexOffset, 16);
+
+			// Calculate offset in MB
+			long offsetInMB = lastOffset / (1024 * 1024);
+
+			ui.flashSizeMB = (int) offsetInMB;
+		}
+
 		String flashSizeString = String.valueOf(ui.flashSizeMB);
 		ui.getFlashSize().setSelectedItem(flashSizeString);
 	}
