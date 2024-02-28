@@ -79,7 +79,7 @@ public class FileManager {
 				String offset = partitionOffset.getText(); // Assuming offset is same as size
 
 				String exported_csvPartition = name + ", " + type + ", " + subType + ", " + "0x" + offset + ", " + "0x"
-						+ size;
+						+ size + ", ";
 				createdPartitionsData.add(exported_csvPartition);
 			}
 		}
@@ -98,21 +98,18 @@ public class FileManager {
 
 		if (file != null) {
 			try (BufferedReader reader = new BufferedReader(new FileReader(new File(directory, file)))) {
-				reader.readLine();
+				String header = reader.readLine(); // Read the header
+				String[] columns = header.split(",\\s*"); // Split by comma with optional spaces
 
-				for (int i = 0; i < ui.getNumOfItems(); i++) {
-					setUIComponents(i, false);
-				}
+				if (columns.length >= 5) {
 
-				int rowIndex = 0;
-				String line;
-				while ((line = reader.readLine()) != null && rowIndex < ui.getNumOfItems()) {
-					String[] columns = line.split(", ");
-					if (columns.length >= 5) {
-						setUIComponents(rowIndex, true);
-						updateUIComponents(columns, rowIndex);
-						rowIndex++;
+					for (int i = 0; i < ui.getNumOfItems(); i++) {
+						setUIComponents(i, false);
 					}
+
+					processCSV(reader);
+				} else {
+					System.out.println("Invalid CSV format: Insufficient columns in the header.");
 				}
 			} catch (IOException e) {
 				System.err.println("Error reading CSV file: " + e.getMessage());
@@ -120,7 +117,22 @@ public class FileManager {
 		} else {
 			System.out.println("No file selected.");
 		}
+		ui.calculateSizeHex();
+		ui.calculateOffsets();
 		ui.updatePartitionFlashVisual();
+	}
+
+	private void processCSV(BufferedReader reader) throws IOException {
+		int rowIndex = 0;
+		String line;
+		while ((line = reader.readLine()) != null && rowIndex < ui.getNumOfItems()) {
+			String[] columns = line.split(",\\s*");
+			if (columns.length >= 5) {
+				setUIComponents(rowIndex, true);
+				updateUIComponents(columns, rowIndex);
+				rowIndex++;
+			}
+		}
 	}
 
 	private void setUIComponents(int index, boolean enabled) {
@@ -142,22 +154,22 @@ public class FileManager {
 		partitionName.setText(columns[0]);
 		partitionType.setSelectedItem(columns[1]);
 		partitionSubType.setText(columns[2]);
-		partitionOffset.setText(columns[3].substring(2));
-		String hexSize = columns[4].substring(2);
+		partitionOffset.setText(columns[3].trim().substring(2));
+		String hexSize = columns[4].trim().substring(2);
 		String kbSize = hexToKB(hexSize);
 		partitionSize.setText(kbSize);
 		partitionSizeHex.setText(hexSize);
 	}
 
 	private String hexToKB(String hexValue) {
-		int decimalValue = Integer.parseInt(hexValue, 16); // Convert hexadecimal to decimal
-		double kilobytes = decimalValue / 1024.0; // Convert bytes to kilobytes
+		int decimalValue = Integer.parseInt(hexValue, 16);
+		double kilobytes = decimalValue / 1024.0;
 
 		// Check if the kilobytes value is a whole number
 		if (kilobytes % 1 == 0) {
-			return String.format("%.0f", kilobytes); // Format without decimal if it's a whole number
+			return String.format("%.0f", kilobytes);
 		} else {
-			return String.format("%.2f", kilobytes); // Format with two decimal places otherwise
+			return String.format("%.2f", kilobytes);
 		}
 	}
 
