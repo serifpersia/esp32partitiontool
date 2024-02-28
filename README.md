@@ -28,16 +28,16 @@ To build the plugin, you need JDK 8 installed. Note that anything newer will cau
 - Select Tools > ESP32 Partition Tool menu item.
 - Customize partition scheme.
 - Export the custom partitions CSV file to sketch directory
-- Select Tools > Partition Scheme & select `Huge App (3MB APP/NO OTA/1MB SPIFFS)`*this will tell arduino ide to use our custom partitions.csv file thast located in sketch directory(export csv via the the tool first)
+- Select Tools > Partition Scheme & select `Huge App (3MB APP/NO OTA/1MB SPIFFS)`*this will tell arduino ide to use our custom partitions.csv file that's located in sketch directory(export csv via the the tool first)
 - Compile the sketch
 - Flash Sketch from Arduino IDE or tool Flash Sketch button(Flash Sketch button will overwrite partitions file)
 - Other options such as SPIFFS create & upload as well as merged bin creation and upload are left to users discretion(Merge Bin button will genereate SPIFFS) 
 
-##Supported boards
-- ESP32 Dev board
-- ESP32 S2 Dev board
-- ESP32 S3 Dev board
-- other boards that are based on esp32,esp32s2 or esp32s3
+## Supported boards
+Following boards are supported for flashing commands of the tool
+- ESP32 Dev
+- ESP32 S3 Dev
+- ESP32 S2 Dev
 
 ## Issues and Contributions
 Feel free to report any issues.
