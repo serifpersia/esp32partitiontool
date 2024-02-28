@@ -98,22 +98,15 @@ public class FileManager {
 
 		if (file != null) {
 			try (BufferedReader reader = new BufferedReader(new FileReader(new File(directory, file)))) {
-				// Skip comment lines until the header
-				String line;
-				while ((line = reader.readLine()) != null && line.startsWith("#")) {
-					// Skip comment lines
-				}
-
-				// Process the header
-				String[] columns = line.split(",\\s*"); // Split by comma with optional spaces
+				String header = reader.readLine(); // Read the header
+				String[] columns = header.split(",\\s*"); // Split by comma with optional spaces
 
 				if (columns.length >= 5) {
-					// Initialize UI components
+
 					for (int i = 0; i < ui.getNumOfItems(); i++) {
 						setUIComponents(i, false);
 					}
 
-					// Process the rest of the CSV
 					processCSV(reader);
 				} else {
 					System.out.println("Invalid CSV format: Insufficient columns in the header.");
@@ -127,6 +120,9 @@ public class FileManager {
 		ui.calculateSizeHex();
 		ui.calculateOffsets();
 		ui.updatePartitionFlashVisual();
+
+		String flashSizeString = String.valueOf(ui.flashSizeMB);
+		ui.getFlashSize().setSelectedItem(flashSizeString);
 	}
 
 	private void processCSV(BufferedReader reader) throws IOException {

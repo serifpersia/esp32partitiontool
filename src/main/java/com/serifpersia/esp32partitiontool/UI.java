@@ -211,7 +211,7 @@ public class UI extends JPanel {
 		csv_FlashSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		partitions_UtilButtonsPanel.add(csv_FlashSizeLabel);
 
-		partitions_FlashSizes = new JComboBox<>(new String[] { "4", "8", "16" });
+		partitions_FlashSizes = new JComboBox<>(new String[] { "4", "8", "16", "32" });
 		partitions_UtilButtonsPanel.add(partitions_FlashSizes);
 
 		partitions_ImportCSVButton = new JButton("Import CSV");
@@ -478,23 +478,40 @@ public class UI extends JPanel {
 	public void calculateOffsets() {
 		partitionsOffsets[0].setText("9000"); // Offset for the first index is hard coded as 9000 hex
 
-		for (int i = 1; i < NUM_ITEMS; i++) {
-			if (partitionsSizeHex[i - 1] != null && partitionsSizeHex[i - 1].getText() != null
-					&& !partitionsSizeHex[i - 1].getText().isEmpty()) {
-				String previousOffsetHex = partitionsOffsets[i - 1].getText();
-				String sizeHex = partitionsSizeHex[i - 1].getText();
+		int lastIndex = -1; // Initialize to -1 indicating no selected index found yet
 
-				// Convert the hexadecimal strings to long values
-				long previousOffset = Long.parseLong(previousOffsetHex, 16);
-				long size = Long.parseLong(sizeHex, 16);
-
-				// Calculate the new offset
-				long newOffset = previousOffset + size;
-
-				// Convert the new offset back to hexadecimal and set it to the current offset
-				// field
-				partitionsOffsets[i].setText(Long.toHexString(newOffset));
+		// Find the last selected index
+		for (int i = 0; i < NUM_ITEMS; i++) {
+			if (getCheckBox(i).isSelected()) {
+				lastIndex = i;
+			} else {
+				break; // Break the loop if a non-selected checkbox is found
 			}
+		}
+
+		if (lastIndex != -1) { // If a selected index is found
+			for (int i = 1; i <= lastIndex + 1; i++) { // Calculate offsets including the hardcoded first offset
+				if (partitionsSizeHex[i - 1] != null && !partitionsSizeHex[i - 1].getText().isEmpty()) {
+					String previousOffsetHex = partitionsOffsets[i - 1].getText();
+					String sizeHex = partitionsSizeHex[i - 1].getText();
+
+					// Convert the hexadecimal strings to long values
+					long previousOffset = Long.parseLong(previousOffsetHex, 16);
+					long size = Long.parseLong(sizeHex, 16);
+
+					// Calculate the new offset
+					long newOffset = previousOffset + size;
+
+					// Convert the new offset back to hexadecimal and set it to the current offset
+					// field
+					partitionsOffsets[i].setText(Long.toHexString(newOffset));
+				}
+			}
+
+			// Print the offset for the last selected index in MB without decimal places
+			long lastOffset = Long.parseLong(partitionsOffsets[lastIndex + 1].getText(), 16);
+			long offsetInMB = lastOffset / (1024 * 1024);
+			flashSizeMB = (int) offsetInMB;
 		}
 	}
 
