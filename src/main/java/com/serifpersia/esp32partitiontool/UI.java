@@ -349,7 +349,9 @@ public class UI extends JPanel {
 		for (int i = 0; i < NUM_ITEMS; i++) {
 			String value = (i < initialPartitionSizeArray.length) ? initialPartitionSizeArray[i] : "";
 			partitionsSize[i] = new JTextField(value);
-			partitionsSize[i].setHorizontalAlignment(SwingConstants.CENTER);
+			partitionsSize[i].setHorizontalAlignment(SwingConstants.RIGHT);
+			final Font currFont = partitionsSize[i].getFont(); // use monospace font for hex/dec values
+			partitionsSize[i].setFont( new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()) );
 			partitionsSize[i].setColumns(10);
 			csv_PartitionSizeInnerPanel.add(partitionsSize[i]);
 			// Set enabled property to false for items 6-NUM_ITEMS
@@ -413,7 +415,9 @@ public class UI extends JPanel {
 		// Populate partitionSizeHex fields with hexadecimal values
 		for (int i = 0; i < NUM_ITEMS; i++) {
 			partitionsSizeHex[i] = new JTextField(sizes[i] != -1 ? hexValues[i] : "");
-			partitionsSizeHex[i].setHorizontalAlignment(SwingConstants.CENTER);
+			partitionsSizeHex[i].setHorizontalAlignment(SwingConstants.RIGHT);
+			final Font currFont = partitionsSizeHex[i].getFont(); // use monospace font for hex/dec values
+			partitionsSizeHex[i].setFont( new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()) );
 			partitionsSizeHex[i].setColumns(10);
 			partitionsSizeHex[i].setEditable(false);
 			csv_PartitionSizeHexInnerPanel.add(partitionsSizeHex[i]);
@@ -462,9 +466,11 @@ public class UI extends JPanel {
 	private void createPartitionsOffsets() {
 		for (int i = 0; i < NUM_ITEMS; i++) {
 			partitionsOffsets[i] = new JTextField("0");
-			partitionsOffsets[i].setHorizontalAlignment(SwingConstants.CENTER);
 			partitionsOffsets[i].setColumns(10);
 			partitionsOffsets[i].setEditable(false);
+			partitionsOffsets[i].setHorizontalAlignment(SwingConstants.RIGHT);
+			final Font currFont = partitionsOffsets[i].getFont(); // use monospace font for hex/dec values
+			partitionsOffsets[i].setFont( new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()) );
 			csv_PartitionOffsetsInnerPanel.add(partitionsOffsets[i]);
 
 			// Set enabled property to false for items 6-NUM_ITEMS
