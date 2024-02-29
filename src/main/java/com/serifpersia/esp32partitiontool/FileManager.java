@@ -98,19 +98,10 @@ public class FileManager {
 
 		if (file != null) {
 			try (BufferedReader reader = new BufferedReader(new FileReader(new File(directory, file)))) {
-				String dataEntry = reader.readLine();
-				String[] columns = dataEntry.split(",\\s*"); // Split by comma with optional spaces
-
-				if (columns.length >= 1) {
-
-					for (int i = 0; i < ui.getNumOfItems(); i++) {
-						setUIComponents(i, false);
-					}
-
-					processCSV(reader);
-				} else {
-					System.out.println("Invalid CSV format: Insufficient columns in the header.");
+				for (int i = 0; i < ui.getNumOfItems(); i++) {
+					setUIComponents(i, false);
 				}
+				processCSV(reader);
 			} catch (IOException e) {
 				System.err.println("Error reading CSV file: " + e.getMessage());
 			}
@@ -147,6 +138,10 @@ public class FileManager {
 				continue;
 			}
 			String[] columns = line.split(",\\s*");
+			// Skip empty or incomplete lines (e.g. trailing CR/LF)
+			if( columns.length < 5 ) {
+				continue;
+			}
 			setUIComponents(rowIndex, true);
 			updateUIComponents(columns, rowIndex);
 			rowIndex++;
@@ -173,26 +168,48 @@ public class FileManager {
 		JTextField partitionSizeHex = ui.getPartitionSizeHex(rowIndex);
 		JTextField partitionOffset = ui.getPartitionOffsets(rowIndex);
 
-		partitionName.setText(columns[0]);
-		partitionType.setSelectedItem(columns[1]);
-		partitionSubType.setText(columns[2]);
-		partitionOffset.setText(columns[3].trim().substring(2));
-		String hexSize = columns[4].trim().substring(2);
-		String kbSize = hexToKB(hexSize);
-		partitionSize.setText(kbSize);
-		partitionSizeHex.setText(hexSize);
+		partitionName.setText(columns[0].trim());
+
+		String partitionTypeStr = columns[1].trim().toLowerCase();
+
+		if( !partitionTypeStr.equals("app") && !partitionTypeStr.equals("data") ) {
+			partitionTypeStr = stringToDec(partitionTypeStr)==0 ? "app" : "data";
+		}
+
+		partitionType.setSelectedItem( partitionTypeStr );
+
+		partitionSubType.setText( columns[2].trim() );
+
+		int bytesOffset = stringToDec( columns[3].trim() );
+		partitionOffset.setText( String.format("%x", bytesOffset) );
+
+		int byteSize = stringToDec( columns[4].trim() );
+		String kbSize = stringToKb( columns[4].trim() );
+		partitionSize.setText( kbSize );
+		partitionSizeHex.setText( String.format("%x", byteSize) );
 	}
 
-	private String hexToKB(String hexValue) {
-		int decimalValue = Integer.parseInt(hexValue, 16);
-		double kilobytes = decimalValue / 1024.0;
-
+	private String formatKilobytes( double kilobytes ) {
 		// Check if the kilobytes value is a whole number
 		if (kilobytes % 1 == 0) {
 			return String.format("%.0f", kilobytes);
 		} else {
 			return String.format("%.2f", kilobytes);
 		}
+	}
+
+	private int stringToDec( String value ) {
+		if (value.toLowerCase().startsWith("0x")) {
+			return Integer.decode( value );
+		} else {
+		  return Integer.parseInt( value );
+		}
+	}
+
+
+	private String stringToKb( String value ) {
+		int decimalValue = stringToDec( value );
+		return formatKilobytes( decimalValue/1024.0 );
 	}
 
 	public void generateCSV() {
