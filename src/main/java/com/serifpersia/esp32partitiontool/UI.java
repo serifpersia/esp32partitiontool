@@ -19,7 +19,7 @@ public class UI extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final int NUM_ITEMS = 10;
+	private static final int NUM_ITEMS = 15;
 
 	private JPanel csv_GenPanel;
 	private JPanel csv_RootPanel;
@@ -128,7 +128,7 @@ public class UI extends JPanel {
 
 		csv_EnableInnerPanel = new JPanel();
 		csv_EnablePanel.add(csv_EnableInnerPanel, BorderLayout.CENTER);
-		csv_EnableInnerPanel.setLayout(new GridLayout(10, 0, 0, 0));
+		csv_EnableInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
 
 		csv_PartitionNamePanel = new JPanel();
 		csv_RootPanel.add(csv_PartitionNamePanel);
@@ -140,7 +140,7 @@ public class UI extends JPanel {
 
 		csv_PartitionNameInnerPanel = new JPanel();
 		csv_PartitionNamePanel.add(csv_PartitionNameInnerPanel, BorderLayout.CENTER);
-		csv_PartitionNameInnerPanel.setLayout(new GridLayout(10, 0, 0, 0));
+		csv_PartitionNameInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
 
 		csv_PartitionTypePanel = new JPanel();
 		csv_RootPanel.add(csv_PartitionTypePanel);
@@ -152,7 +152,7 @@ public class UI extends JPanel {
 
 		csv_PartitionTypeInnerPanel = new JPanel();
 		csv_PartitionTypePanel.add(csv_PartitionTypeInnerPanel, BorderLayout.CENTER);
-		csv_PartitionTypeInnerPanel.setLayout(new GridLayout(10, 0, 0, 0));
+		csv_PartitionTypeInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
 
 		csv_PartitionSubTypePanel = new JPanel();
 		csv_RootPanel.add(csv_PartitionSubTypePanel);
@@ -164,7 +164,7 @@ public class UI extends JPanel {
 
 		csv_PartitionSubTypeInnerPanel = new JPanel();
 		csv_PartitionSubTypePanel.add(csv_PartitionSubTypeInnerPanel, BorderLayout.CENTER);
-		csv_PartitionSubTypeInnerPanel.setLayout(new GridLayout(10, 0, 0, 0));
+		csv_PartitionSubTypeInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
 
 		csv_PartitionSizePanel = new JPanel();
 		csv_RootPanel.add(csv_PartitionSizePanel);
@@ -176,7 +176,7 @@ public class UI extends JPanel {
 
 		csv_PartitionSizeInnerPanel = new JPanel();
 		csv_PartitionSizePanel.add(csv_PartitionSizeInnerPanel, BorderLayout.CENTER);
-		csv_PartitionSizeInnerPanel.setLayout(new GridLayout(10, 0, 0, 0));
+		csv_PartitionSizeInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
 
 		csv_PartitionSizeHexPanel = new JPanel();
 		csv_RootPanel.add(csv_PartitionSizeHexPanel);
@@ -188,7 +188,7 @@ public class UI extends JPanel {
 
 		csv_PartitionSizeHexInnerPanel = new JPanel();
 		csv_PartitionSizeHexPanel.add(csv_PartitionSizeHexInnerPanel, BorderLayout.CENTER);
-		csv_PartitionSizeHexInnerPanel.setLayout(new GridLayout(10, 0, 0, 0));
+		csv_PartitionSizeHexInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
 
 		csv_PartitionOffsetsPanel = new JPanel();
 		csv_RootPanel.add(csv_PartitionOffsetsPanel);
@@ -200,7 +200,7 @@ public class UI extends JPanel {
 
 		csv_PartitionOffsetsInnerPanel = new JPanel();
 		csv_PartitionOffsetsPanel.add(csv_PartitionOffsetsInnerPanel, BorderLayout.CENTER);
-		csv_PartitionOffsetsInnerPanel.setLayout(new GridLayout(10, 0, 0, 0));
+		csv_PartitionOffsetsInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
 
 		csv_PartitionsVisual = new JPanel();
 		csv_GenPanel.add(csv_PartitionsVisual, BorderLayout.SOUTH);
@@ -306,23 +306,24 @@ public class UI extends JPanel {
 			partitionsNames[i].setHorizontalAlignment(SwingConstants.CENTER);
 			partitionsNames[i].setColumns(10);
 			csv_PartitionNameInnerPanel.add(partitionsNames[i]);
-			// Set enabled property to false for items 6-10
-			if (i >= 6 && i <= 10) {
+			// Set enabled property to false for items 6-NUM_ITEMS
+			if (i >= 6 && i <= NUM_ITEMS) {
 				partitionsNames[i].setEditable(false);
 			}
 		}
 	}
 
 	private void createPartitionsTypes() {
-		String[] defaultItems = { "data", "data", "app", "app", "data", "data", "data", "data", "data", "data" };
+		String[] defaultItems = { "data", "data", "app", "app", "data", "data", "data", "data", "data", "data", "data",
+				"data", "data", "data", "data" };
 
 		for (int i = 0; i < NUM_ITEMS; i++) {
 			partitionsType[i] = new JComboBox<>(new String[] { "data", "app" });
 			partitionsType[i].setSelectedItem(defaultItems[i]);
 			csv_PartitionTypeInnerPanel.add(partitionsType[i]);
 
-			// Set enabled property to false for items 6-10
-			if (i >= 6 && i <= 10) {
+			// Set enabled property to false for items 6-NUM_ITEMS
+			if (i >= 6 && i <= NUM_ITEMS) {
 				partitionsType[i].setEnabled(false);
 			}
 		}
@@ -336,8 +337,8 @@ public class UI extends JPanel {
 			partitionsSubType[i].setHorizontalAlignment(SwingConstants.CENTER);
 			partitionsSubType[i].setColumns(10);
 			csv_PartitionSubTypeInnerPanel.add(partitionsSubType[i]);
-			// Set enabled property to false for items 6-10
-			if (i >= 6 && i <= 10) {
+			// Set enabled property to false for items 6-NUM_ITEMS
+			if (i >= 6 && i <= NUM_ITEMS) {
 				partitionsSubType[i].setEditable(false);
 			}
 		}
@@ -351,8 +352,8 @@ public class UI extends JPanel {
 			partitionsSize[i].setHorizontalAlignment(SwingConstants.CENTER);
 			partitionsSize[i].setColumns(10);
 			csv_PartitionSizeInnerPanel.add(partitionsSize[i]);
-			// Set enabled property to false for items 6-10
-			if (i >= 6 && i <= 10) {
+			// Set enabled property to false for items 6-NUM_ITEMS
+			if (i >= 6 && i <= NUM_ITEMS) {
 				partitionsSize[i].setEditable(false);
 			}
 		}
@@ -466,8 +467,8 @@ public class UI extends JPanel {
 			partitionsOffsets[i].setEditable(false);
 			csv_PartitionOffsetsInnerPanel.add(partitionsOffsets[i]);
 
-			// Set enabled property to false for items 6-10
-			if (i >= 6 && i <= 10) {
+			// Set enabled property to false for items 6-NUM_ITEMS
+			if (i >= 6 && i <= NUM_ITEMS) {
 				partitionsOffsets[i].setEditable(false);
 			}
 		}

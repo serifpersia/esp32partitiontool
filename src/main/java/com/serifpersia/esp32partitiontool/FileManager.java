@@ -5,6 +5,8 @@ import java.awt.Frame;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JTextField;
@@ -98,10 +100,10 @@ public class FileManager {
 
 		if (file != null) {
 			try (BufferedReader reader = new BufferedReader(new FileReader(new File(directory, file)))) {
-				String header = reader.readLine(); // Read the header
-				String[] columns = header.split(",\\s*"); // Split by comma with optional spaces
+				String dataEntry = reader.readLine();
+				String[] columns = dataEntry.split(",\\s*"); // Split by comma with optional spaces
 
-				if (columns.length >= 5) {
+				if (columns.length >= 1) {
 
 					for (int i = 0; i < ui.getNumOfItems(); i++) {
 						setUIComponents(i, false);
@@ -143,12 +145,16 @@ public class FileManager {
 		int rowIndex = 0;
 		String line;
 		while ((line = reader.readLine()) != null && rowIndex < ui.getNumOfItems()) {
-			String[] columns = line.split(",\\s*");
-			if (columns.length >= 5) {
-				setUIComponents(rowIndex, true);
-				updateUIComponents(columns, rowIndex);
-				rowIndex++;
+			// Skip comment lines that start with #
+			if (line.trim().startsWith("#")) {
+				continue;
 			}
+			String[] columns = line.split(",\\s*");
+			setUIComponents(rowIndex, true);
+			updateUIComponents(columns, rowIndex);
+			// Print processed data to console
+			System.out.println("Processed data: " + Arrays.toString(columns));
+			rowIndex++;
 		}
 	}
 

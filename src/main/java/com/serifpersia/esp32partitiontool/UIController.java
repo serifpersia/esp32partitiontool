@@ -99,10 +99,13 @@ public class UIController implements ActionListener {
 
 		if (isSelected) {
 			// Set text if isSelected is true
-			String[] defaultPartitionNameText = { "nvs", "otadata", "app0", "app1", "spiffs", "coredump" };
-			int[] defaultPartitionTypeText = { 0, 0, 1, 1, 0, 0, 0, 0, 0, 0 };
-			String[] defaultPartitionSubTypeText = { "nvs", "ota", "ota_0", "ota_1", "spiffs", "coredump" };
-			String[] defaultPartitionSizeText = { "20", "8", "1280", "1280", "1408", "64" };
+			String[] defaultPartitionNameText = { "nvs", "otadata", "app0", "app1", "spiffs", "coredump", "", "", "",
+					"", "", "", "", "", "", "" };
+			int[] defaultPartitionTypeText = { 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+			String[] defaultPartitionSubTypeText = { "nvs", "ota", "ota_0", "ota_1", "spiffs", "coredump", "", "", "",
+					"", "", "", "", "", "" };
+			String[] defaultPartitionSizeText = { "20", "8", "1280", "1280", "1408", "64", "", "", "", "", "", "", "",
+					"", "" };
 
 			if (toggleID < defaultPartitionNameText.length) {
 				ui.getPartitionName(toggleID).setText(defaultPartitionNameText[toggleID]);
