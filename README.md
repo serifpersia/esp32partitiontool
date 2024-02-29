@@ -39,6 +39,59 @@ Following boards are supported for flashing commands of the tool
 - ESP32 S3 Dev
 - ESP32 S2 Dev
 
+## CSV Examples
+Example 4MB
+```csv
+# Name,   Type, SubType,  Offset,   Size,  Flags
+nvs, data, nvs, 0x9000, 0x5000
+otadata, data, ota, 0xe000, 0x2000
+app0, app, ota_0, 0x10000, 0x1A0000
+app1, app, ota_1, 0x1b0000, 0x1A0000
+spiffs, data, spiffs, 0x350000, 0xA0000
+coredump, data, coredump, 0x3f0000, 0x10000
+```
+Example 16MB:
+```csv# 6 Apps + Factory
+# Name,   Type, SubType,    Offset,     Size
+nvs,      data, nvs,        0x9000,   0x5000
+otadata,  data, ota,        0xe000,   0x2000
+ota_0,    app,    ota_0,     0x10000, 0x200000
+ota_1,    app,    ota_1,    0x210000, 0x200000
+ota_2,    app,    ota_2,    0x410000, 0x200000
+ota_3,    app,    ota_3,    0x610000, 0x200000
+ota_4,    app,    ota_4,    0x810000, 0x200000
+ota_5,    app,    ota_5,    0xA10000, 0x200000
+firmware, app,  factory,  0xC10000, 0x0F0000
+spiffs,   data, spiffs,   0xD00000, 0x2F0000
+coredump, data, coredump, 0xFF0000,  0x10000
+```
+Example 32MB:
+```csv# 6 Apps + Factory
+# 6 Apps + Factory
+# Name,   Type, SubType,    Offset,     Size
+nvs,      data, nvs,        0x9000,     0x5000
+otadata,  data, ota,        0xe000,     0x2000
+ota_0,    app,  ota_0,      0x10000,    0x200000
+ota_1,    app,  ota_1,      0x210000,   0x200000
+ota_2,    app,  ota_2,      0x410000,   0x200000
+ota_3,    app,  ota_3,      0x610000,   0x200000
+ota_4,    app,  ota_4,      0x810000,   0x200000
+ota_5,    app,  ota_5,      0xA10000,   0x200000
+firmware, app,  factory,    0xC10000,   0x0F0000
+spiffs,   data, spiffs,     0xD00000,   0x2F0000
+coredump, data, coredump,   0xFF0000,   0x100000
+```
+Bad CSV format
+
+```csv
+# Name,   Type, SubType,  Offset,   Size,  Flags
+nvs, 0, nvs, 0x9000, 0x5000
+otadata, 0, ota, 0xe000, 0x2000
+app0, 1, ota_0, 0x10000, 0x1A0000
+app1, 1, ota_1, 0x1b0000, 0x1A0000
+spiffs, 0, spiffs, 0x350000, 0xA0000
+coredump, 0, coredump, 0x3f0000, 0x10000
+```
 ## Issues and Contributions
 Feel free to report any issues.
 ## License
