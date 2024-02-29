@@ -56,7 +56,7 @@ public class UIController implements ActionListener {
 		ui.getCreatePartitionsBin().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
 		ui.getFlashSPIFFSButton().addActionListener(this);
-		ui.getFlashSketchButton().addActionListener(this);
+		ui.getPartitionFlashType().addActionListener(this);
 		ui.getFlashMergedBin().addActionListener(this);
 		ui.getHelpButton().addActionListener(this);
 	}
@@ -79,8 +79,6 @@ public class UIController implements ActionListener {
 			fileManager.createPartitionsBin();
 		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
 			fileManager.handleSPIFFS();
-		} else if (e.getSource() == ui.getFlashSketchButton()) {
-			fileManager.flashCompiledSketch();
 		} else if (e.getSource() == ui.getFlashMergedBin()) {
 			fileManager.handleMergedBin();
 		} else if (e.getSource() == ui.getHelpButton()) {
@@ -163,6 +161,9 @@ public class UIController implements ActionListener {
 			String blockSizeText = String.valueOf(spiffs_setBlockSize);
 			ui.getSpiffsBlockSize().setText(blockSizeText);
 
+		} else if( comboBox == ui.getPartitionFlashType() ) {
+			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
+			System.out.println("Changed fs to :" + fsName );
 		}
 	}
 

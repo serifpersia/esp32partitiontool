@@ -7,13 +7,8 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
+import javax.swing.*;
+import java.util.*;
 
 public class UI extends JPanel {
 
@@ -46,6 +41,9 @@ public class UI extends JPanel {
 	private JCheckBox[] partitions_EnableChckb = new JCheckBox[NUM_ITEMS];
 	private JTextField[] partitionsNames = new JTextField[NUM_ITEMS];
 	private JComboBox<?>[] partitionsType = new JComboBox[NUM_ITEMS];
+	private JComboBox<?> partitionsFlashTypes;
+	private JLabel lb_filesystems;
+
 	private JTextField[] partitionsSubType = new JTextField[NUM_ITEMS];
 	private JTextField[] partitionsSize = new JTextField[NUM_ITEMS];
 	private JTextField[] partitionsSizeHex = new JTextField[NUM_ITEMS];
@@ -63,13 +61,18 @@ public class UI extends JPanel {
 	private JPanel csv_PartitionSizeHexInnerPanel;
 	private JLabel csv_partitionFlashFreeSpace;
 
-	private Color[] partitionColors = { new Color(255, 102, 102), // A darker shade of red
+	private Color[] partitionColors = {
+			new Color(255, 102, 102), // A darker shade of red
 			new Color(102, 153, 255), // A darker shade of blue
 			new Color(102, 204, 102), // A darker shade of green
 			new Color(178, 102, 255), // A darker shade of purple
 			new Color(255, 153, 51), // A darker shade of orange
-			new Color(204, 102, 204) // A darker shade of magenta
+			new Color(204, 102, 204), // A darker shade of magenta
+			new Color(0xff, 0x80, 0x00) // A discutable color
 	};
+
+	private Map<String, String> flashFileSystems = new HashMap<>();
+
 	private JPanel SPIFFS_InnerPanel;
 	private JLabel lb_blockSize;
 	private JTextField spiffs_blockSize;
@@ -80,7 +83,7 @@ public class UI extends JPanel {
 	private JLabel lblNewLabel_3;
 	private JPanel panel_4;
 	private JPanel panel_5;
-	private JButton btn_flashSketch;
+	//private JButton btn_flashSketch;
 	private JButton btn_flashMergedBin;
 	private JButton btn_help;
 	private JButton partitions_ImportCSVButton;
@@ -108,6 +111,7 @@ public class UI extends JPanel {
 		csv_GenPanel = new JPanel();
 		add(csv_GenPanel);
 		csv_GenPanel.setLayout(new BorderLayout(0, 0));
+		csv_GenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 		JLabel csv_GenLabel = new JLabel("Partitions");
 		csv_GenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
@@ -228,6 +232,7 @@ public class UI extends JPanel {
 		SPIFFS_AND_MERGE_AND_FLASH_RootPanel = new JPanel();
 		add(SPIFFS_AND_MERGE_AND_FLASH_RootPanel, BorderLayout.EAST);
 		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.setLayout(new BorderLayout(0, 0));
+		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 		JLabel SPIFFS_GenLabel = new JLabel("SPIFFS");
 		SPIFFS_GenLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -243,6 +248,13 @@ public class UI extends JPanel {
 		gl_SPIFFS_InnerPanel.setHgap(5);
 		SPIFFS_InnerPanel = new JPanel(gl_SPIFFS_InnerPanel); // 0 rows means any number of rows, 2 columns
 		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.add(SPIFFS_InnerPanel, BorderLayout.NORTH);
+
+		lb_filesystems = new JLabel("FS type:");
+		lb_filesystems.setHorizontalAlignment(SwingConstants.CENTER);
+		SPIFFS_InnerPanel.add(lb_filesystems);
+
+		partitionsFlashTypes = new JComboBox<>(new String[] { "SPIFFS", "LittleFS", "FatFS" });
+		SPIFFS_InnerPanel.add(partitionsFlashTypes);
 
 		lb_blockSize = new JLabel("Block Size:");
 		lb_blockSize.setHorizontalAlignment(SwingConstants.CENTER);
@@ -279,9 +291,6 @@ public class UI extends JPanel {
 		panel_5 = new JPanel();
 		panel_4.add(panel_5, BorderLayout.NORTH);
 		panel_5.setLayout(new GridLayout(2, 0, 0, 0));
-
-		btn_flashSketch = new JButton("Flash Sketch");
-		panel_5.add(btn_flashSketch);
 
 		btn_flashMergedBin = new JButton("Flash Merged Bin");
 		panel_5.add(btn_flashMergedBin);
@@ -568,7 +577,9 @@ public class UI extends JPanel {
 						double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
 						JPanel partitionPanel = new JPanel();
 						partitionPanel.setBackground(partitionColors[i % partitionColors.length]);
-
+						partitionPanel.setBorder(BorderFactory.createCompoundBorder(
+																	BorderFactory.createTitledBorder("app"),
+																	BorderFactory.createEmptyBorder(0,0,0,0)));
 						// Set the text color to white
 						JLabel label = new JLabel(getPartitionSubType(i).getText());
 						label.setForeground(Color.WHITE);
@@ -597,10 +608,22 @@ public class UI extends JPanel {
 						int partitionSize = Integer.parseInt(partitionsSize[i].getText());
 						double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
 						JPanel partitionPanel = new JPanel();
-						partitionPanel.setBackground(partitionColors[i % partitionColors.length]);
+						//partitionPanel.setBackground(partitionColors[i % partitionColors.length]);
+						String partName    = (String) getPartitionName(i).getText();
+						String partType    = (String) getPartitionType(i).getSelectedItem();
+						String partSubType = (String) getPartitionSubType(i).getText();
 
+						Color partColor = partType.equals("app") ? new Color( 0x33, 0x66, 0xff ) : new Color( 0xff, 0x00, 0x33 );
+						if( partSubType.equals("factory") )       partColor = new Color( 0x00, 0x00, 0x80); // dark blue
+						else if( partSubType.equals("spiffs") )   partColor = new Color( 0x80, 0x00, 0x80); // purple
+						else if( partSubType.equals("coredump") ) partColor = new Color( 0x80, 0x00, 0x00); // dark red
+						else if( partName.equals("nvs") )         partColor = new Color( 0xB0, 0x80, 0x00);
+						else if( partName.equals("otadata")  )    partColor = new Color( 0xB0, 0x00, 0x80);
+
+						partitionPanel.setBorder( BorderFactory.createEtchedBorder() );
+						partitionPanel.setBackground(partColor);
 						// Set the text color to white
-						JLabel label = new JLabel(getPartitionSubType(i).getText());
+						JLabel label = new JLabel(partSubType);
 						label.setForeground(Color.WHITE);
 						partitionPanel.add(label);
 
@@ -616,6 +639,13 @@ public class UI extends JPanel {
 		csv_partitionsCenterVisualPanel.revalidate();
 		csv_partitionsCenterVisualPanel.repaint();
 	}
+
+
+	// Getter method to access a specific partitionType by index
+	public JComboBox<?> getPartitionFlashType() {
+		return partitionsFlashTypes;
+	}
+
 
 	public JLabel getFlashFreeLabel() {
 		return csv_partitionFlashFreeSpace;
@@ -643,10 +673,6 @@ public class UI extends JPanel {
 
 	public JButton getFlashSPIFFSButton() {
 		return btn_flashSPIFFS;
-	}
-
-	public JButton getFlashSketchButton() {
-		return btn_flashSketch;
 	}
 
 	public JButton getFlashMergedBin() {
