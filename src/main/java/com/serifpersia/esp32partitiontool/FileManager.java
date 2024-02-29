@@ -5,8 +5,6 @@ import java.awt.Frame;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JTextField;
@@ -151,8 +149,6 @@ public class FileManager {
 			String[] columns = line.split(",\\s*");
 			setUIComponents(rowIndex, true);
 			updateUIComponents(columns, rowIndex);
-			// Print processed data to console
-			System.out.println("Processed data: " + Arrays.toString(columns));
 			rowIndex++;
 		}
 	}
@@ -163,6 +159,10 @@ public class FileManager {
 		ui.getPartitionType(index).setEnabled(enabled);
 		ui.getPartitionSubType(index).setEditable(enabled);
 		ui.getPartitionSize(index).setEditable(enabled);
+		ui.getPartitionSize(index).setText("");
+		ui.getPartitionName(index).setText("");
+		ui.getPartitionSubType(index).setText("");
+		ui.getPartitionOffsets(index).setText("");
 	}
 
 	private void updateUIComponents(String[] columns, int rowIndex) {
@@ -372,12 +372,11 @@ public class FileManager {
 	}
 
 	private void createSPIFFS() {
-		String spiPageBlockSizeSelected = ui.getSpiffsBlockSize().getText();
 
 		spiStart = 0;
 		spiSize = 0;
 		spiPage = 256;
-		spiBlock = Integer.parseInt(spiPageBlockSizeSelected);
+		spiBlock = ui.flashSizeMB * 1024;
 
 		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
 			System.err.println();

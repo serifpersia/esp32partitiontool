@@ -154,7 +154,7 @@ public class UIController implements ActionListener {
 
 			int spiffs_setBlockSize = 0;
 
-			if (ui.flashSizeMB == 4 || ui.flashSizeMB == 8 || ui.flashSizeMB == 16) {
+			if (ui.flashSizeMB == 4 || ui.flashSizeMB == 8 || ui.flashSizeMB == 16 || ui.flashSizeMB == 32) {
 				spiffs_setBlockSize = ui.flashSizeMB * 1024;
 			} else {
 				// Handle other cases or provide a default value if necessary
