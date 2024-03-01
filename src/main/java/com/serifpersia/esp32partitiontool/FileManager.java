@@ -58,7 +58,6 @@ public class FileManager {
 	}
 
 	private void calculateCSV() {
-		// Now you can use 'ui' to access UI components
 		int numOfItems = ui.getNumOfItems();
 		createdPartitionsData = new ArrayList<>();
 		createdPartitionsData.add("# Name,   Type, SubType,  Offset,   Size,  Flags");
@@ -139,7 +138,7 @@ public class FileManager {
 			}
 			String[] columns = line.split(",\\s*");
 			// Skip empty or incomplete lines (e.g. trailing CR/LF)
-			if( columns.length < 5 ) {
+			if (columns.length < 5) {
 				continue;
 			}
 			setUIComponents(rowIndex, true);
@@ -172,24 +171,24 @@ public class FileManager {
 
 		String partitionTypeStr = columns[1].trim().toLowerCase();
 
-		if( !partitionTypeStr.equals("app") && !partitionTypeStr.equals("data") ) {
-			partitionTypeStr = stringToDec(partitionTypeStr)==0 ? "app" : "data";
+		if (!partitionTypeStr.equals("app") && !partitionTypeStr.equals("data")) {
+			partitionTypeStr = stringToDec(partitionTypeStr) == 0 ? "app" : "data";
 		}
 
-		partitionType.setSelectedItem( partitionTypeStr );
+		partitionType.setSelectedItem(partitionTypeStr);
 
-		partitionSubType.setText( columns[2].trim() );
+		partitionSubType.setText(columns[2].trim());
 
-		int bytesOffset = stringToDec( columns[3].trim() );
-		partitionOffset.setText( String.format("%x", bytesOffset) );
+		int bytesOffset = stringToDec(columns[3].trim());
+		partitionOffset.setText(String.format("%x", bytesOffset));
 
-		int byteSize = stringToDec( columns[4].trim() );
-		String kbSize = stringToKb( columns[4].trim() );
-		partitionSize.setText( kbSize );
-		partitionSizeHex.setText( String.format("%x", byteSize) );
+		int byteSize = stringToDec(columns[4].trim());
+		String kbSize = stringToKb(columns[4].trim());
+		partitionSize.setText(kbSize);
+		partitionSizeHex.setText(String.format("%x", byteSize));
 	}
 
-	private String formatKilobytes( double kilobytes ) {
+	private String formatKilobytes(double kilobytes) {
 		// Check if the kilobytes value is a whole number
 		if (kilobytes % 1 == 0) {
 			return String.format("%.0f", kilobytes);
@@ -198,18 +197,17 @@ public class FileManager {
 		}
 	}
 
-	private int stringToDec( String value ) {
+	private int stringToDec(String value) {
 		if (value.toLowerCase().startsWith("0x")) {
-			return Integer.decode( value );
+			return Integer.decode(value);
 		} else {
-		  return Integer.parseInt( value );
+			return Integer.parseInt(value);
 		}
 	}
 
-
-	private String stringToKb( String value ) {
-		int decimalValue = stringToDec( value );
-		return formatKilobytes( decimalValue/1024.0 );
+	private String stringToKb(String value) {
+		int decimalValue = stringToDec(value);
+		return formatKilobytes(decimalValue / 1024.0);
 	}
 
 	public void generateCSV() {
@@ -377,8 +375,9 @@ public class FileManager {
 		// Create a JOptionPane to prompt the user
 		String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
 
-		int option = JOptionPane.showConfirmDialog(null, "Do you want to flash "+fsName+" after it has been created?",
-				"Flash "+fsName, JOptionPane.YES_NO_OPTION);
+		int option = JOptionPane.showConfirmDialog(null,
+				"Do you want to upload " + fsName + " after it has been created?", "Upload SPIFFS" + fsName,
+				JOptionPane.YES_NO_OPTION);
 
 		// Check user's choice
 		if (option == JOptionPane.YES_OPTION) {
@@ -402,7 +401,7 @@ public class FileManager {
 
 		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
 			System.err.println();
-			editor.statusError(fsName+" Not Supported on " + PreferencesData.get("target_platform"));
+			editor.statusError(fsName + " Not Supported on " + PreferencesData.get("target_platform"));
 			return;
 		}
 
@@ -413,9 +412,9 @@ public class FileManager {
 		System.out.println("Selected tool: " + toolBinName);
 
 		pythonCmd = is_windows ? "python3.exe" : "python3";
-		String toolExtension = is_windows ? ".exe"           : ".py";
-		String mkFsCmd 			 = toolBinName + ( is_windows ? ".exe" : "" );
-		String espotaCmd     = is_windows ? "espota.exe"     : "espota.py";
+		String toolExtension = is_windows ? ".exe" : ".py";
+		String mkFsCmd = toolBinName + (is_windows ? ".exe" : "");
+		String espotaCmd = is_windows ? "espota.exe" : "espota.py";
 
 		isNetwork = false;
 		espota = new File(platform.getFolder() + "/tools");
@@ -447,7 +446,8 @@ public class FileManager {
 		try (BufferedReader partitionsReader = new BufferedReader(new FileReader(csvFilePath))) {
 			String partitionsLine = "";
 			while ((partitionsLine = partitionsReader.readLine()) != null) {
-				if ( partitionsLine.contains("spiffs") || partitionsLine.contains("littlefs") || partitionsLine.contains("ffat") ) {
+				if (partitionsLine.contains("spiffs") || partitionsLine.contains("littlefs")
+						|| partitionsLine.contains("ffat")) {
 					String[] partitionsData = partitionsLine.split(",\\s*"); // Split by comma with optional spaces
 					if (partitionsData.length >= 5) { // Ensure there are enough elements
 						String pStart = partitionsData[3].trim(); // Offset value
@@ -459,7 +459,7 @@ public class FileManager {
 			}
 			if (spiSize == 0) {
 				System.err.println();
-				editor.statusError(fsName+" Error: partition size could not be found!");
+				editor.statusError(fsName + " Error: partition size could not be found!");
 				return;
 			}
 		} catch (Exception e) {
@@ -469,12 +469,12 @@ public class FileManager {
 
 		File tool = new File(platform.getFolder() + "/tools", mkFsCmd);
 		if (!tool.exists() || !tool.isFile()) {
-			tool = new File(platform.getFolder() + "/tools/"+toolBinName, mkFsCmd);
+			tool = new File(platform.getFolder() + "/tools/" + toolBinName, mkFsCmd);
 			if (!tool.exists()) {
-				tool = new File(PreferencesData.get("runtime.tools."+toolBinName+".path"), mkFsCmd);
+				tool = new File(PreferencesData.get("runtime.tools." + toolBinName + ".path"), mkFsCmd);
 				if (!tool.exists()) {
 					System.err.println();
-					editor.statusError(fsName+" Error: "+toolBinName+" not found!");
+					editor.statusError(fsName + " Error: " + toolBinName + " not found!");
 					return;
 				}
 			}
@@ -483,7 +483,7 @@ public class FileManager {
 		// make sure the serial port or IP is defined
 		if (serialPort == null || serialPort.isEmpty()) {
 			System.err.println();
-			editor.statusError(fsName+" Error: serial port not defined!");
+			editor.statusError(fsName + " Error: serial port not defined!");
 			return;
 		}
 
@@ -493,7 +493,7 @@ public class FileManager {
 			espota = new File(platform.getFolder() + "/tools", espotaCmd);
 			if (!espota.exists() || !espota.isFile()) {
 				System.err.println();
-				editor.statusError(fsName+" Error: espota not found!");
+				editor.statusError(fsName + " Error: espota not found!");
 				return;
 			}
 		} else {
@@ -505,7 +505,7 @@ public class FileManager {
 					esptool = new File(PreferencesData.get("runtime.tools.esptool_py.path"), esptoolCmd);
 					if (!esptool.exists()) {
 						System.err.println();
-						editor.statusError(fsName+" Error: esptool not found!");
+						editor.statusError(fsName + " Error: esptool not found!");
 						return;
 					}
 				}
@@ -535,37 +535,38 @@ public class FileManager {
 		uploadSpeed = BaseNoGui.getBoardPreferences().get("upload.speed");
 
 		Object[] options = { "Yes", "No" };
-		String title = "Create "+fsName;
-		String message = "No files have been found in your data folder!\nAre you sure you want to create an empty "+fsName+" image?";
+		String title = "Create " + fsName;
+		String message = "No files have been found in your data folder!\nAre you sure you want to create an empty "
+				+ fsName + " image?";
 
 		if (fileCount == 0 && JOptionPane.showOptionDialog(editor, message, title, JOptionPane.YES_NO_OPTION,
 				JOptionPane.QUESTION_MESSAGE, null, options, options[1]) != JOptionPane.YES_OPTION) {
 			System.err.println();
-			editor.statusError(fsName+" Warning: "+toolBinName+" canceled!");
+			editor.statusError(fsName + " Warning: " + toolBinName + " canceled!");
 			return;
 		}
 
-		editor.statusNotice("Creating "+fsName+"...");
-		System.out.println("["+fsName+"] data   : " + dataPath);
-		System.out.println("["+fsName+"] start (kB)  : " + spiStart / 1024);
-		System.out.println("["+fsName+"] size (kB)   : " + (spiSize / 1024));
-		System.out.println("["+fsName+"] page (kB)   : " + spiPage);
-		System.out.println("["+fsName+"] block (kB)  : " + spiBlock);
+		editor.statusNotice("Creating " + fsName + "...");
+		System.out.println("[" + fsName + "] data   : " + dataPath);
+		System.out.println("[" + fsName + "] start  : " + spiStart);
+		System.out.println("[" + fsName + "] size   : " + (spiSize));
+		System.out.println("[" + fsName + "] page   : " + spiPage);
+		System.out.println("[" + fsName + "] block  : " + spiBlock);
 
 		try {
 			if (listenOnProcess(new String[] { toolPath, "-c", dataPath, "-p", spiPage + "", "-b", spiBlock + "", "-s",
 					spiSize + "", imagePath }) != 0) {
 				System.err.println();
-				editor.statusError("Failed to create "+fsName+"!");
+				editor.statusError("Failed to create " + fsName + "!");
 				return;
 			}
 		} catch (Exception e) {
 			editor.statusError(e);
-			editor.statusError("Failed to create "+fsName+"!");
+			editor.statusError("Failed to create " + fsName + "!");
 			return;
 		} finally {
-			editor.statusNotice("Completed creating "+fsName);
-			System.out.println(fsName+" successfully created");
+			editor.statusNotice("Completed creating " + fsName);
+			System.out.println(fsName + " successfully created");
 			// Delete the partitions.csv file after reading its contents
 			File csvFile = new File(csvFilePath);
 			if (csvFile.exists()) {
@@ -578,12 +579,12 @@ public class FileManager {
 	}
 
 	private void uploadSPIFFS() {
-	  String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
-		editor.statusNotice("Uploading "+fsName+"...");
-		System.out.println("["+fsName+"] upload : " + imagePath);
+		String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
+		editor.statusNotice("Uploading " + fsName + "...");
+		System.out.println("[" + fsName + "] upload : " + imagePath);
 
 		if (isNetwork) {
-			System.out.println("["+fsName+"] IP     : " + serialPort);
+			System.out.println("[" + fsName + "] IP     : " + serialPort);
 			System.out.println();
 			if (espota.getAbsolutePath().endsWith(".py"))
 				sysExec(new String[] { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s", "-f",
@@ -592,11 +593,11 @@ public class FileManager {
 				sysExec(new String[] { espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s", "-f",
 						imagePath });
 		} else {
-			System.out.println("["+fsName+"] address: " + spiStart);
-			System.out.println("["+fsName+"] port   : " + serialPort);
-			System.out.println("["+fsName+"] speed  : " + uploadSpeed);
-			System.out.println("["+fsName+"] mode   : " + flashMode);
-			System.out.println("["+fsName+"] freq   : " + flashFreq);
+			System.out.println("[" + fsName + "] address: " + spiStart);
+			System.out.println("[" + fsName + "] port   : " + serialPort);
+			System.out.println("[" + fsName + "] speed  : " + uploadSpeed);
+			System.out.println("[" + fsName + "] mode   : " + flashMode);
+			System.out.println("[" + fsName + "] freq   : " + flashFreq);
 			System.out.println();
 			if (esptool.getAbsolutePath().endsWith(".py"))
 				sysExec(new String[] { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
@@ -611,12 +612,12 @@ public class FileManager {
 		}
 	}
 
-
 	public void handleMergedBin() {
 
 		// Create a JOptionPane to prompt the user
-		int option = JOptionPane.showConfirmDialog(null, "Do you want to flash Merged bin after it has been created?",
-				"Flash Merged bin", JOptionPane.YES_NO_OPTION);
+		int option = JOptionPane.showConfirmDialog(null,
+				"Do you want to upload merged binary after it has been created?", "Upload merged binary",
+				JOptionPane.YES_NO_OPTION);
 
 		// Check user's choice
 		if (option == JOptionPane.YES_OPTION) {
@@ -674,7 +675,7 @@ public class FileManager {
 		// make sure the serial port or IP is defined
 		if (serialPort == null || serialPort.isEmpty()) {
 			System.err.println();
-			editor.statusError(fsName+" Error: serial port not defined!");
+			editor.statusError(fsName + " Error: serial port not defined!");
 			return;
 		}
 
@@ -684,7 +685,7 @@ public class FileManager {
 			espota = new File(platform.getFolder() + "/tools", espotaCmd);
 			if (!espota.exists() || !espota.isFile()) {
 				System.err.println();
-				editor.statusError(fsName+" Error: espota not found!");
+				editor.statusError(fsName + " Error: espota not found!");
 				return;
 			}
 		} else {
@@ -706,7 +707,8 @@ public class FileManager {
 		String sketchName = editor.getSketch().getName();
 
 		String bootloaderImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bootloader.bin";
-		// TODO: if bootloaderImage file does not exists, print error("You must compile the sketch first");
+		// TODO: if bootloaderImage file does not exists, print error("You must compile
+		// the sketch first");
 		String partitionsImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".partitions.bin";
 		String bootImage = platform.getFolder() + "/tools/partitions/boot_app0.bin";
 		String appImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bin";
@@ -714,7 +716,7 @@ public class FileManager {
 
 		String mergedImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + "merged" + ".bin";
 
-		//String bootloaderOffset = "0x1000";
+		// String bootloaderOffset = "0x1000";
 		String bootloaderOffset = BaseNoGui.getBoardPreferences().get("build.bootloader_addr");
 		String partitionsOffset = "0x8000";
 		String bootOffset = "0xe000";
@@ -728,31 +730,30 @@ public class FileManager {
 		String flashFreq = BaseNoGui.getBoardPreferences().get("build.flash_freq");
 		String flashSize = ui.flashSizeMB + "MB";
 
-		editor.statusNotice("Creating Merged bin...");
+		editor.statusNotice("Creating merged binary...");
 		System.out.println("[Merged bin] creation:");
 
-		System.out.println("[Merged bin] mcu: " + mcu);
-		System.out.println("[Merged bin] port   : " + serialPort);
-		System.out.println("[Merged bin] speed  : " + uploadSpeed);
-		System.out.println("[Merged bin] mode   : " + flashMode);
-		System.out.println("[Merged bin] freq   : " + flashFreq);
+		System.out.println("[Merged binary] mcu: " + mcu);
+		System.out.println("[Merged binary] port   : " + serialPort);
+		System.out.println("[Merged binary] speed  : " + uploadSpeed);
+		System.out.println("[Merged binary] mode   : " + flashMode);
+		System.out.println("[Merged bbinary freq   : " + flashFreq);
 
-		String[] mergeCommand = { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o",
-				mergedImage, "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize,
-				bootloaderOffset, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
-				bootImage, appOffset, appImage, spiffsOffset, spiffsImage };
+		String[] mergeCommand = { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o", mergedImage,
+				"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize, bootloaderOffset,
+				bootloaderImage, partitionsOffset, partitionsImage, bootOffset, bootImage, appOffset, appImage,
+				spiffsOffset, spiffsImage };
 
-		String[] mergeWindowsCommand = { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o",
-				mergedImage, "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize,
-				bootloaderOffset, bootloaderImage, partitionsOffset, partitionsImage, bootOffset,
-				bootImage, appOffset, appImage, spiffsOffset, spiffsImage };
+		String[] mergeWindowsCommand = { esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o", mergedImage,
+				"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize, bootloaderOffset,
+				bootloaderImage, partitionsOffset, partitionsImage, bootOffset, bootImage, appOffset, appImage,
+				spiffsOffset, spiffsImage };
 
 		if (esptool.getAbsolutePath().endsWith(".py")) {
 			sysExec(mergeCommand);
 		} else {
 			sysExec(mergeWindowsCommand);
 		}
-
 	}
 
 	private void uploadMergedBin() {
@@ -793,7 +794,7 @@ public class FileManager {
 		// make sure the serial port or IP is defined
 		if (serialPort == null || serialPort.isEmpty()) {
 			System.err.println();
-			editor.statusError(fsName+" Error: serial port not defined!");
+			editor.statusError(fsName + " Error: serial port not defined!");
 			return;
 		}
 
@@ -827,83 +828,43 @@ public class FileManager {
 
 		String mergedOffset = "0x0";
 
-		editor.statusNotice("Creating Merged bin...");
-		System.out.println("[Merged bin] creation:");
+		editor.statusNotice("Creating merged binary...");
+		System.out.println("[Merged binary] creation:");
 
-		if (mcu.contains("s3")) {
+		if (isNetwork) {
+			System.out.println("[Merged bin] IP: " + serialPort);
+			System.out.println();
 
-			if (isNetwork) {
-				System.out.println("[Merged bin] IP: " + serialPort);
-				System.out.println();
+			String[] writeFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s",
+					"-f", mergedImage };
+			String[] writeWindowsFlashCommand = { espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s", "-f",
+					mergedImage };
 
-				String[] writeFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232",
-						"-s", "-f", mergedImage };
-				String[] writeWindowsFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p",
-						"3232", "-s", "-f", mergedImage };
-
-				if (espota.getAbsolutePath().endsWith(".py")) {
-					sysExec(writeFlashCommand);
-				} else {
-					sysExec(writeWindowsFlashCommand);
-				}
+			if (espota.getAbsolutePath().endsWith(".py")) {
+				sysExec(writeFlashCommand);
 			} else {
-				System.out.println("[Merged bin] mcu: " + mcu);
-				System.out.println("[Merged bin] port   : " + serialPort);
-				System.out.println("[Merged bin] speed  : " + uploadSpeed);
-				System.out.println("[Merged bin] mode   : " + flashMode);
-				System.out.println("[Merged bin] freq   : " + flashFreq);
-
-				String[] writeFlashCommand = { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "--baud",
-						uploadSpeed, "--port", serialPort, "--before", "default_reset", "--after", "hard_reset",
-						"write_flash", "-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size",
-						"detect", mergedOffset, mergedImage };
-				String[] writeWindowsFlashCommand = { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
-						"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
-						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
-						mergedImage };
-
-				if (esptool.getAbsolutePath().endsWith(".py")) {
-					sysExec(writeFlashCommand);
-				} else {
-					sysExec(writeWindowsFlashCommand);
-				}
+				sysExec(writeWindowsFlashCommand);
 			}
 		} else {
-			if (isNetwork) {
-				System.out.println("[Merged bin] IP: " + serialPort);
-				System.out.println();
+			System.out.println("[Merged binary] mcu: " + mcu);
+			System.out.println("[Merged binary] port   : " + serialPort);
+			System.out.println("[Merged binary] speed  : " + uploadSpeed);
+			System.out.println("[Merged binary] mode   : " + flashMode);
+			System.out.println("[Merged binary] freq(exec)   : " + flashFreq);
 
-				String[] writeFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232",
-						"-s", "-f", mergedImage };
-				String[] writeWindowsFlashCommand = { espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s",
-						"-f", mergedImage };
+			String[] writeFlashCommand = { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+					"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
+					"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
+					mergedImage };
+			String[] writeWindowsFlashCommand = { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+					"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
+					"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
+					mergedImage };
 
-				if (espota.getAbsolutePath().endsWith(".py")) {
-					sysExec(writeFlashCommand);
-				} else {
-					sysExec(writeWindowsFlashCommand);
-				}
+			if (esptool.getAbsolutePath().endsWith(".py")) {
+				sysExec(writeFlashCommand);
 			} else {
-				System.out.println("[Merged bin] mcu: " + mcu);
-				System.out.println("[Merged bin] port   : " + serialPort);
-				System.out.println("[Merged bin] speed  : " + uploadSpeed);
-				System.out.println("[Merged bin] mode   : " + flashMode);
-				System.out.println("[Merged bin] freq(exec)   : " + flashFreq);
-
-				String[] writeFlashCommand = { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "--baud",
-						uploadSpeed, "--port", serialPort, "--before", "default_reset", "--after", "hard_reset",
-						"write_flash", "-z", "--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size",
-						"detect", mergedOffset, mergedImage };
-				String[] writeWindowsFlashCommand = { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
-						"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
-						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
-						mergedImage };
-
-				if (esptool.getAbsolutePath().endsWith(".py")) {
-					sysExec(writeFlashCommand);
-				} else {
-					sysExec(writeWindowsFlashCommand);
-				}
+				sysExec(writeWindowsFlashCommand);
 			}
 		}
 	}

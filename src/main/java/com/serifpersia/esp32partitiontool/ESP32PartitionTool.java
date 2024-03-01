@@ -74,7 +74,6 @@ public class ESP32PartitionTool implements Tool {
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
 			// Size and display the frame
-			//frame.setSize(824, 478);
 			frame.setSize(1024, 640);
 
 			// Set frame position to the center of the screen
