@@ -56,7 +56,7 @@ public class UIController implements ActionListener {
 		ui.getCreatePartitionsBin().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
 		ui.getFlashSPIFFSButton().addActionListener(this);
-		ui.getFlashSketchButton().addActionListener(this);
+		ui.getPartitionFlashType().addActionListener(this);
 		ui.getFlashMergedBin().addActionListener(this);
 		ui.getHelpButton().addActionListener(this);
 	}
@@ -79,8 +79,6 @@ public class UIController implements ActionListener {
 			fileManager.createPartitionsBin();
 		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
 			fileManager.handleSPIFFS();
-		} else if (e.getSource() == ui.getFlashSketchButton()) {
-			fileManager.flashCompiledSketch();
 		} else if (e.getSource() == ui.getFlashMergedBin()) {
 			fileManager.handleMergedBin();
 		} else if (e.getSource() == ui.getHelpButton()) {
@@ -163,12 +161,17 @@ public class UIController implements ActionListener {
 			String blockSizeText = String.valueOf(spiffs_setBlockSize);
 			ui.getSpiffsBlockSize().setText(blockSizeText);
 
+		} else if (comboBox == ui.getPartitionFlashType()) {
+			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
+			System.out.println("Changed filesystem to :" + fsName);
 		}
 	}
 
 	private void handleHelpButton() {
 		int currentStep = 0;
 		String[] messages = {
+				"<html>Usage:Export CSV to sketch dir, under Tools > Partition schemes, select: Huge App/No OTA/1MB SPIFFS to use custom partition scheme.</html>",
+				"<html>Compile sketch to use SPIFFS & Merge tools.",
 				"<html>Partitions like nvs or any other small partitions before the app partition<br>needs to be a multiple of 4.</html>",
 				"<html>Partitions before the first app partition should have a total of 28 kB so the offset<br>for the first app partition will always be correct at 0x10000 offset.<br>Any other configuration will cause the ESP32 board to not function properly.</html>",
 				"<html>The app partition needs to be at 0x10000, and following partitions have to be<br>a multiple of 64.</html>",
