@@ -98,6 +98,8 @@ public class ESP32PartitionTool implements Tool {
 			frame.toFront();
 			frame.setVisible(true);
 		}
+
+		fileManager.loadProperties();
 	}
 
 	public void run() {

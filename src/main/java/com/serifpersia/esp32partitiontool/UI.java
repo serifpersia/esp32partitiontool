@@ -8,6 +8,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import javax.swing.*;
+import java.io.*;
+
 
 public class UI extends JPanel {
 
@@ -75,6 +77,9 @@ public class UI extends JPanel {
 	private JButton btn_help;
 	private JButton partitions_ImportCSVButton;
 
+	private JCheckBox ui_DebugChckb;
+	//private JLabel ui_DebugLabel;
+
 	public int lastIndex;
 
 	public UI() {
@@ -89,10 +94,13 @@ public class UI extends JPanel {
 		createPartitionsTypes();
 		createPartitionsSubTypes();
 		createPartitionsSize();
+		createDebugCheckBox();
 		createPartitionsSizeHex();
 		createPartitionsOffsets();
 		createPartitionFlashVisualPanel();
 	}
+
+
 
 	private void createPanels() {
 		csv_GenPanel = new JPanel();
@@ -374,6 +382,12 @@ public class UI extends JPanel {
 		partitions_UtilButtonsPanel.add(btn_help);
 	}
 
+	private void createDebugCheckBox() {
+		ui_DebugChckb = new JCheckBox("debug");
+		partitions_UtilButtonsPanel.add(ui_DebugChckb);
+	}
+
+
 	public String[] convertKbToHex(int[] sizes) {
 		String[] hexValues = new String[sizes.length];
 		for (int i = 0; i < sizes.length; i++) {
@@ -652,7 +666,10 @@ public class UI extends JPanel {
 		csv_partitionsCenterVisualPanel.repaint();
 	}
 
-	// Getter method to access a specific partitionType by index
+	public JCheckBox getDebug() {
+		return ui_DebugChckb;
+	}
+
 	public JComboBox<?> getPartitionFlashType() {
 		return partitionsFlashTypes;
 	}

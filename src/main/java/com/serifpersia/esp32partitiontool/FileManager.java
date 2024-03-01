@@ -9,12 +9,13 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JTextField;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.JOptionPane;
+
+import java.util.Properties;
+import java.nio.file.*;
+
 
 import processing.app.PreferencesData;
 import processing.app.Editor;
@@ -37,13 +38,15 @@ public class FileManager {
 	File espota;
 	File esptool;
 	File gen_esp32part;
-	String pythonCmd = "python3";
 	String uploadSpeed;
 	long spiStart;
 
 	String mcu = BaseNoGui.getBoardPreferences().get("build.mcu");
 	String flashMode = BaseNoGui.getBoardPreferences().get("build.flash_mode");
 	String flashFreq = BaseNoGui.getBoardPreferences().get("build.flash_freq");
+	boolean isWindows = PreferencesData.get("runtime.os").contentEquals("windows");
+
+	boolean debug_ui = false;
 
 	// Declare spiSize, spiPage, spiBlock here
 	long spiSize;
@@ -56,6 +59,182 @@ public class FileManager {
 		this.ui = ui;
 		this.editor = editor;
 	}
+
+	String pythonCmd             = isWindows ? "python3.exe" : "python3";
+	String toolExtension         = isWindows ? ".exe" : ".py";
+	String espotaCmd             = "espota"  + toolExtension;
+	String esptoolCmd            = "esptool" + toolExtension;
+
+	TargetPlatform platform      = BaseNoGui.getTargetPlatform();
+	File platformPath            = platform.getFolder();
+	String toolsPathBase         = BaseNoGui.getToolsPath();
+	File defaultSketchbookFolder = BaseNoGui.getDefaultSketchbookFolder();
+	String classPath             = FileManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+	Path path                    = Paths.get(classPath);
+	String classDir              = path.getParent().toString();
+	String propertiesFile        = classDir + "/prefs.properties";
+	Properties prefs             = new Properties();
+
+
+	public void setDebug( boolean enable ) {
+		debug_ui = enable;
+		prefs.setProperty("debug.enabled", debug_ui?"true":"false");
+		saveProperties();
+	}
+
+
+	public void loadProperties() {
+
+		if( debug_ui ) {
+			System.out.println("classPath = " + classPath );
+			System.out.println("classDir = " + classDir);
+			System.out.println("platformPath = " + platformPath);
+			System.out.println("toolsPathBase= " + toolsPathBase);
+			System.out.println("defaultSketchbookFolder= " + defaultSketchbookFolder);
+		}
+
+		try (InputStream input = new FileInputStream(propertiesFile)) {
+
+			// load the properties file
+			prefs.load(input);
+
+			debug_ui = Boolean.parseBoolean( prefs.getProperty("debug.enabled") );
+
+			// print key and values
+			if( debug_ui ) {
+				prefs.forEach((key, value) -> {
+					System.out.println("Key : " + key + ", Value : " + value);
+				});
+				// Get all keys
+				// prefs.keySet().forEach(x -> System.out.println(x));
+			}
+
+			// search for esptool.[py|exe] in all the following folders
+			String espToolSearchPaths[] = {
+				prefs.getProperty("esptool.path"),                    // user.properties (always first)
+				PreferencesData.get("runtime.tools.esptool_py.path"), // preferences.txt (always second)
+				platformPath + "/tools",
+				platformPath + "/tools/esptool_py",
+				defaultSketchbookFolder+"/tools",
+				defaultSketchbookFolder+"/tools/esptool_py",
+				toolsPathBase,
+				toolsPathBase+"/tools/esptool_py"
+			};
+
+			if( !findFile( esptoolCmd, espToolSearchPaths, "esptool" ) ) {
+				editor.statusError(" Error: esptool not found!");
+			}
+
+			int size = ui.getPartitionFlashType().getItemCount();
+
+			for (int i = 0; i < size; i++) {
+				String fsName = (String) ui.getPartitionFlashType().getItemAt(i);
+
+				String toolBinName = "mk" + fsName.toLowerCase();
+				String toolExeName = toolBinName + (isWindows ? ".exe" : "");
+
+				String toolPrefName = "runtime.tools." + toolBinName + ".path";
+				String toolPathPref = PreferencesData.get(toolPrefName);
+
+				// search for mk{filesystem}fs binary in the following folders:
+				String searchPaths[] = {
+					prefs.getProperty(toolBinName+".path"), // user.properties (always first)
+					toolPathPref,                           // preferences.txt (always second)
+					platformPath + "/tools",
+					platformPath + "/tools/" + toolBinName,
+					defaultSketchbookFolder+"/tools",
+					defaultSketchbookFolder+"/tools/"+toolBinName,
+					toolsPathBase,
+					toolsPathBase + "/"+toolBinName
+				};
+
+				findFile( toolExeName, searchPaths, toolBinName );
+			}
+
+			saveProperties();
+
+		} catch (IOException ex) {
+				ex.printStackTrace();
+		}
+
+		// figure out what csv file is selected in the boards menu, and where it is
+		String csvName        = BaseNoGui.getBoardPreferences().get("build.partitions");
+		String customCsvName  = BaseNoGui.getBoardPreferences().get("build.custom_partitions");
+		String variantName    = BaseNoGui.getBoardPreferences().get("build.variant");
+		String variantPath    = platformPath+"/variants/" + variantName;
+		String partitionsPath = platformPath+"/tools/partitions";
+		String csvPath        = partitionsPath + "/" + csvName + ".csv";
+		String variantCsvPath = null;
+
+		// check if the board uses a custom partition, could be stored in variants or tools folder
+    if( BaseNoGui.getBoardPreferences().containsKey("build.custom_partitions") ) {
+			variantCsvPath = variantPath + "/" + customCsvName + ".csv";
+    } else {
+			variantCsvPath = variantPath    + "/" + csvName + ".csv";
+		}
+
+		if( debug_ui ) {
+			System.out.println("build.custom_partitions = " + customCsvName );
+			System.out.println("build.partitions = " + csvName );
+			System.out.println("build.variant = " + variantName );
+			System.out.println("variantCsvPath = " + variantCsvPath );
+			System.out.println("csvPath = " + csvPath );
+		}
+
+		String searchPaths[] = { variantCsvPath, csvPath };
+
+		// load csv file
+		for(int i=0;i<searchPaths.length;i++) {
+			File csvFile = new File(searchPaths[i]); // check binary is in the tools folder
+			if (csvFile.exists() && csvFile.isFile() ) {
+				importCSV( searchPaths[i] );
+				break;
+			}
+		}
+
+	}
+
+
+	public boolean findFile( String fileName, String searchPaths[], String propertyName ) {
+		String full_path = "";
+		boolean found = false;
+		for( int j=0; j<searchPaths.length; j++ ) {
+			if( searchPaths[j] == null ) continue;
+			File tool = new File(searchPaths[j], fileName); // check binary is in the tools folder
+			if (tool.exists() && tool.isFile() ) {
+				found = true;
+				full_path = searchPaths[j]+"/"+fileName;
+				break;
+			}
+			if( debug_ui )
+				System.out.println("Tool #"+j+" "+fileName+" not found at "+searchPaths[j]);
+		}
+
+
+		if( found ) { // save found path in properties file
+			if( debug_ui )
+				System.out.println("[" + propertyName + "] "+fileName+" found at " + full_path);
+			prefs.setProperty(propertyName+".path", full_path);
+		} else {
+			if( debug_ui )
+				System.out.println("[" + propertyName + "] "+fileName+" not found in any tools folder");
+		}
+		return found;
+	}
+
+
+
+	public void saveProperties() {
+		try {
+			File f = new File( classDir + "/prefs.properties");
+			OutputStream out = new FileOutputStream( f );
+			prefs.store(out, "User properties");
+		}
+		catch (Exception e ) {
+			e.printStackTrace();
+		}
+	}
+
 
 	private void calculateCSV() {
 		int numOfItems = ui.getNumOfItems();
@@ -84,19 +263,24 @@ public class FileManager {
 		}
 	}
 
-	public void importCSV() {
+	public void importCSV( String file ) {
 		File defaultDirectory = editor.getSketch().getFolder();
+		File readerFile = null;
 
-		FileDialog dialog = new FileDialog((Frame) null, "Select CSV File", FileDialog.LOAD);
-		dialog.setDirectory(defaultDirectory.getAbsolutePath());
-		dialog.setFile("*.csv");
-		dialog.setVisible(true);
-
-		String directory = dialog.getDirectory();
-		String file = dialog.getFile();
+		if( file == null ) {
+			FileDialog dialog = new FileDialog((Frame) null, "Select CSV File", FileDialog.LOAD);
+			dialog.setDirectory(defaultDirectory.getAbsolutePath());
+			dialog.setFile("*.csv");
+			dialog.setVisible(true);
+			String directory = dialog.getDirectory();
+			file = dialog.getFile();
+			readerFile = new File(directory, file);
+		} else {
+			readerFile = new File(file);
+		}
 
 		if (file != null) {
-			try (BufferedReader reader = new BufferedReader(new FileReader(new File(directory, file)))) {
+			try (BufferedReader reader = new BufferedReader(new FileReader(readerFile))) {
 				for (int i = 0; i < ui.getNumOfItems(); i++) {
 					setUIComponents(i, false);
 				}
@@ -319,7 +503,6 @@ public class FileManager {
 	}
 
 	public void createPartitionsBin() {
-		TargetPlatform platform = BaseNoGui.getTargetPlatform();
 
 		String gen_esp32partCmd = "gen_esp32part.py";
 		gen_esp32part = new File(platform.getFolder() + "/tools", gen_esp32partCmd);
@@ -334,6 +517,12 @@ public class FileManager {
 		String buildPath = getBuildFolderPath(editor.getSketch());
 		String sketchName = editor.getSketch().getName();
 		String csvFilePath = buildPath + "/partitions.csv";
+
+		if (Files.notExists(Paths.get(buildPath))) {
+			System.err.println();
+			editor.statusError("No build path found. Forgot to compile the sketch?");
+			return;
+		}
 
 		// Assuming you have access to the UI components
 		calculateCSV();
@@ -397,7 +586,17 @@ public class FileManager {
 		spiBlock = ui.flashSizeMB * 1024;
 
 		String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
-		boolean is_windows = PreferencesData.get("runtime.os").contentEquals("windows");
+		String toolBinName = "mk" + fsName.toLowerCase();
+		String toolPath = prefs.getProperty(toolBinName+".path");//tool.getAbsolutePath();
+		if( toolPath == null ) return;
+
+		// fail fast
+		File tool = new File(toolPath);
+		if (!tool.exists() || !tool.isFile()) {
+			System.err.println();
+			editor.statusError(fsName + " Error: executable " + toolBinName + " not found at " + toolPath);
+			return;
+		}
 
 		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
 			System.err.println();
@@ -405,20 +604,15 @@ public class FileManager {
 			return;
 		}
 
-		TargetPlatform platform = BaseNoGui.getTargetPlatform();
+		if( debug_ui ) {
+			System.out.println("Selected filesystem: " + fsName);
+			System.out.println("Selected tool: " + toolBinName);
+			System.out.println("Selected exe: " + toolPath);
+		}
 
-		String toolBinName = "mk" + fsName.toLowerCase();
-		System.out.println("Selected filesystem: " + fsName);
-		System.out.println("Selected tool: " + toolBinName);
-
-		pythonCmd = is_windows ? "python3.exe" : "python3";
-		String toolExtension = is_windows ? ".exe" : ".py";
-		String mkFsCmd = toolBinName + (is_windows ? ".exe" : "");
-		String espotaCmd = is_windows ? "espota.exe" : "espota.py";
-
-		isNetwork = false;
-		espota = new File(platform.getFolder() + "/tools");
-		esptool = new File(platform.getFolder() + "/tools");
+		isNetwork  = false;
+		espota     = new File(platform.getFolder() + "/tools");
+		esptool    = new File(platform.getFolder() + "/tools");
 		serialPort = PreferencesData.get("serial.port");
 
 		if (!BaseNoGui.getBoardPreferences().containsKey("build.partitions")) {
@@ -427,10 +621,16 @@ public class FileManager {
 			return;
 		}
 
+		calculateCSV();
+
 		String buildPath = getBuildFolderPath(editor.getSketch());
 		String csvFilePath = buildPath + "/partitions.csv";
 
-		calculateCSV();
+		if (Files.notExists(Paths.get(buildPath))) {
+			System.err.println();
+			editor.statusError("No build path found. Forgot to compile the sketch?");
+			return;
+		}
 
 		try (FileWriter writer = new FileWriter(csvFilePath)) {
 			// Write the exported data to the CSV file
@@ -467,19 +667,6 @@ public class FileManager {
 			return;
 		}
 
-		File tool = new File(platform.getFolder() + "/tools", mkFsCmd);
-		if (!tool.exists() || !tool.isFile()) {
-			tool = new File(platform.getFolder() + "/tools/" + toolBinName, mkFsCmd);
-			if (!tool.exists()) {
-				tool = new File(PreferencesData.get("runtime.tools." + toolBinName + ".path"), mkFsCmd);
-				if (!tool.exists()) {
-					System.err.println();
-					editor.statusError(fsName + " Error: " + toolBinName + " not found!");
-					return;
-				}
-			}
-		}
-
 		// make sure the serial port or IP is defined
 		if (serialPort == null || serialPort.isEmpty()) {
 			System.err.println();
@@ -497,18 +684,13 @@ public class FileManager {
 				return;
 			}
 		} else {
-			String esptoolCmd = "esptool" + toolExtension;
-			esptool = new File(platform.getFolder() + "/tools", esptoolCmd);
+			String esptoolpath = prefs.getProperty("esptool.path");
+			if( esptoolpath == null ) return;
+			esptool = new File( esptoolpath );
 			if (!esptool.exists() || !esptool.isFile()) {
-				esptool = new File(platform.getFolder() + "/tools/esptool_py", esptoolCmd);
-				if (!esptool.exists()) {
-					esptool = new File(PreferencesData.get("runtime.tools.esptool_py.path"), esptoolCmd);
-					if (!esptool.exists()) {
-						System.err.println();
-						editor.statusError(fsName + " Error: esptool not found!");
-						return;
-					}
-				}
+				System.err.println();
+				editor.statusError(fsName + " Error: esptool not found!");
+				return;
 			}
 		}
 
@@ -529,7 +711,6 @@ public class FileManager {
 		}
 
 		String dataPath = dataFolder.getAbsolutePath();
-		String toolPath = tool.getAbsolutePath();
 		String sketchName = editor.getSketch().getName();
 		imagePath = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".spiffs.bin";
 		uploadSpeed = BaseNoGui.getBoardPreferences().get("upload.speed");
@@ -554,19 +735,24 @@ public class FileManager {
 		System.out.println("[" + fsName + "] block  : " + spiBlock);
 
 		try {
-			if (listenOnProcess(new String[] { toolPath, "-c", dataPath, "-p", spiPage + "", "-b", spiBlock + "", "-s",
-					spiSize + "", imagePath }) != 0) {
+
+			String baseMkFsArgs[] = { toolPath, "-c", dataPath, "-p", spiPage + "", "-b", spiBlock + "", "-s", spiSize + "", imagePath };
+			String mkFatFsArgs[]  = { toolPath, "-c", dataPath,                                          "-s", spiSize + "", imagePath };
+
+			String mkFsArgs[] =  fsName.equals("FatFS") ? mkFatFsArgs : baseMkFsArgs;
+
+			if (listenOnProcess( mkFsArgs ) != 0) {
 				System.err.println();
 				editor.statusError("Failed to create " + fsName + "!");
 				return;
 			}
+			editor.statusNotice("Completed creating " + fsName);
+			System.out.println("[" + fsName + "] Data partition successfully created at " + imagePath);
 		} catch (Exception e) {
 			editor.statusError(e);
 			editor.statusError("Failed to create " + fsName + "!");
 			return;
 		} finally {
-			editor.statusNotice("Completed creating " + fsName);
-			System.out.println(fsName + " successfully created");
 			// Delete the partitions.csv file after reading its contents
 			File csvFile = new File(csvFilePath);
 			if (csvFile.exists()) {
@@ -647,20 +833,6 @@ public class FileManager {
 			return;
 		}
 
-		TargetPlatform platform = BaseNoGui.getTargetPlatform();
-
-		String toolExtension = ".py";
-		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
-			toolExtension = ".exe";
-		}
-
-		if (PreferencesData.get("runtime.os").contentEquals("windows"))
-			pythonCmd = "python3.exe";
-
-		String espotaCmd = "espota.py";
-		if (PreferencesData.get("runtime.os").contentEquals("windows"))
-			espotaCmd = "espota.exe";
-
 		isNetwork = false;
 		espota = new File(platform.getFolder() + "/tools");
 		esptool = new File(platform.getFolder() + "/tools");
@@ -689,46 +861,55 @@ public class FileManager {
 				return;
 			}
 		} else {
-			String esptoolCmd = "esptool" + toolExtension;
-			esptool = new File(platform.getFolder() + "/tools", esptoolCmd);
+			String esptoolpath = prefs.getProperty("esptool.path");
+			if( esptoolpath == null ) return;
+			esptool = new File( esptoolpath );
 			if (!esptool.exists() || !esptool.isFile()) {
-				esptool = new File(platform.getFolder() + "/tools/esptool_py", esptoolCmd);
-				if (!esptool.exists()) {
-					esptool = new File(PreferencesData.get("runtime.tools.esptool_py.path"), esptoolCmd);
-					if (!esptool.exists()) {
-						System.err.println();
-						editor.statusError("Creating Merge Bin Error: esptool not found!");
-						return;
-					}
-				}
+				System.err.println();
+				editor.statusError(fsName + " Error: esptool not found!");
+				return;
 			}
+		}
+
+		String buildPath = getBuildFolderPath(editor.getSketch());
+		if (Files.notExists(Paths.get(buildPath))) {
+			System.err.println();
+			editor.statusError("No build path found. Forgot to compile the sketch?");
+			return;
 		}
 
 		String sketchName = editor.getSketch().getName();
 
 		String bootloaderImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bootloader.bin";
-		// TODO: if bootloaderImage file does not exists, print error("You must compile
-		// the sketch first");
 		String partitionsImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".partitions.bin";
-		String bootImage = platform.getFolder() + "/tools/partitions/boot_app0.bin";
-		String appImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bin";
-		String spiffsImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".spiffs.bin";
+		String bootImage       = platform.getFolder() + "/tools/partitions/boot_app0.bin";
+		String appImage        = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bin";
+		String spiffsImage     = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".spiffs.bin";
+		String mergedImage     = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + "merged" + ".bin";
 
-		String mergedImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + "merged" + ".bin";
+		String checkFiles[] = { bootloaderImage, partitionsImage, bootImage, appImage, spiffsImage };
 
-		// String bootloaderOffset = "0x1000";
+		for( int i=0; i<checkFiles.length; i++ ) {
+			File test = new File(checkFiles[i]);
+			if( !test.exists() || !test.isFile() ) {
+				System.err.println();
+				editor.statusError("Missing file: " + checkFiles[i] + ". Forgot to compile the sketch?");
+				return;
+			}
+		}
+
 		String bootloaderOffset = BaseNoGui.getBoardPreferences().get("build.bootloader_addr");
 		String partitionsOffset = "0x8000";
-		String bootOffset = "0xe000";
-		String appOffset = "0x10000";
-		String spiffsOffset = ui.getSpiffsOffset();
+		String bootOffset       = "0xe000";
+		String appOffset        = "0x10000";
+		String spiffsOffset     = ui.getSpiffsOffset();
 
-		String mcu = BaseNoGui.getBoardPreferences().get("build.mcu");
-		String serialPort = PreferencesData.get("serial.port");
-		String uploadSpeed = BaseNoGui.getBoardPreferences().get("upload.speed");
-		String flashMode = BaseNoGui.getBoardPreferences().get("build.flash_mode");
-		String flashFreq = BaseNoGui.getBoardPreferences().get("build.flash_freq");
-		String flashSize = ui.flashSizeMB + "MB";
+		String mcu              = BaseNoGui.getBoardPreferences().get("build.mcu");
+		String serialPort       = PreferencesData.get("serial.port");
+		String uploadSpeed      = BaseNoGui.getBoardPreferences().get("upload.speed");
+		String flashMode        = BaseNoGui.getBoardPreferences().get("build.flash_mode");
+		String flashFreq        = BaseNoGui.getBoardPreferences().get("build.flash_freq");
+		String flashSize        = ui.flashSizeMB + "MB";
 
 		editor.statusNotice("Creating merged binary...");
 		System.out.println("[Merged bin] creation:");
@@ -765,20 +946,6 @@ public class FileManager {
 		}
 
 		String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
-
-		TargetPlatform platform = BaseNoGui.getTargetPlatform();
-
-		String toolExtension = ".py";
-		if (PreferencesData.get("runtime.os").contentEquals("windows")) {
-			toolExtension = ".exe";
-		}
-
-		if (PreferencesData.get("runtime.os").contentEquals("windows"))
-			pythonCmd = "python3.exe";
-
-		String espotaCmd = "espota.py";
-		if (PreferencesData.get("runtime.os").contentEquals("windows"))
-			espotaCmd = "espota.exe";
 
 		isNetwork = false;
 		espota = new File(platform.getFolder() + "/tools");

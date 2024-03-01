@@ -42,6 +42,7 @@ public class UIController implements ActionListener {
 
 	private void attachListeners() {
 		// Attach listener to the "Generate CSV" button
+		ui.getDebug().addActionListener(this);
 		ui.getImportCSVButton().addActionListener(this);
 		ui.getCreatePartitionsCSV().addActionListener(this);
 		int numOfItems = ui.getNumOfItems();
@@ -65,7 +66,7 @@ public class UIController implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == ui.getImportCSVButton()) {
 			// Handle CSV export
-			fileManager.importCSV();
+			fileManager.importCSV(null);
 		} else if (e.getSource() == ui.getCreatePartitionsCSV()) {
 			// Handle CSV export
 			fileManager.generateCSV();
@@ -88,8 +89,14 @@ public class UIController implements ActionListener {
 	}
 
 	private void handleCheckBoxAction(JCheckBox checkBox) {
-		int toggleID = getIndexForComponent(checkBox);
 		boolean isSelected = checkBox.isSelected();
+
+		if( checkBox == ui.getDebug() ) {
+			fileManager.setDebug(isSelected);
+			return;
+		}
+
+		int toggleID = getIndexForComponent(checkBox);
 		ui.getPartitionName(toggleID).setEditable(isSelected);
 		ui.getPartitionType(toggleID).setEnabled(isSelected);
 		ui.getPartitionSubType(toggleID).setEditable(isSelected);
@@ -163,7 +170,12 @@ public class UIController implements ActionListener {
 
 		} else if (comboBox == ui.getPartitionFlashType()) {
 			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
-			System.out.println("Changed filesystem to :" + fsName);
+			String toolPath = fileManager.prefs.getProperty("mk"+fsName.toLowerCase()+".path");
+			if( toolPath == null ) {
+				System.err.println("Invalid filesystem :" + fsName);
+			} else {
+				System.out.println("Changed filesystem to :" + fsName);
+			}
 		}
 	}
 
