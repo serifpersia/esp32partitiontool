@@ -16,7 +16,6 @@ import javax.swing.JOptionPane;
 import java.util.Properties;
 import java.nio.file.*;
 
-
 import processing.app.PreferencesData;
 import processing.app.Editor;
 import processing.app.BaseNoGui;
@@ -89,8 +88,17 @@ public class FileManager {
 			System.out.println("classPath = " + classPath );
 			System.out.println("classDir = " + classDir);
 			System.out.println("platformPath = " + platformPath);
-			System.out.println("toolsPathBase= " + toolsPathBase);
-			System.out.println("defaultSketchbookFolder= " + defaultSketchbookFolder);
+			System.out.println("toolsPathBase = " + toolsPathBase);
+			System.out.println("defaultSketchbookFolder = " + defaultSketchbookFolder);
+		}
+
+		if (Files.notExists(Paths.get(propertiesFile))) {
+			try {
+				File file = new File(propertiesFile);
+				file.createNewFile();
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
 		}
 
 		try (InputStream input = new FileInputStream(propertiesFile)) {
