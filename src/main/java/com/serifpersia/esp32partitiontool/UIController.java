@@ -179,7 +179,7 @@ public class UIController implements ActionListener {
 			if( toolPath == null ) {
 				System.err.println("Invalid filesystem :" + fsName);
 			} else {
-				System.out.println("Changed filesystem to :" + fsName);
+				System.out.println("Changed filesystem to : " + fsName);
 			}
 		}
 	}

@@ -350,7 +350,7 @@ public class FileManager {
 
 		String partitionTypeStr = columns[1].trim().toLowerCase();
 
-		// ⚠️ partition type can be numeric
+		// partition type can be numeric
 		if (!partitionTypeStr.equals("app") && !partitionTypeStr.equals("data")) {
 			partitionTypeStr = stringToDec(partitionTypeStr) == 0 ? "app" : "data";
 		}

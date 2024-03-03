@@ -356,7 +356,7 @@ public class UI extends JPanel {
 		}
 
 		// Update the free space label
-		getFlashFreeLabel().setText("Free Space: " + FlashSizeBytes / 1024 + " bytes");
+		getFlashFreeLabel().setText("Free Space: " + FlashSizeBytes / 1024 + " kB");
 		getFlashFreeLabel().setForeground( FlashSizeBytes >= 0 ? Color.BLACK : Color.RED );
 
 		// Convert partition sizes to hexadecimal strings

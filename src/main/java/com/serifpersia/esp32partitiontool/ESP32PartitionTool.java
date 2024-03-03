@@ -52,14 +52,6 @@ public class ESP32PartitionTool implements Tool {
 	Editor editor;
 	private JFrame frame;
 
-	// uncomment If you want to work on the tool in Eclipse, IntelliJ
-	// or any other Java supported IDE otherwise comment out for Arduino IDE use
-
-	// public static void main(String[] args) {
-	// ESP32PartitionTool tool = new ESP32PartitionTool();
-	// tool.run();
-	// }
-
 	public void init(Editor editor) {
 		this.editor = editor;
 		// Pass the Editor instance when creating FileManager
