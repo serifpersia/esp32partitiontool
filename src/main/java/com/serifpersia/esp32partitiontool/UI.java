@@ -29,6 +29,7 @@ public class UI extends JPanel {
 
 
 	private JPanel csv_GenPanel;
+	private JLabel csv_GenLabel;
 
 	private JPanel csvPanel;
 	private JScrollPane csvScrollPanel;
@@ -37,6 +38,7 @@ public class UI extends JPanel {
 	private JPanel partitions_UtilButtonsPanel;
 	private JPanel csv_partitionsCenterVisualPanel;
 
+	private JLabel SPIFFS_GenLabel;
 	private JPanel SPIFFS_AND_MERGE_AND_FLASH_RootPanel;
 	private JPanel SPIFFS_AND_MERGE_AND_FLASH_InnerPanel;
 
@@ -190,13 +192,15 @@ public class UI extends JPanel {
 		csv_GenPanel.setLayout(new BorderLayout(0, 0));
 		csv_GenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-		JLabel csv_GenLabel = new JLabel("Partitions");
+		csv_GenLabel = new JLabel("Partitions");
 		csv_GenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		csv_GenLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		csv_GenPanel.add(csv_GenLabel, BorderLayout.NORTH);
 
 		csvPanel = new JPanel();
 		csvScrollPanel = new JScrollPane( csvPanel );
+		csvScrollPanel.getVerticalScrollBar().setUnitIncrement(100); // prevent the scroll wheel from going sloth
+
 		csv_GenPanel.add(csvScrollPanel, BorderLayout.CENTER );
 
 		csv_PartitionsVisual = new JPanel();
@@ -227,7 +231,7 @@ public class UI extends JPanel {
 		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.setLayout(new BorderLayout(0, 0));
 		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-		JLabel SPIFFS_GenLabel = new JLabel("SPIFFS");
+		SPIFFS_GenLabel = new JLabel("SPIFFS");
 		SPIFFS_GenLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		SPIFFS_GenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.add(SPIFFS_GenLabel, BorderLayout.NORTH);
@@ -271,10 +275,12 @@ public class UI extends JPanel {
 		panel_3 = new JPanel();
 		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel_3, BorderLayout.CENTER);
 		panel_3.setLayout(new BorderLayout(0, 0));
+		panel_3.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
 		lblNewLabel_3 = new JLabel("Merge");
 		lblNewLabel_3.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		lblNewLabel_3.setHorizontalAlignment(SwingConstants.CENTER);
+
 		panel_3.add(lblNewLabel_3, BorderLayout.NORTH);
 
 		panel_4 = new JPanel();
@@ -285,8 +291,10 @@ public class UI extends JPanel {
 		panel_4.add(panel_5, BorderLayout.NORTH);
 		panel_5.setLayout(new GridLayout(2, 0, 0, 0));
 
-		btn_flashMergedBin = new JButton("Merged Binary");
+		btn_flashMergedBin = new JButton("Merge Binary");
 		panel_5.add(btn_flashMergedBin);
+
+		// TODO: insert image 170 * 384 ?
 
 	}
 
@@ -429,6 +437,12 @@ public class UI extends JPanel {
 	}
 
 
+	public void updatePartitionFlashTypeLabel() {
+		SPIFFS_GenLabel.setText( (String)getPartitionFlashType().getSelectedItem() );
+		btn_flashSPIFFS.setText( (String)getPartitionFlashType().getSelectedItem() );
+	}
+
+
 	public void validateSubtypes() {
 		//
 		for( int i=0;i<csvRows.size();i++ ) {
@@ -443,6 +457,11 @@ public class UI extends JPanel {
 			else if( type.equals("data") && subtype.equals("littlefs") ) getPartitionFlashType().setSelectedItem("LittleFS");
 
 		}
+	}
+
+
+	public void updatePartitionLabel( String label ) {
+		csv_GenLabel.setText( label );
 	}
 
 

@@ -110,9 +110,9 @@ public class CSVRow extends JPanel {
 
 
 	public String toString() {
-		return name.getText() + ", " + (String)type.getSelectedItem() + ", "
+		return name.getText() + ", " + type.getSelectedItem().toString() + ", "
 			+ subtype.getText() + ", " + "0x" + offset.getText() + ", " + "0x"
-			+ size.getText() + ", "
+			+ sizeHex.getText() + ", "
 		;
 	}
 
@@ -160,19 +160,19 @@ public class CSVRow extends JPanel {
 	}
 
 
-	public boolean isValidSubtype( String type ) {
+	public boolean isValidSubtype( String typeStr ) {
 		final String[] validSubtypes = {
 			"factory", "test", "nvs", "phy", "nvs_keys", "undefined", "efuse", "ota", "spiffs", "littlefs", "coredump",
 			"ota_0", "ota_1", "ota_2", "ota_3", "ota_4", "ota_5", "ota_6", "ota_7",
 			"ota_8", "ota_9", "ota_10", "ota_11", "ota_12", "ota_13", "ota_14", "ota_15"
 		};
 		for( int i=0; i<validSubtypes.length; i++ ) {
-			if( type.equals( validSubtypes[i] ) ) return true;
+			if( typeStr.equals( validSubtypes[i] ) ) return true;
 		}
 
-		if( type.startsWith("0x" ) ) {
+		if( typeStr.startsWith("0x" ) ) {
 			try {
-				int value = Integer.decode( type );
+				int value = Integer.decode( typeStr );
 				if( value < 0xff ) return true;
 			} catch( NumberFormatException e ) { };
 		}

@@ -65,7 +65,13 @@ public class FileManager {
 	File jarFile                 = new File(jarPath);
 	String classPath             = jarFile.getParent();                 // => /path/to/ESP32PartitionTool/tool
 	String propertiesFile        = classPath + "/prefs.properties";     // => /path/to/ESP32PartitionTool/tool/prefs.properties
+
+	String sketchName;
+	String sketchPath;
+	String sketchDir;
+
 	Properties prefs             = new Properties();
+
 
 	// Constructor to initialize FileManager with UI instance and Editor instance
 	public FileManager(UI ui, Editor editor) {
@@ -73,6 +79,14 @@ public class FileManager {
 		this.editor = editor;
 	}
 
+
+	public static String basename(String path) {
+		String filename = path.substring(path.lastIndexOf('/') + 1);
+		if (filename == null || filename.equalsIgnoreCase("")) {
+			filename = "";
+		}
+		return filename;
+	}
 
 	public void setUIController( UIController controller ) {
 		ui.controller = controller;
@@ -88,13 +102,10 @@ public class FileManager {
 
 	public void loadProperties() {
 
-		if( debug_ui ) {
-			System.out.println("jarPath = " + jarPath);
-			System.out.println("classPath = " + classPath );
-			System.out.println("platformPath = " + platformPath);
-			System.out.println("toolsPathBase = " + toolsPathBase);
-			System.out.println("defaultSketchbookFolder = " + defaultSketchbookFolder);
-		}
+		sketchName   = editor.getSketch().getName();
+		sketchPath   = editor.getSketch().getMainFilePath();
+		File inoFile = new File( sketchPath );
+		sketchDir    = inoFile.getParent();
 
 		if (Files.notExists(Paths.get(propertiesFile))) {
 			try {
@@ -115,7 +126,7 @@ public class FileManager {
 			// print key and values
 			if( debug_ui ) {
 				prefs.forEach((key, value) -> {
-					System.out.println("Key : " + key + ", Value : " + value);
+					System.out.println("[Loaded pref] " + key + " = " + value);
 				});
 				// Get all keys
 				// prefs.keySet().forEach(x -> System.out.println(x));
@@ -169,6 +180,16 @@ public class FileManager {
 				ex.printStackTrace();
 		}
 
+		if( debug_ui ) {
+			System.out.println("sketchDir               = " + sketchDir );
+			System.out.println("jarPath                 = " + jarPath);
+			System.out.println("classPath               = " + classPath );
+			System.out.println("platformPath            = " + platformPath);
+			System.out.println("toolsPathBase           = " + toolsPathBase);
+			System.out.println("defaultSketchbookFolder = " + defaultSketchbookFolder);
+		}
+
+
 	}
 
 	public void loadCSV() {
@@ -190,10 +211,10 @@ public class FileManager {
 
 		if( debug_ui ) {
 			System.out.println("build.custom_partitions = " + customCsvName );
-			System.out.println("build.partitions = " + csvName );
-			System.out.println("build.variant = " + variantName );
-			System.out.println("variantCsvPath = " + variantCsvPath );
-			System.out.println("csvPath = " + csvPath );
+			System.out.println("build.partitions        = " + csvName );
+			System.out.println("build.variant           = " + variantName );
+			System.out.println("variantCsvPath          = " + variantCsvPath );
+			System.out.println("csvPath                 = " + csvPath );
 		}
 
 		String searchPaths[] = { variantCsvPath, csvPath };
@@ -221,7 +242,7 @@ public class FileManager {
 				break;
 			}
 			if( debug_ui )
-				System.out.println("Tool #"+j+" "+fileName+" not found at "+searchPaths[j]);
+				System.out.println("[" + propertyName + "] "+fileName+" not at "+searchPaths[j]);
 		}
 
 
@@ -259,14 +280,9 @@ public class FileManager {
 			CSVRow csvRow = ui.getCSVRow(i);
 
 			if (csvRow.enabled.isSelected()) {
-				String name    = csvRow.name.getText();
-				String type    = (String) csvRow.type.getSelectedItem();
-				String subType = csvRow.subtype.getText();
-				String size    = csvRow.size.getText();
-				String offset  = csvRow.offset.getText(); // Assuming offset is same as size
-
-				String exported_csvPartition = name + ", " + type + ", " + subType + ", " + "0x" + offset + ", " + "0x"
-						+ size + ", ";
+				String exported_csvPartition = csvRow.toString();
+				if( debug_ui )
+					System.out.println( exported_csvPartition );
 				createdPartitionsData.add(exported_csvPartition);
 			}
 		}
@@ -282,7 +298,9 @@ public class FileManager {
 			dialog.setFile("*.csv");
 			dialog.setVisible(true);
 			String directory = dialog.getDirectory();
+			if( directory == null || directory.isEmpty() ) return;
 			file = dialog.getFile();
+			if( file == null || file.isEmpty() ) return;
 			readerFile = new File(directory, file);
 		} else {
 			readerFile = new File(file);
@@ -291,6 +309,10 @@ public class FileManager {
 		if (file != null) {
 			try (BufferedReader reader = new BufferedReader(new FileReader(readerFile))) {
 				processCSV(reader);
+
+				String csvBasename = basename(file);
+				ui.updatePartitionLabel(csvBasename);
+
 			} catch (IOException e) {
 				System.err.println("Error reading CSV file: " + e.getMessage());
 			}
@@ -318,7 +340,7 @@ public class FileManager {
 
 		String flashSizeString = String.valueOf(ui.flashSizeMB);
 		ui.getFlashSize().setSelectedItem(flashSizeString);
-
+		ui.updatePartitionFlashTypeLabel();
 	}
 
 	private void processCSV(BufferedReader reader) throws IOException {
@@ -890,7 +912,7 @@ public class FileManager {
 			return;
 		}
 
-		String sketchName = editor.getSketch().getName();
+
 
 		String bootloaderImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bootloader.bin";
 		String partitionsImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".partitions.bin";

@@ -114,14 +114,10 @@ public class UIController implements ActionListener {
 			else csvRow.enableRow();
 			if( csvRowId == ui.csvRows.size()-1 ) { // we're enabling the last checkbox, add one!
 			  if( csvRowId > 0 ) {
-					//CSVRow prevLine = ui.getCSVRow(csvRowId-1);
-					//if( prevLine.enabled.isSelected() ) { // previous checkbox is enabled too
-					ui.renderCSVRows(); // the additional empty line will be inserted by renderCSVRows()
-					//}
+					ui.renderCSVRows(); // an extra empty line will be inserted by renderCSVRows()
 			  }
 			}
 		} else {
-			//csvRow.setDefaults( -1 );
 			csvRow.disableRow();
 			if( csvRowId>=ui.MIN_ITEMS-1 && csvRowId == ui.csvRows.size()-2 ) { // we're disabling the last enabled checkbox
 				ui.popCSVRow();
@@ -136,7 +132,6 @@ public class UIController implements ActionListener {
 	}
 
 	private void handleTextFieldAction(JTextField textField) {
-		//int id = getIndexForComponent(textField);
 
 		int id = getRowIndexForComponent(textField);
 
@@ -149,6 +144,9 @@ public class UIController implements ActionListener {
 			ui.updatePartitionFlashVisual();
 		}
 	}
+
+
+	private String lastFsName = "";
 
 	private void handleComboBoxAction(JComboBox<?> comboBox) {
 		if (comboBox == ui.getFlashSize()) {
@@ -177,9 +175,14 @@ public class UIController implements ActionListener {
 			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
 			String toolPath = fileManager.prefs.getProperty("mk"+fsName.toLowerCase()+".path");
 			if( toolPath == null ) {
-				System.err.println("Invalid filesystem :" + fsName);
+				System.err.println("Invalid filesystem:" + fsName);
 			} else {
-				System.out.println("Changed filesystem to :" + fsName);
+			  if( ! fsName.equals(lastFsName) ) {
+					// no need to spam the console with repeated messages
+					lastFsName = fsName;
+					System.out.println("Selected filesystem:" + fsName);
+					ui.updatePartitionFlashTypeLabel();
+				}
 			}
 		}
 	}
