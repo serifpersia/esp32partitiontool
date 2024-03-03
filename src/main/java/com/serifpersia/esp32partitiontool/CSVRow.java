@@ -66,8 +66,8 @@ public class CSVRow extends JPanel {
 		sizeHex.setEditable(false);
 		offset. setEditable(false);
 
-		sizeHex.setBackground(Color.GRAY);
-		offset. setBackground(Color.GRAY);
+		sizeHex.setBackground(new Color(240, 240, 240));
+		offset.setBackground(new Color(240, 240, 240));
 
 		if( values != null && values.length>5 ) {
 			this.setRowName(    values[0] );
