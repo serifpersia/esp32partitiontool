@@ -1,36 +1,37 @@
 package com.serifpersia.esp32partitiontool;
 
+import java.util.ArrayList;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Component;
 import javax.swing.*;
 import java.io.*;
+
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
 
 
 public class UI extends JPanel {
 
 	private static final long serialVersionUID = 1L;
+	private static final int NUM_ITEMS = 100;
+	public 	static final int MIN_ITEMS = 15;
+	public int lastIndex;
 
-	private static final int NUM_ITEMS = 15;
+	public UIController controller;
+
 
 	private JPanel csv_GenPanel;
-	private JPanel csv_RootPanel;
-	private JPanel csv_EnablePanel;
-	private JPanel csv_EnableInnerPanel;
-	private JPanel csv_PartitionNamePanel;
-	private JPanel csv_PartitionNameInnerPanel;
-	private JPanel csv_PartitionTypePanel;
-	private JPanel csv_PartitionTypeInnerPanel;
-	private JPanel csv_PartitionSubTypePanel;
-	private JPanel csv_PartitionSubTypeInnerPanel;
-	private JPanel csv_PartitionSizePanel;
-	private JPanel csv_PartitionSizeInnerPanel;
-	private JPanel csv_PartitionOffsetsPanel;
-	private JPanel csv_PartitionOffsetsInnerPanel;
+
+	private JPanel csvPanel;
+	private JScrollPane csvScrollPanel;
 
 	private JPanel csv_PartitionsVisual;
 	private JPanel partitions_UtilButtonsPanel;
@@ -39,19 +40,10 @@ public class UI extends JPanel {
 	private JPanel SPIFFS_AND_MERGE_AND_FLASH_RootPanel;
 	private JPanel SPIFFS_AND_MERGE_AND_FLASH_InnerPanel;
 
-	private JCheckBox[] partitions_EnableChckb = new JCheckBox[NUM_ITEMS];
-	private JTextField[] partitionsNames = new JTextField[NUM_ITEMS];
-	private JComboBox<?>[] partitionsType = new JComboBox[NUM_ITEMS];
 	private JComboBox<?> partitionsFlashTypes;
 	private JLabel lb_filesystems;
-
-	private JTextField[] partitionsSubType = new JTextField[NUM_ITEMS];
-	private JTextField[] partitionsSize = new JTextField[NUM_ITEMS];
-	private JTextField[] partitionsSizeHex = new JTextField[NUM_ITEMS];
-	private JTextField[] partitionsOffsets = new JTextField[NUM_ITEMS];
-
 	private JComboBox<?> partitions_FlashSizes;
-	int FlashSizeBytes = 4 * 1024 * 1024 - 36864;
+	long FlashSizeBytes = 4 * 1024 * 1024 - 36864;
 	int flashSizeMB = 4;
 	// long FlashSizeBytes = 0;
 
@@ -75,31 +67,112 @@ public class UI extends JPanel {
 	// private JButton btn_flashSketch;
 	private JButton btn_flashMergedBin;
 	private JButton btn_help;
+	private JButton btn_about;
 	private JButton partitions_ImportCSVButton;
 
 	private JCheckBox ui_DebugChckb;
-	//private JLabel ui_DebugLabel;
 
-	public int lastIndex;
+  public ArrayList<CSVRow> csvRows = new ArrayList<CSVRow>();
+
 
 	public UI() {
 		setLayout(new BorderLayout(0, 0));
 		init();
 	}
 
+
 	private void init() {
 		createPanels();
-		createPartitionsEnableToggles();
-		createPartitionsNames();
-		createPartitionsTypes();
-		createPartitionsSubTypes();
-		createPartitionsSize();
+		createFreeSpaceBox();
+		createHelpButton();
+		createAboutButton();
 		createDebugCheckBox();
-		createPartitionsSizeHex();
-		createPartitionsOffsets();
+		calculateOffsets();
 		createPartitionFlashVisualPanel();
+		updatePartitionFlashVisual();
 	}
 
+
+
+	public void addCSVRow( CSVRow line ) {
+		if( line == null )  {
+			line = new CSVRow(null);
+		}
+		line.attachListeners( this.controller );
+		line.size.getDocument().addDocumentListener(new DocumentListener() {
+			public void changedUpdate(DocumentEvent e) { recalculate(); }
+			public void removeUpdate(DocumentEvent e) { recalculate(); }
+			public void insertUpdate(DocumentEvent e) { recalculate(); }
+			public void recalculate() {
+				calculateSizeHex();
+				calculateOffsets();
+				updatePartitionFlashVisual();
+			}
+		});
+
+		csvRows.add( line );
+	}
+
+
+	public void popCSVRow() {
+		int lastIndex = csvRows.size() -1;
+		if( lastIndex >= 0 ) {
+		  CSVRow csvRow = getCSVRow(lastIndex);
+		  csvPanel.remove( csvRow );
+			csvRows.remove(lastIndex);
+		}
+	}
+
+
+	public void removeCVSLine(int index) {
+		int lastIndex = csvRows.size() -1;
+		if( lastIndex >= 0 && lastIndex>=index) {
+			CSVRow csvRow = getCSVRow(lastIndex);
+			csvPanel.remove( csvRow );
+			csvRows.remove(index);
+		}
+	}
+
+
+	public CSVRow getCSVRow(int index) {
+		if( index>=0 && csvRows.size() > index ) {
+			return csvRows.get(index);
+		}
+		return null;
+	}
+
+
+	public void clearCSVRows() {
+		csvRows.clear();
+	}
+
+
+	public void renderCSVRows() {
+		csvPanel.removeAll();
+		int layoutSize = csvRows.size()+2 < MIN_ITEMS+1 ? MIN_ITEMS+1 : csvRows.size()+2;
+		csvPanel.setLayout( new GridLayout(layoutSize, 0, 0, 0) );
+		addTitleCSVRow(); // add column titles
+		while( csvRows.size() < layoutSize-1 ) {
+			addCSVRow( null );
+		}
+		for( int i=0; i<csvRows.size(); i++ ) {
+			csvPanel.add( getCSVRow(i), BorderLayout.CENTER );
+		}
+	}
+
+
+	public void addTitleCSVRow() {
+		JPanel titleLinePanel = new JPanel();
+		titleLinePanel.setLayout(new GridLayout(0, 7, 0, 0));
+
+		String labels[] = { "Enable", "Name", "Type", "SubType", "Size(kB)", "Size(hex)", "Offset(hex)" };
+		for( int i=0; i<labels.length; i++ ) {
+			JLabel label = new JLabel( labels[i] );
+			label.setHorizontalAlignment(SwingConstants.CENTER);
+			titleLinePanel.add(label, BorderLayout.NORTH);
+		}
+		csvPanel.add( titleLinePanel );
+	}
 
 
 	private void createPanels() {
@@ -113,93 +186,10 @@ public class UI extends JPanel {
 		csv_GenLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		csv_GenPanel.add(csv_GenLabel, BorderLayout.NORTH);
 
-		csv_RootPanel = new JPanel();
-		csv_GenPanel.add(csv_RootPanel, BorderLayout.CENTER);
-		csv_RootPanel.setLayout(new GridLayout(0, 7, 0, 0));
-
-		csv_EnablePanel = new JPanel();
-		csv_RootPanel.add(csv_EnablePanel);
-		csv_EnablePanel.setLayout(new BorderLayout(0, 0));
-
-		JLabel csv_EnableLabel = new JLabel("Enable");
-		csv_EnableLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		csv_EnablePanel.add(csv_EnableLabel, BorderLayout.NORTH);
-
-		csv_EnableInnerPanel = new JPanel();
-		csv_EnablePanel.add(csv_EnableInnerPanel, BorderLayout.CENTER);
-		csv_EnableInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
-
-		csv_PartitionNamePanel = new JPanel();
-		csv_RootPanel.add(csv_PartitionNamePanel);
-		csv_PartitionNamePanel.setLayout(new BorderLayout(0, 0));
-
-		JLabel csv_PartitionNameLabel = new JLabel("Name");
-		csv_PartitionNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		csv_PartitionNamePanel.add(csv_PartitionNameLabel, BorderLayout.NORTH);
-
-		csv_PartitionNameInnerPanel = new JPanel();
-		csv_PartitionNamePanel.add(csv_PartitionNameInnerPanel, BorderLayout.CENTER);
-		csv_PartitionNameInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
-
-		csv_PartitionTypePanel = new JPanel();
-		csv_RootPanel.add(csv_PartitionTypePanel);
-		csv_PartitionTypePanel.setLayout(new BorderLayout(0, 0));
-
-		JLabel csv_PartitionTypeLabel = new JLabel("Type");
-		csv_PartitionTypeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		csv_PartitionTypePanel.add(csv_PartitionTypeLabel, BorderLayout.NORTH);
-
-		csv_PartitionTypeInnerPanel = new JPanel();
-		csv_PartitionTypePanel.add(csv_PartitionTypeInnerPanel, BorderLayout.CENTER);
-		csv_PartitionTypeInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
-
-		csv_PartitionSubTypePanel = new JPanel();
-		csv_RootPanel.add(csv_PartitionSubTypePanel);
-		csv_PartitionSubTypePanel.setLayout(new BorderLayout(0, 0));
-
-		JLabel csv_PartitionSubTypeLabel = new JLabel("SubType");
-		csv_PartitionSubTypeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		csv_PartitionSubTypePanel.add(csv_PartitionSubTypeLabel, BorderLayout.NORTH);
-
-		csv_PartitionSubTypeInnerPanel = new JPanel();
-		csv_PartitionSubTypePanel.add(csv_PartitionSubTypeInnerPanel, BorderLayout.CENTER);
-		csv_PartitionSubTypeInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
-
-		csv_PartitionSizePanel = new JPanel();
-		csv_RootPanel.add(csv_PartitionSizePanel);
-		csv_PartitionSizePanel.setLayout(new BorderLayout(0, 0));
-
-		JLabel csv_PartitionSizeLabel = new JLabel("Size(kB)");
-		csv_PartitionSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		csv_PartitionSizePanel.add(csv_PartitionSizeLabel, BorderLayout.NORTH);
-
-		csv_PartitionSizeInnerPanel = new JPanel();
-		csv_PartitionSizePanel.add(csv_PartitionSizeInnerPanel, BorderLayout.CENTER);
-		csv_PartitionSizeInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
-
-		csv_PartitionSizeHexPanel = new JPanel();
-		csv_RootPanel.add(csv_PartitionSizeHexPanel);
-		csv_PartitionSizeHexPanel.setLayout(new BorderLayout(0, 0));
-
-		csv_PartitionSizeHexLabel = new JLabel("Size(hex)");
-		csv_PartitionSizeHexLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		csv_PartitionSizeHexPanel.add(csv_PartitionSizeHexLabel, BorderLayout.NORTH);
-
-		csv_PartitionSizeHexInnerPanel = new JPanel();
-		csv_PartitionSizeHexPanel.add(csv_PartitionSizeHexInnerPanel, BorderLayout.CENTER);
-		csv_PartitionSizeHexInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
-
-		csv_PartitionOffsetsPanel = new JPanel();
-		csv_RootPanel.add(csv_PartitionOffsetsPanel);
-		csv_PartitionOffsetsPanel.setLayout(new BorderLayout(0, 0));
-
-		JLabel csv_PartitionOffsetsLabel = new JLabel("Offset(hex)");
-		csv_PartitionOffsetsLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		csv_PartitionOffsetsPanel.add(csv_PartitionOffsetsLabel, BorderLayout.NORTH);
-
-		csv_PartitionOffsetsInnerPanel = new JPanel();
-		csv_PartitionOffsetsPanel.add(csv_PartitionOffsetsInnerPanel, BorderLayout.CENTER);
-		csv_PartitionOffsetsInnerPanel.setLayout(new GridLayout(15, 0, 0, 0));
+		csvPanel = new JPanel();
+		csvScrollPanel = new JScrollPane( csvPanel/*, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER*/ );
+		//csvScrollPanel.setSize(960, 512);
+		csv_GenPanel.add(csvScrollPanel, BorderLayout.CENTER );
 
 		csv_PartitionsVisual = new JPanel();
 		csv_GenPanel.add(csv_PartitionsVisual, BorderLayout.SOUTH);
@@ -292,95 +282,23 @@ public class UI extends JPanel {
 
 	}
 
-	private void createPartitionsEnableToggles() {
-		for (int i = 0; i < NUM_ITEMS; i++) {
-			partitions_EnableChckb[i] = new JCheckBox("Enable");
-			// Set the first 6 checkboxes as selected (enabled) by default
-			partitions_EnableChckb[i].setSelected(i < 6);
-			partitions_EnableChckb[i].setHorizontalAlignment(SwingConstants.CENTER);
-			csv_EnableInnerPanel.add(partitions_EnableChckb[i]);
-		}
-	}
 
-	private void createPartitionsNames() {
-		String[] initialTexts = { "nvs", "otadata", "app0", "app1", "spiffs", "coredump" };
-
-		for (int i = 0; i < NUM_ITEMS; i++) {
-			partitionsNames[i] = new JTextField(i < initialTexts.length ? initialTexts[i] : "");
-			partitionsNames[i].setHorizontalAlignment(SwingConstants.CENTER);
-			partitionsNames[i].setColumns(10);
-			csv_PartitionNameInnerPanel.add(partitionsNames[i]);
-			// Set enabled property to false for items 6-NUM_ITEMS
-			if (i >= 6 && i <= NUM_ITEMS) {
-				partitionsNames[i].setEditable(false);
-			}
-		}
-	}
-
-	private void createPartitionsTypes() {
-		String[] defaultItems = { "data", "data", "app", "app", "data", "data", "data", "data", "data", "data", "data",
-				"data", "data", "data", "data" };
-
-		for (int i = 0; i < NUM_ITEMS; i++) {
-			partitionsType[i] = new JComboBox<>(new String[] { "data", "app" });
-			partitionsType[i].setSelectedItem(defaultItems[i]);
-			csv_PartitionTypeInnerPanel.add(partitionsType[i]);
-
-			// Set enabled property to false for items 6-NUM_ITEMS
-			if (i >= 6 && i <= NUM_ITEMS) {
-				partitionsType[i].setEnabled(false);
-			}
-		}
-	}
-
-	private void createPartitionsSubTypes() {
-		String[] initialTexts = { "nvs", "ota", "ota_0", "ota_1", "spiffs", "coredump" };
-
-		for (int i = 0; i < NUM_ITEMS; i++) {
-			partitionsSubType[i] = new JTextField(i < initialTexts.length ? initialTexts[i] : "");
-			partitionsSubType[i].setHorizontalAlignment(SwingConstants.CENTER);
-			partitionsSubType[i].setColumns(10);
-			csv_PartitionSubTypeInnerPanel.add(partitionsSubType[i]);
-			// Set enabled property to false for items 6-NUM_ITEMS
-			if (i >= 6 && i <= NUM_ITEMS) {
-				partitionsSubType[i].setEditable(false);
-			}
-		}
-	}
-
-	private void createPartitionsSize() {
-		String[] initialPartitionSizeArray = { "20", "8", "1280", "1280", "1408", "64" };
-		for (int i = 0; i < NUM_ITEMS; i++) {
-			String value = (i < initialPartitionSizeArray.length) ? initialPartitionSizeArray[i] : "";
-			partitionsSize[i] = new JTextField(value);
-			partitionsSize[i].setHorizontalAlignment(SwingConstants.RIGHT);
-			final Font currFont = partitionsSize[i].getFont(); // use monospace font for hex/dec values
-			partitionsSize[i].setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
-			partitionsSize[i].setColumns(10);
-			csv_PartitionSizeInnerPanel.add(partitionsSize[i]);
-			// Set enabled property to false for items 6-NUM_ITEMS
-			if (i >= 6 && i <= NUM_ITEMS) {
-				partitionsSize[i].setEditable(false);
-			}
-		}
-		// Iterate through all text fields to calculate the total size
-		for (int i = 0; i < getNumOfItems(); i++) {
-			if (!getPartitionSize(i).getText().isEmpty()) {
-				try {
-					int partitionsTotalSize = Integer.parseInt(getPartitionSize(i).getText()) * 1024;
-					FlashSizeBytes -= partitionsTotalSize;
-				} catch (NumberFormatException e) {
-					// Handle parsing errors if necessary
-					System.out.println("Invalid input in text field " + i);
-				}
-			}
-		}
-		csv_partitionFlashFreeSpace = new JLabel("Free Space: " + FlashSizeBytes / 1024 + " bytes");
+	private void createFreeSpaceBox() {
+		csv_partitionFlashFreeSpace = new JLabel("Free Space: not set");
 		partitions_UtilButtonsPanel.add(csv_partitionFlashFreeSpace);
+	}
 
+	private void createAboutButton() {
+		btn_about = new JButton("About");
+		partitions_UtilButtonsPanel.add(btn_about);
+	}
+
+
+	private void createHelpButton() {
 		btn_help = new JButton("Help");
 		partitions_UtilButtonsPanel.add(btn_help);
 	}
+
 
 	private void createDebugCheckBox() {
 		ui_DebugChckb = new JCheckBox("debug");
@@ -388,12 +306,12 @@ public class UI extends JPanel {
 	}
 
 
-	public String[] convertKbToHex(int[] sizes) {
+	public String[] convertKbToHex(long[] sizes) {
 		String[] hexValues = new String[sizes.length];
 		for (int i = 0; i < sizes.length; i++) {
 			if (sizes[i] != 0) {
-				int bytes = sizes[i] * 1024; // Convert kilobytes to bytes
-				String hexValue = Integer.toHexString(bytes); // Convert bytes to hexadecimal
+				long bytes = sizes[i] * 1024; // Convert kilobytes to bytes
+				String hexValue = Long.toHexString(bytes); // Convert bytes to hexadecimal
 				hexValues[i] = hexValue.toUpperCase(); // Prefix "0x" and convert to uppercase
 			} else {
 				hexValues[i] = ""; // Set empty string if size is zero
@@ -402,56 +320,28 @@ public class UI extends JPanel {
 		return hexValues;
 	}
 
-	private int[] getPartitionsSizeValues() {
-		int[] sizes = new int[NUM_ITEMS];
-		for (int i = 0; i < NUM_ITEMS; i++) {
-			String value = partitionsSize[i].getText();
-			try {
-				sizes[i] = Integer.parseInt(value);
-			} catch (NumberFormatException e) {
-				sizes[i] = -1; // Set default value to -1 if parsing fails
-			}
-		}
-		return sizes;
-	}
-
-	private void createPartitionsSizeHex() {
-		// Get the partitionSize values
-		int[] sizes = getPartitionsSizeValues();
-
-		// Convert sizes array to hexadecimal
-		String[] hexValues = convertKbToHex(sizes);
-
-		// Populate partitionSizeHex fields with hexadecimal values
-		for (int i = 0; i < NUM_ITEMS; i++) {
-			partitionsSizeHex[i] = new JTextField(sizes[i] != -1 ? hexValues[i] : "");
-			partitionsSizeHex[i].setHorizontalAlignment(SwingConstants.RIGHT);
-			final Font currFont = partitionsSizeHex[i].getFont(); // use monospace font for hex/dec values
-			partitionsSizeHex[i].setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
-			partitionsSizeHex[i].setColumns(10);
-			partitionsSizeHex[i].setEditable(false);
-			csv_PartitionSizeHexInnerPanel.add(partitionsSizeHex[i]);
-		}
-	}
 
 	public void calculateSizeHex() {
-
-		FlashSizeBytes = flashSizeMB * 1024 * 1024 - 36864;
-		int[] partitionSizes = new int[getNumOfItems()];
+		FlashSizeBytes = flashSizeMB * 1024 * 1024 - 0x9000;
+		long[] partitionSizes = new long[getNumOfItems()];
 
 		// Iterate through all text fields to calculate the total size
 		for (int i = 0; i < getNumOfItems(); i++) {
-			if (!getPartitionSize(i).getText().isEmpty()) {
+			CSVRow csvRow = getCSVRow(i);
+			if ( csvRow == null ) {
+				System.err.println("csv line # " + i + " not found, skipping");
+				continue;
+			}
+			String sizeText = csvRow.size.getText();
+			if (!sizeText.isEmpty()) {
 				try {
-					int partitionTotalSize = Integer.parseInt(getPartitionSize(i).getText()) * 1024;
-
+					long partitionTotalSize = Long.parseLong(sizeText) * 1024;
 					FlashSizeBytes -= partitionTotalSize;
-
 					// Store partition size in kilobytes
 					partitionSizes[i] = partitionTotalSize / 1024;
 				} catch (NumberFormatException e) {
 					// Handle parsing errors if necessary
-					System.out.println("Invalid input in text field " + i);
+					System.out.println("Invalid input in text field " + i + ": " + sizeText );
 				}
 			}
 		}
@@ -464,43 +354,21 @@ public class UI extends JPanel {
 
 		// Set hexadecimal strings to the respective text fields
 		for (int i = 0; i < hexStrings.length; i++) {
-			JTextField partitionSizeHexField = getPartitionSizeHex(i);
-			if (partitionSizeHexField != null) {
-				partitionSizeHexField.setText(hexStrings[i]);
-			} else {
-				System.out.println("Partition size hex field at index " + i + " is not available.");
+			CSVRow csvRow = getCSVRow(i);
+			if ( csvRow == null ) {
+				System.err.println("csv line # " + i + " not found, skipping");
+				continue;
 			}
+			csvRow.sizeHex.setText(hexStrings[i]);
 		}
 	}
 
-	private void createPartitionsOffsets() {
-		for (int i = 0; i < NUM_ITEMS; i++) {
-			partitionsOffsets[i] = new JTextField("0");
-			partitionsOffsets[i].setColumns(10);
-			partitionsOffsets[i].setEditable(false);
-			partitionsOffsets[i].setHorizontalAlignment(SwingConstants.RIGHT);
-			final Font currFont = partitionsOffsets[i].getFont(); // use monospace font for hex/dec values
-			partitionsOffsets[i].setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
-			csv_PartitionOffsetsInnerPanel.add(partitionsOffsets[i]);
-
-			// Set enabled property to false for items 6-NUM_ITEMS
-			if (i >= 6 && i <= NUM_ITEMS) {
-				partitionsOffsets[i].setEditable(false);
-			}
-		}
-		// Offset for the first index is hard coded as 9000 hex
-		partitionsOffsets[0].setText("9000");
-
-		calculateOffsets(); // Calculate offsets after creating the fields
-	}
 
 	public void calculateOffsets() {
-		partitionsOffsets[0].setText("9000"); // Offset for the first index is hard coded as 9000 hex
-
 		lastIndex = -1; // Initialize to -1 indicating no selected index found yet
 
 		// Find the last selected index
-		for (int i = 0; i < NUM_ITEMS; i++) {
+		for (int i = 0; i < getNumOfItems(); i++) {
 			if (getCheckBox(i).isSelected()) {
 				lastIndex = i;
 			} else {
@@ -510,9 +378,11 @@ public class UI extends JPanel {
 
 		if (lastIndex != -1) { // If a selected index is found
 			for (int i = 1; i <= lastIndex + 1; i++) { // Calculate offsets including the hardcoded first offset
-				if (partitionsSizeHex[i - 1] != null && !partitionsSizeHex[i - 1].getText().isEmpty()) {
-					String previousOffsetHex = partitionsOffsets[i - 1].getText();
-					String sizeHex = partitionsSizeHex[i - 1].getText();
+				CSVRow prevLine = getCSVRow( i - 1 );
+				CSVRow currLine = getCSVRow( i );
+				if (currLine != null && prevLine != null && !prevLine.sizeHex.getText().isEmpty()) {
+					String previousOffsetHex = prevLine.offset.getText();
+					String sizeHex = prevLine.sizeHex.getText();
 
 					// Convert the hexadecimal strings to long values
 					long previousOffset = Long.parseLong(previousOffsetHex, 16);
@@ -523,21 +393,18 @@ public class UI extends JPanel {
 
 					// Convert the new offset back to hexadecimal and set it to the current offset
 					// field
-					partitionsOffsets[i].setText(Long.toHexString(newOffset));
+					currLine.offset.setText( Long.toHexString(newOffset).toUpperCase() );
 				}
 			}
 		}
 	}
 
+
 	private void createPartitionFlashVisualPanel() {
-
 		csv_partitionsCenterVisualPanel = new JPanel(new GridBagLayout());
-
 		csv_PartitionsVisual.add(csv_partitionsCenterVisualPanel, BorderLayout.SOUTH);
-
-		// Call the method to initially populate the center panel
-		updatePartitionFlashVisual();
 	}
+
 
 	public void updatePartitionFlashVisual() {
 		// Clear the center panel before updating
@@ -545,13 +412,17 @@ public class UI extends JPanel {
 
 		int FLASH_SIZE = flashSizeMB * 1024;
 		int RESERVED_SPACE = 36;
-
 		int totalPartitionSize = 0;
 
-		for (int i = 0; i < NUM_ITEMS; i++) {
-			if (partitions_EnableChckb[i].isSelected()) {
+		for (int i = 0; i < getNumOfItems(); i++) {
+			CSVRow csvRow = getCSVRow( i );
+			if ( csvRow == null ) {
+				System.err.println("csv line # " + i + " not found, skipping");
+				continue;
+			}
+			if (csvRow.enabled.isSelected()) {
 				try {
-					totalPartitionSize += Integer.parseInt(partitionsSize[i].getText());
+					totalPartitionSize += Integer.parseInt(csvRow.size.getText());
 				} catch (NumberFormatException e) {
 				}
 			}
@@ -561,20 +432,27 @@ public class UI extends JPanel {
 
 		JPanel initialPanel = new JPanel(new BorderLayout());
 		JLabel initialLabel = new JLabel("0x9000");
+		GridBagConstraints gbc = new GridBagConstraints();
+
 		initialLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		initialPanel.add(initialLabel, BorderLayout.CENTER);
+		initialPanel.setPreferredSize(new Dimension(50, 24));
 
-		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 
-		initialPanel.setPreferredSize(new Dimension(50, 24));
 		csv_partitionsCenterVisualPanel.add(initialPanel, gbc);
 
+		// TODO: get rid of duplicate code
 		if (remainingSpace > 0) {
-			for (int i = 0; i < NUM_ITEMS; i++) {
-				if (partitions_EnableChckb[i].isSelected()) {
+			for (int i = 0; i < getNumOfItems(); i++) {
+				CSVRow csvRow = getCSVRow( i );
+				if ( csvRow == null ) {
+					System.err.println("csv line # " + i + " not found, skipping");
+					continue;
+				}
+				if (csvRow.enabled.isSelected()) {
 					try {
-						int partitionSize = Integer.parseInt(partitionsSize[i].getText());
+						int partitionSize = Integer.parseInt(csvRow.size.getText());
 						double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
 						JPanel partitionPanel = new JPanel();
 
@@ -621,15 +499,20 @@ public class UI extends JPanel {
 
 			csv_partitionsCenterVisualPanel.add(unusedSpacePanel, gbc);
 		} else {
-			for (int i = 0; i < NUM_ITEMS; i++) {
-				if (partitions_EnableChckb[i].isSelected()) {
+			for (int i = 0; i < getNumOfItems(); i++) {
+				CSVRow csvRow = getCSVRow( i );
+				if ( csvRow == null ) {
+					System.err.println("csv line # " + i + " not found, skipping");
+					continue;
+				}
+				if (csvRow.enabled.isSelected()) {
 					try {
-						int partitionSize = Integer.parseInt(partitionsSize[i].getText());
+						int partitionSize = Integer.parseInt(csvRow.size.getText());
 						double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
 						JPanel partitionPanel = new JPanel();
 
-						String partName = (String) getPartitionName(i).getText();
-						String partType = (String) getPartitionType(i).getSelectedItem();
+						String partName    = (String) getPartitionName(i).getText();
+						String partType    = (String) getPartitionType(i).getSelectedItem();
 						String partSubType = (String) getPartitionSubType(i).getText();
 
 						Color partColor = partType.equals("app") ? new Color(66, 176, 245) : new Color(47, 98, 207);
@@ -666,125 +549,120 @@ public class UI extends JPanel {
 		csv_partitionsCenterVisualPanel.repaint();
 	}
 
-	public JCheckBox getDebug() {
-		return ui_DebugChckb;
-	}
 
-	public JComboBox<?> getPartitionFlashType() {
-		return partitionsFlashTypes;
-	}
+	public long         getFlashBytes() { return FlashSizeBytes; }
+	public int          getNumOfItems() { return csvRows.size(); }
+	public JButton      getImportCSVButton() { return partitions_ImportCSVButton; }
+	public JButton      getCreatePartitionsCSV() { return partitions_CSVButton; }
+	public JButton      getCreatePartitionsBin() { return partitions_BinButton; }
+	public JButton      getFlashSPIFFSButton() { return btn_flashSPIFFS; }
+	public JButton      getFlashMergedBin() { return btn_flashMergedBin; }
+	public JButton      getHelpButton() { return btn_help; }
+	public JButton      getAboutButton() { return btn_about; }
+	public JTextField   getSpiffsBlockSize() { return spiffs_blockSize; }
+	public JCheckBox    getDebug() { return ui_DebugChckb; }
+	public JComboBox<?> getPartitionFlashType() { return partitionsFlashTypes; }
+	public JComboBox<?> getFlashSize() { return partitions_FlashSizes; }
+	public JLabel       getFlashFreeLabel() { return csv_partitionFlashFreeSpace; }
 
-	public JLabel getFlashFreeLabel() {
-		return csv_partitionFlashFreeSpace;
-	}
 
-	public long getFlashBytes() {
-		return FlashSizeBytes;
-	}
-
-	public JComboBox<?> getFlashSize() {
-		return partitions_FlashSizes;
-	}
-
-	public JButton getImportCSVButton() {
-		return partitions_ImportCSVButton;
-	}
-
-	public JButton getCreatePartitionsCSV() {
-		return partitions_CSVButton;
-	}
-
-	public JButton getCreatePartitionsBin() {
-		return partitions_BinButton;
-	}
-
-	public JButton getFlashSPIFFSButton() {
-		return btn_flashSPIFFS;
-	}
-
-	public JButton getFlashMergedBin() {
-		return btn_flashMergedBin;
-	}
-
-	public JButton getHelpButton() {
-		return btn_help;
-	}
-
-	public int getNumOfItems() {
-		return NUM_ITEMS;
-	}
 
 	// Getter method to access a specific checkbox by index
 	public JCheckBox getCheckBox(int index) {
-		if (index >= 0 && index < NUM_ITEMS) {
-			return partitions_EnableChckb[index];
+		if (index >= 0 && index < getNumOfItems()) {
+			CSVRow csvRow = getCSVRow( index );
+			if ( csvRow == null ) {
+				return null;
+			}
+			return csvRow.enabled;
 		}
 		return null;
 	}
 
 	// Getter method to access a specific partitionName by index
 	public JTextField getPartitionName(int index) {
-		if (index >= 0 && index < NUM_ITEMS) {
-			return partitionsNames[index];
+		if (index >= 0 && index < getNumOfItems()) {
+			CSVRow csvRow = getCSVRow( index );
+			if ( csvRow == null ) {
+				return null;
+			}
+			return csvRow.name;
 		}
 		return null;
 	}
 
 	// Getter method to access a specific partitionType by index
 	public JComboBox<?> getPartitionType(int index) {
-		if (index >= 0 && index < NUM_ITEMS) {
-			return partitionsType[index];
+		if (index >= 0 && index < getNumOfItems()) {
+			CSVRow csvRow = getCSVRow( index );
+			if ( csvRow == null ) {
+				return null;
+			}
+			return csvRow.type;
 		}
 		return null;
 	}
 
 	// Getter method to access a specific partitionName by index
 	public JTextField getPartitionSubType(int index) {
-		if (index >= 0 && index < NUM_ITEMS) {
-			return partitionsSubType[index];
+		if (index >= 0 && index < getNumOfItems()) {
+			CSVRow csvRow = getCSVRow( index );
+			if ( csvRow == null ) {
+				return null;
+			}
+			return csvRow.subtype;
 		}
 		return null;
 	}
 
+	// Getter method to access a specific partitionSize by index
 	public JTextField getPartitionSize(int index) {
-		if (index >= 0 && index < NUM_ITEMS) {
-			return partitionsSize[index];
+		if (index >= 0 && index < getNumOfItems()) {
+			CSVRow csvRow = getCSVRow( index );
+			if ( csvRow == null ) {
+				return null;
+			}
+			return csvRow.size;
 		}
 		return null;
 	}
 
+	// Getter method to access a specific partitionSizeHex by index
 	public JTextField getPartitionSizeHex(int index) {
-		if (index >= 0 && index < NUM_ITEMS) {
-			return partitionsSizeHex[index];
+		if (index >= 0 && index < getNumOfItems()) {
+			CSVRow csvRow = getCSVRow( index );
+			if ( csvRow == null ) {
+				return null;
+			}
+			return csvRow.sizeHex;
 		}
 		return null;
 	}
 
 	// Getter method to access a specific partitionName by index
 	public JTextField getPartitionOffsets(int index) {
-		if (index >= 0 && index < NUM_ITEMS) {
-			return partitionsOffsets[index];
+		if (index >= 0 && index < getNumOfItems()) {
+			CSVRow csvRow = getCSVRow( index );
+			if ( csvRow == null ) {
+				return null;
+			}
+			return csvRow.offset;
 		}
 		return null;
 	}
 
-	public JTextField getSpiffsBlockSize() {
-		return spiffs_blockSize;
-	}
 
 	public String getSpiffsOffset() {
 		String result = "";
 		int spiffsIndex = -1; // Initialize spiffsIndex to -1 to indicate not found
-
 		// Iterate through the partition subtypes to find the SPIFFS partition
-		for (int i = 0; i < NUM_ITEMS; i++) {
+		for (int i = 0; i < getNumOfItems(); i++) {
 			JTextField partitionSubType = getPartitionSubType(i);
 			if (partitionSubType != null && partitionSubType.getText().equals("spiffs")) {
 				spiffsIndex = i;
 				break; // Exit the loop once SPIFFS partition subtype is found
 			}
 		}
-
 		if (spiffsIndex != -1) {
 			// Retrieve the partition offset using the SPIFFS partition subtype index
 			String partitionOffset = getPartitionOffsets(spiffsIndex).getText();
@@ -792,7 +670,6 @@ public class UI extends JPanel {
 		} else {
 			result = "SPIFFS partition not found.";
 		}
-
 		return result;
 	}
 

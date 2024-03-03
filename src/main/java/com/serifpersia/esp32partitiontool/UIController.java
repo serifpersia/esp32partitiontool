@@ -2,12 +2,20 @@ package com.serifpersia.esp32partitiontool;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.Rectangle;
+import java.awt.Component;
+import java.awt.Desktop;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import javax.swing.ImageIcon;
+import javax.swing.JEditorPane;
+import javax.swing.event.*;
+import java.net.*;
+import java.io.IOException;
 
-import java.awt.Component;
+
 
 public class UIController implements ActionListener {
 	private static UIController instance;
@@ -28,38 +36,29 @@ public class UIController implements ActionListener {
 		return instance;
 	}
 
-	private int getIndexForComponent(Component component) {
-		int numOfItems = ui.getNumOfItems();
-		for (int i = 0; i < numOfItems; i++) {
-			if (component == ui.getCheckBox(i) || component == ui.getPartitionName(i)
-					|| component == ui.getPartitionType(i) || component == ui.getPartitionSubType(i)
-					|| component == ui.getPartitionSize(i)) {
+
+	private int getRowIndexForComponent(Component component) {
+		for( int i=0; i<ui.csvRows.size(); i++ ) {
+			if( ui.getCSVRow(i) == component.getParent().getParent() ) {
 				return i;
 			}
 		}
 		return -1;
 	}
 
+
 	private void attachListeners() {
 		// Attach listener to the "Generate CSV" button
 		ui.getDebug().addActionListener(this);
 		ui.getImportCSVButton().addActionListener(this);
 		ui.getCreatePartitionsCSV().addActionListener(this);
-		int numOfItems = ui.getNumOfItems();
-		for (int i = 0; i < numOfItems; i++) {
-			JCheckBox checkBox = ui.getCheckBox(i);
-			checkBox.addActionListener(this);
-			ui.getPartitionName(i).addActionListener(this);
-			ui.getPartitionType(i).addActionListener(this);
-			ui.getPartitionSubType(i).addActionListener(this);
-			ui.getPartitionSize(i).addActionListener(this);
-		}
 		ui.getCreatePartitionsBin().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
 		ui.getFlashSPIFFSButton().addActionListener(this);
 		ui.getPartitionFlashType().addActionListener(this);
 		ui.getFlashMergedBin().addActionListener(this);
 		ui.getHelpButton().addActionListener(this);
+		ui.getAboutButton().addActionListener(this);
 	}
 
 	@Override
@@ -84,6 +83,8 @@ public class UIController implements ActionListener {
 			fileManager.handleMergedBin();
 		} else if (e.getSource() == ui.getHelpButton()) {
 			handleHelpButton();
+		} else if (e.getSource() == ui.getAboutButton()) {
+			handleAboutButton();
 		}
 
 	}
@@ -96,45 +97,46 @@ public class UIController implements ActionListener {
 			return;
 		}
 
-		int toggleID = getIndexForComponent(checkBox);
-		ui.getPartitionName(toggleID).setEditable(isSelected);
-		ui.getPartitionType(toggleID).setEnabled(isSelected);
-		ui.getPartitionSubType(toggleID).setEditable(isSelected);
-		ui.getPartitionSize(toggleID).setEditable(isSelected);
+		int csvRowId = getRowIndexForComponent(checkBox);
+		if( csvRowId < 0 ) return;
 
-		if (isSelected) {
-			// Set text if isSelected is true
-			String[] defaultPartitionNameText = { "nvs", "otadata", "app0", "app1", "spiffs", "coredump", "", "", "",
-					"", "", "", "", "", "", "" };
-			int[] defaultPartitionTypeText = { 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-			String[] defaultPartitionSubTypeText = { "nvs", "ota", "ota_0", "ota_1", "spiffs", "coredump", "", "", "",
-					"", "", "", "", "", "" };
-			String[] defaultPartitionSizeText = { "20", "8", "1280", "1280", "1408", "64", "", "", "", "", "", "", "",
-					"", "" };
+		CSVRow csvRow = ui.getCSVRow(csvRowId);
 
-			if (toggleID < defaultPartitionNameText.length) {
-				ui.getPartitionName(toggleID).setText(defaultPartitionNameText[toggleID]);
-				if (defaultPartitionTypeText[toggleID] < ui.getPartitionType(toggleID).getItemCount()) {
-					ui.getPartitionType(toggleID).setSelectedIndex(defaultPartitionTypeText[toggleID]);
-				}
-				ui.getPartitionSubType(toggleID).setText(defaultPartitionSubTypeText[toggleID]);
-				ui.getPartitionSize(toggleID).setText(defaultPartitionSizeText[toggleID]);
-				ui.calculateSizeHex();
-				ui.calculateOffsets();
+		csvRow.name.   setEditable( isSelected );
+		csvRow.type.   setEnabled(  isSelected );
+		csvRow.subtype.setEditable( isSelected );
+		csvRow.size.   setEditable( isSelected );
+		csvRow.sizeHex.setEditable( isSelected );
+		csvRow.offset. setEditable( isSelected );
+
+		if( isSelected) {
+			csvRow.setDefaults( csvRowId );
+			if( csvRowId == ui.csvRows.size()-1 ) { // we're enabling the last checkbox, add one!
+			  if( csvRowId > 0 ) {
+					//CSVRow prevLine = ui.getCSVRow(csvRowId-1);
+					//if( prevLine.enabled.isSelected() ) { // previous checkbox is enabled too
+					ui.renderCSVRows(); // the additional empty line will be inserted by renderCSVRows()
+					//}
+			  }
 			}
 		} else {
-			// Make that index partitionSize an empty string if isSelected is false
-			ui.getPartitionSize(toggleID).setText("");
-			ui.getPartitionName(toggleID).setText("");
-			ui.getPartitionSubType(toggleID).setText("");
-			ui.calculateSizeHex();
-			ui.calculateOffsets();
+			csvRow.setDefaults( -1 );
+			if( csvRowId>=ui.MIN_ITEMS-1 && csvRowId == ui.csvRows.size()-2 ) { // we're disabling the last enabled checkbox
+				ui.popCSVRow();
+				ui.popCSVRow();
+				ui.renderCSVRows();
+			}
 		}
+
+		ui.calculateSizeHex();
+		ui.calculateOffsets();
 		ui.updatePartitionFlashVisual();
 	}
 
 	private void handleTextFieldAction(JTextField textField) {
-		int id = getIndexForComponent(textField);
+		//int id = getIndexForComponent(textField);
+
+		int id = getRowIndexForComponent(textField);
 
 		JTextField partitionSizeField = ui.getPartitionSize(id);
 		if (partitionSizeField == textField) {
@@ -155,6 +157,7 @@ public class UIController implements ActionListener {
 			ui.flashSizeMB = Integer.parseInt(selectedItem);
 
 			ui.calculateSizeHex();
+			ui.calculateOffsets();
 			ui.updatePartitionFlashVisual();
 
 			int spiffs_setBlockSize = 0;
@@ -178,6 +181,35 @@ public class UIController implements ActionListener {
 			}
 		}
 	}
+
+
+	private void handleAboutButton() {
+
+			String boxpadding   = "padding-top: 0px;padding-right: 10px;padding-bottom: 10px;padding-left: 10px;";
+			String titleSpanned = "<span style=\"background-color: #d7a631\">&nbsp;ESP32</span>"
+													+ "<span style=\"background-color: #bf457a\">Partition</span>"
+													+ "<span style=\"background-color: #42b0f5\">Tool&nbsp;</span>"
+													+ "<span style=\"background-color: #9a41c2\">v1.3&nbsp;</span>";
+			String title        = "<h2 align=center style=\"color: #ffffff;\">"+titleSpanned+"</h2>";
+			String description  = "<p>The ESP32 Partition Tool is a utility designed to ease the manipulation<br>"
+													+ "of custom partition schemes in the Arduino IDE 1.8.x environment.<br>"
+													+ "This tool aims to simplify the process of creating custom partition<br>"
+													+ "schemes for ESP32 projects.</p>";
+			String projectlink  = "<p><b>Source:</b><br>https://github.com/serifpersia/esp32partitiontool</p>";
+			String copyright    = "<p><b>Copyright (c) 2024 @serifpersia</b><br>https://github.com/serifpersia</p>";
+			String credits      = "<p><b>Contributors:</b><br>serifpersia, tobozo</p>";
+			String message      = "<html>"+title+"<div style=\""+boxpadding+"\">"
+													+ description +  projectlink + copyright + credits + "</div></html>";
+
+			JEditorPane ep = new JEditorPane("text/html", message);
+			ep.setEditable(false);
+
+			ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/shrug.png"));
+
+			int option = JOptionPane.showConfirmDialog(null, ep, "About ESP32PartitionTool",
+					JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, icon);
+	}
+
 
 	private void handleHelpButton() {
 		int currentStep = 0;

@@ -39,19 +39,33 @@ public class FileManager {
 	File gen_esp32part;
 	String uploadSpeed;
 	long spiStart;
-
-	String mcu = BaseNoGui.getBoardPreferences().get("build.mcu");
-	String flashMode = BaseNoGui.getBoardPreferences().get("build.flash_mode");
-	String flashFreq = BaseNoGui.getBoardPreferences().get("build.flash_freq");
-	boolean isWindows = PreferencesData.get("runtime.os").contentEquals("windows");
-
-	boolean debug_ui = false;
-
 	// Declare spiSize, spiPage, spiBlock here
 	long spiSize;
 	int spiPage;
 	int spiBlock;
 	private ArrayList<String> createdPartitionsData;
+
+	boolean isWindows    = PreferencesData.get("runtime.os").contentEquals("windows");
+	String mcu           = BaseNoGui.getBoardPreferences().get("build.mcu");
+	String flashMode     = BaseNoGui.getBoardPreferences().get("build.flash_mode");
+	String flashFreq     = BaseNoGui.getBoardPreferences().get("build.flash_freq");
+	String pythonCmd     = isWindows ? "python3.exe" : "python3";
+	String toolExtension = isWindows ? ".exe" : ".py";
+	String espotaCmd     = "espota"  + toolExtension;
+	String esptoolCmd    = "esptool" + toolExtension;
+
+	boolean debug_ui     = false;
+
+	TargetPlatform platform      = BaseNoGui.getTargetPlatform();
+	File platformPath            = platform.getFolder();
+	String toolsPathBase         = BaseNoGui.getToolsPath();
+	File defaultSketchbookFolder = BaseNoGui.getDefaultSketchbookFolder();
+	String jarPath               = FileManager.class.getProtectionDomain().getCodeSource()
+	                                          .getLocation().getPath(); // => /path/to/ESP32PartitionTool/tool/ESP32PartitionTool.jar
+	File jarFile                 = new File(jarPath);
+	String classPath             = jarFile.getParent();                 // => /path/to/ESP32PartitionTool/tool
+	String propertiesFile        = classPath + "/prefs.properties";     // => /path/to/ESP32PartitionTool/tool/prefs.properties
+	Properties prefs             = new Properties();
 
 	// Constructor to initialize FileManager with UI instance and Editor instance
 	public FileManager(UI ui, Editor editor) {
@@ -59,20 +73,10 @@ public class FileManager {
 		this.editor = editor;
 	}
 
-	String pythonCmd             = isWindows ? "python3.exe" : "python3";
-	String toolExtension         = isWindows ? ".exe" : ".py";
-	String espotaCmd             = "espota"  + toolExtension;
-	String esptoolCmd            = "esptool" + toolExtension;
 
-	TargetPlatform platform      = BaseNoGui.getTargetPlatform();
-	File platformPath            = platform.getFolder();
-	String toolsPathBase         = BaseNoGui.getToolsPath();
-	File defaultSketchbookFolder = BaseNoGui.getDefaultSketchbookFolder();
-	String classPath             = FileManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-	Path path                    = Paths.get(classPath);
-	String classDir              = path.getParent().toString();
-	String propertiesFile        = classDir + "/prefs.properties";
-	Properties prefs             = new Properties();
+	public void setUIController( UIController controller ) {
+		ui.controller = controller;
+	}
 
 
 	public void setDebug( boolean enable ) {
@@ -85,8 +89,8 @@ public class FileManager {
 	public void loadProperties() {
 
 		if( debug_ui ) {
+			System.out.println("jarPath = " + jarPath);
 			System.out.println("classPath = " + classPath );
-			System.out.println("classDir = " + classDir);
 			System.out.println("platformPath = " + platformPath);
 			System.out.println("toolsPathBase = " + toolsPathBase);
 			System.out.println("defaultSketchbookFolder = " + defaultSketchbookFolder);
@@ -165,6 +169,9 @@ public class FileManager {
 				ex.printStackTrace();
 		}
 
+	}
+
+	public void loadCSV() {
 		// figure out what csv file is selected in the boards menu, and where it is
 		String csvName        = BaseNoGui.getBoardPreferences().get("build.partitions");
 		String customCsvName  = BaseNoGui.getBoardPreferences().get("build.custom_partitions");
@@ -199,7 +206,6 @@ public class FileManager {
 				break;
 			}
 		}
-
 	}
 
 
@@ -234,7 +240,7 @@ public class FileManager {
 
 	public void saveProperties() {
 		try {
-			File f = new File( classDir + "/prefs.properties");
+			File f = new File( propertiesFile );
 			OutputStream out = new FileOutputStream( f );
 			prefs.store(out, "User properties");
 		}
@@ -250,19 +256,19 @@ public class FileManager {
 		createdPartitionsData.add("# Name,   Type, SubType,  Offset,   Size,  Flags");
 
 		for (int i = 0; i < numOfItems; i++) {
-			JCheckBox checkBox = ui.getCheckBox(i);
-			JTextField partitionNameField = ui.getPartitionName(i);
+			JCheckBox checkBox                 = ui.getCheckBox(i);
+			JTextField partitionNameField      = ui.getPartitionName(i);
 			JComboBox<?> partitionTypeComboBox = ui.getPartitionType(i);
-			JTextField partitionSubTypeField = ui.getPartitionSubType(i);
-			JTextField partitionSizeField = ui.getPartitionSizeHex(i);
-			JTextField partitionOffset = ui.getPartitionOffsets(i);
+			JTextField partitionSubTypeField   = ui.getPartitionSubType(i);
+			JTextField partitionSizeField      = ui.getPartitionSizeHex(i);
+			JTextField partitionOffset         = ui.getPartitionOffsets(i);
 
 			if (checkBox.isSelected()) {
-				String name = partitionNameField.getText();
-				String type = (String) partitionTypeComboBox.getSelectedItem();
+				String name    = partitionNameField.getText();
+				String type    = (String) partitionTypeComboBox.getSelectedItem();
 				String subType = partitionSubTypeField.getText();
-				String size = partitionSizeField.getText();
-				String offset = partitionOffset.getText(); // Assuming offset is same as size
+				String size    = partitionSizeField.getText();
+				String offset  = partitionOffset.getText(); // Assuming offset is same as size
 
 				String exported_csvPartition = name + ", " + type + ", " + subType + ", " + "0x" + offset + ", " + "0x"
 						+ size + ", ";
@@ -289,9 +295,6 @@ public class FileManager {
 
 		if (file != null) {
 			try (BufferedReader reader = new BufferedReader(new FileReader(readerFile))) {
-				for (int i = 0; i < ui.getNumOfItems(); i++) {
-					setUIComponents(i, false);
-				}
 				processCSV(reader);
 			} catch (IOException e) {
 				System.err.println("Error reading CSV file: " + e.getMessage());
@@ -299,13 +302,14 @@ public class FileManager {
 		} else {
 			System.out.println("No file selected.");
 		}
+
 		ui.calculateSizeHex();
 		ui.calculateOffsets();
 		ui.updatePartitionFlashVisual();
 
 		JTextField lastPartitionOffsetField = ui.getPartitionOffsets(ui.lastIndex + 1);
 
-		if (lastPartitionOffsetField != null) {
+		if (lastPartitionOffsetField != null && !lastPartitionOffsetField.getText().isEmpty() ) {
 			// Get the text from the JTextField and parse it as hexadecimal
 			String hexOffset = lastPartitionOffsetField.getText();
 			long lastOffset = Long.parseLong(hexOffset, 16);
@@ -323,7 +327,10 @@ public class FileManager {
 	private void processCSV(BufferedReader reader) throws IOException {
 		int rowIndex = 0;
 		String line;
-		while ((line = reader.readLine()) != null && rowIndex < ui.getNumOfItems()) {
+
+		ui.clearCSVRows();
+
+		while ((line = reader.readLine()) != null && rowIndex < 100) {
 			// Skip comment lines that start with #
 			if (line.trim().startsWith("#")) {
 				continue;
@@ -333,52 +340,42 @@ public class FileManager {
 			if (columns.length < 5) {
 				continue;
 			}
-			setUIComponents(rowIndex, true);
-			updateUIComponents(columns, rowIndex);
+			updateUIComponents(columns);
 			rowIndex++;
 		}
+		ui.renderCSVRows();
 	}
 
-	private void setUIComponents(int index, boolean enabled) {
-		ui.getCheckBox(index).setSelected(enabled);
-		ui.getPartitionName(index).setEditable(enabled);
-		ui.getPartitionType(index).setEnabled(enabled);
-		ui.getPartitionSubType(index).setEditable(enabled);
-		ui.getPartitionSize(index).setEditable(enabled);
-		ui.getPartitionSize(index).setText("");
-		ui.getPartitionName(index).setText("");
-		ui.getPartitionSubType(index).setText("");
-		ui.getPartitionOffsets(index).setText("");
-	}
 
-	private void updateUIComponents(String[] columns, int rowIndex) {
-		JTextField partitionName = ui.getPartitionName(rowIndex);
-		JComboBox<?> partitionType = ui.getPartitionType(rowIndex);
-		JTextField partitionSubType = ui.getPartitionSubType(rowIndex);
-		JTextField partitionSize = ui.getPartitionSize(rowIndex);
-		JTextField partitionSizeHex = ui.getPartitionSizeHex(rowIndex);
-		JTextField partitionOffset = ui.getPartitionOffsets(rowIndex);
+	private void updateUIComponents(String[] columns) {
 
-		partitionName.setText(columns[0].trim());
+		if( columns.length<5 ) return;
 
 		String partitionTypeStr = columns[1].trim().toLowerCase();
 
+		// ⚠️ partition type can be numeric
 		if (!partitionTypeStr.equals("app") && !partitionTypeStr.equals("data")) {
 			partitionTypeStr = stringToDec(partitionTypeStr) == 0 ? "app" : "data";
 		}
 
-		partitionType.setSelectedItem(partitionTypeStr);
+		long bytesOffset = stringToDec(columns[3].trim());
+		long byteSize    = stringToDec(columns[4].trim());
+		String kbSize   = stringToKb(columns[4].trim());
 
-		partitionSubType.setText(columns[2].trim());
+		String cells[] = {
+			columns[0].trim(), // name
+			partitionTypeStr,  // type
+			columns[2].trim(), // subtype
+			kbSize,            // size
+			String.format("%X", byteSize),   // sizeHex
+			String.format("%X", bytesOffset) // offsetHex
+		};
 
-		int bytesOffset = stringToDec(columns[3].trim());
-		partitionOffset.setText(String.format("%x", bytesOffset));
-
-		int byteSize = stringToDec(columns[4].trim());
-		String kbSize = stringToKb(columns[4].trim());
-		partitionSize.setText(kbSize);
-		partitionSizeHex.setText(String.format("%x", byteSize));
+		CSVRow csvRow = new CSVRow( cells );
+		csvRow.attachListeners( ui.controller );
+		ui.addCSVRow( csvRow );
 	}
+
 
 	private String formatKilobytes(double kilobytes) {
 		// Check if the kilobytes value is a whole number
@@ -389,18 +386,21 @@ public class FileManager {
 		}
 	}
 
-	private int stringToDec(String value) {
+
+	private long stringToDec(String value) {
 		if (value.toLowerCase().startsWith("0x")) {
-			return Integer.decode(value);
+			return Long.decode(value);
 		} else {
-			return Integer.parseInt(value);
+			return Long.parseLong(value);
 		}
 	}
 
+
 	private String stringToKb(String value) {
-		int decimalValue = stringToDec(value);
+		long decimalValue = stringToDec(value);
 		return formatKilobytes(decimalValue / 1024.0);
 	}
+
 
 	public void generateCSV() {
 		calculateCSV();
@@ -428,6 +428,7 @@ public class FileManager {
 			}
 		}
 	}
+
 
 	private int listenOnProcess(String[] arguments) {
 		try {
@@ -458,6 +459,7 @@ public class FileManager {
 		}
 	}
 
+
 	private void sysExec(final String[] arguments) {
 		Thread thread = new Thread() {
 			public void run() {
@@ -472,6 +474,7 @@ public class FileManager {
 		};
 		thread.start();
 	}
+
 
 	private String getBuildFolderPath(Sketch s) {
 		// first of all try the getBuildPath() function introduced with IDE 1.6.12
@@ -509,6 +512,7 @@ public class FileManager {
 		}
 		return "";
 	}
+
 
 	public void createPartitionsBin() {
 
@@ -567,6 +571,7 @@ public class FileManager {
 
 	}
 
+
 	public void handleSPIFFS() {
 
 		// Create a JOptionPane to prompt the user
@@ -580,11 +585,11 @@ public class FileManager {
 		if (option == JOptionPane.YES_OPTION) {
 			createSPIFFS();
 			uploadSPIFFS();
-
 		} else {
 			createSPIFFS();
 		}
 	}
+
 
 	private void createSPIFFS() {
 
@@ -660,8 +665,8 @@ public class FileManager {
 					if (partitionsData.length >= 5) { // Ensure there are enough elements
 						String pStart = partitionsData[3].trim(); // Offset value
 						String pSize = partitionsData[4].trim(); // Size value
-						spiStart = Integer.parseInt(pStart.substring(2), 16); // Convert hex to int
-						spiSize = Integer.parseInt(pSize.substring(2), 16); // Convert hex to int
+						spiStart = Long.parseLong(pStart.substring(2), 16); // Convert hex to int
+						spiSize  = Long.parseLong(pSize.substring(2), 16); // Convert hex to int
 					}
 				}
 			}
@@ -806,6 +811,7 @@ public class FileManager {
 		}
 	}
 
+
 	public void handleMergedBin() {
 
 		// Create a JOptionPane to prompt the user
@@ -830,6 +836,7 @@ public class FileManager {
 			createMergedBin();
 		}
 	}
+
 
 	private void createMergedBin() {
 

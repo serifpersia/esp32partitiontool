@@ -38,8 +38,11 @@ import processing.app.tools.Tool;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.Toolkit;
+
 
 import javax.swing.JFrame;
+import java.awt.Dimension;
 
 public class ESP32PartitionTool implements Tool {
 
@@ -68,38 +71,53 @@ public class ESP32PartitionTool implements Tool {
 	}
 
 	private void initGUI() {
+
+		fileManager.loadProperties();
+
+		final int minFrameWidth  = 1024;
+		final int minFrameHeight = 640;
+		final int maxFrameWidth  = 1280;
+		final int maxFrameHeight = 800;
+
 		// Create and show the JFrame
 		if (frame == null) {
 			frame = new JFrame("ESP32 Partition Tool");
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-			// Size and display the frame
-			frame.setSize(1024, 640);
-
-			// Set frame position to the center of the screen
-			frame.setLocationRelativeTo(null);
+			frame.setMaximumSize(new Dimension(maxFrameWidth, maxFrameHeight));
+			frame.setMinimumSize(new Dimension(minFrameWidth, minFrameHeight));
+			frame.setSize(new Dimension(minFrameWidth, minFrameHeight));
+			frame.setResizable(false);
 
 			// Add panel to frame
 			frame.getContentPane().add(contentPane);
 
-			new UIController(contentPane, fileManager);
+			fileManager.setUIController( new UIController(contentPane, fileManager) );
 
 			frame.addWindowListener(new WindowAdapter() {
 				@Override
 				public void windowClosing(WindowEvent e) {
+					// save window dimensions
+				  fileManager.saveProperties();
 					// Just hide the frame instead of disposing
 					frame.setVisible(false);
 				}
 			});
+
+			// Set frame position to the center of the screen
+			frame.setLocationRelativeTo(null);
 			// Ensure visibility of the frame
 			frame.setVisible(true);
+
 		} else {
 			// If the frame is already open, bring it to the front and make it visible
 			frame.toFront();
 			frame.setVisible(true);
 		}
 
-		fileManager.loadProperties();
+
+		//fileManager.loadProperties();
+		fileManager.loadCSV();
 	}
 
 	public void run() {
