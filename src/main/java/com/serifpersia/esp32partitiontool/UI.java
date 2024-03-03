@@ -110,6 +110,15 @@ public class UI extends JPanel {
 			}
 		});
 
+		line.subtype.getDocument().addDocumentListener(new DocumentListener() {
+			public void changedUpdate(DocumentEvent e) { validate(); }
+			public void removeUpdate(DocumentEvent e) { validate(); }
+			public void insertUpdate(DocumentEvent e) { validate(); }
+			public void validate() {
+				validateSubtypes();
+			}
+		});
+
 		csvRows.add( line );
 	}
 
@@ -187,8 +196,7 @@ public class UI extends JPanel {
 		csv_GenPanel.add(csv_GenLabel, BorderLayout.NORTH);
 
 		csvPanel = new JPanel();
-		csvScrollPanel = new JScrollPane( csvPanel/*, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER*/ );
-		//csvScrollPanel.setSize(960, 512);
+		csvScrollPanel = new JScrollPane( csvPanel );
 		csv_GenPanel.add(csvScrollPanel, BorderLayout.CENTER );
 
 		csv_PartitionsVisual = new JPanel();
@@ -332,6 +340,7 @@ public class UI extends JPanel {
 				System.err.println("csv line # " + i + " not found, skipping");
 				continue;
 			}
+			if( !csvRow.enabled.isSelected() ) continue;
 			String sizeText = csvRow.size.getText();
 			if (!sizeText.isEmpty()) {
 				try {
@@ -348,6 +357,7 @@ public class UI extends JPanel {
 
 		// Update the free space label
 		getFlashFreeLabel().setText("Free Space: " + FlashSizeBytes / 1024 + " bytes");
+		getFlashFreeLabel().setForeground( FlashSizeBytes >= 0 ? Color.BLACK : Color.RED );
 
 		// Convert partition sizes to hexadecimal strings
 		String[] hexStrings = convertKbToHex(partitionSizes);
@@ -377,6 +387,7 @@ public class UI extends JPanel {
 		}
 
 		if (lastIndex != -1) { // If a selected index is found
+			long previousOffset=0, size=0;
 			for (int i = 1; i <= lastIndex + 1; i++) { // Calculate offsets including the hardcoded first offset
 				CSVRow prevLine = getCSVRow( i - 1 );
 				CSVRow currLine = getCSVRow( i );
@@ -384,15 +395,27 @@ public class UI extends JPanel {
 					String previousOffsetHex = prevLine.offset.getText();
 					String sizeHex = prevLine.sizeHex.getText();
 
-					// Convert the hexadecimal strings to long values
-					long previousOffset = Long.parseLong(previousOffsetHex, 16);
-					long size = Long.parseLong(sizeHex, 16);
+					try {
+						// Convert the hexadecimal strings to long values
+						previousOffset = Long.parseLong(previousOffsetHex, 16);
+						size = Long.parseLong(sizeHex, 16);
+					} catch( NumberFormatException e ) {
+						size = 0; // cell was either disabled or contains invalid value, safe to ignore
+					}
 
 					// Calculate the new offset
 					long newOffset = previousOffset + size;
 
-					// Convert the new offset back to hexadecimal and set it to the current offset
-					// field
+
+					if(newOffset%0x1000!=0 ) { // uh-oh, not a multiple of 4096!!
+						// System.err.println( newOffset + " is not a multiple of 4096 (0x1000 )");
+						currLine.size.setForeground(Color.RED);
+						prevLine.size.setForeground(Color.RED);
+					} else {
+						currLine.size.setForeground(Color.BLACK);
+						prevLine.size.setForeground(Color.BLACK);
+					}
+					// Convert the new offset back to hexadecimal and set it to the current offset field
 					currLine.offset.setText( Long.toHexString(newOffset).toUpperCase() );
 				}
 			}
@@ -403,6 +426,23 @@ public class UI extends JPanel {
 	private void createPartitionFlashVisualPanel() {
 		csv_partitionsCenterVisualPanel = new JPanel(new GridBagLayout());
 		csv_PartitionsVisual.add(csv_partitionsCenterVisualPanel, BorderLayout.SOUTH);
+	}
+
+
+	public void validateSubtypes() {
+		//
+		for( int i=0;i<csvRows.size();i++ ) {
+			CSVRow csvRow = getCSVRow( i );
+			if( !csvRow.enabled.isSelected() ) continue;
+			String type    = (String)csvRow.type.getSelectedItem();
+			String subtype = csvRow.subtype.getText();
+			csvRow.subtype.setForeground( csvRow.isValidSubtype(subtype) ? Color.BLACK : Color.RED );
+
+			if     ( type.equals("data") && subtype.equals("fat") )      getPartitionFlashType().setSelectedItem("FatFS");
+			else if( type.equals("data") && subtype.equals("spiffs") )   getPartitionFlashType().setSelectedItem("SPIFFS");
+			else if( type.equals("data") && subtype.equals("littlefs") ) getPartitionFlashType().setSelectedItem("LittleFS");
+
+		}
 	}
 
 
@@ -420,12 +460,10 @@ public class UI extends JPanel {
 				System.err.println("csv line # " + i + " not found, skipping");
 				continue;
 			}
-			if (csvRow.enabled.isSelected()) {
-				try {
-					totalPartitionSize += Integer.parseInt(csvRow.size.getText());
-				} catch (NumberFormatException e) {
-				}
-			}
+			if (!csvRow.enabled.isSelected()) continue;
+			try {
+				totalPartitionSize += Integer.parseInt(csvRow.size.getText());
+			} catch (NumberFormatException e) { }
 		}
 
 		int remainingSpace = FLASH_SIZE - RESERVED_SPACE - totalPartitionSize;
@@ -439,6 +477,7 @@ public class UI extends JPanel {
 		initialPanel.setPreferredSize(new Dimension(50, 24));
 
 		gbc.fill = GridBagConstraints.HORIZONTAL;
+		//gbc.setForeground( remainingSpace > 0 ? Color.BLACK : Color.RED );
 
 		csv_partitionsCenterVisualPanel.add(initialPanel, gbc);
 
@@ -450,41 +489,40 @@ public class UI extends JPanel {
 					System.err.println("csv line # " + i + " not found, skipping");
 					continue;
 				}
-				if (csvRow.enabled.isSelected()) {
-					try {
-						int partitionSize = Integer.parseInt(csvRow.size.getText());
-						double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
-						JPanel partitionPanel = new JPanel();
+				if (!csvRow.enabled.isSelected()) continue;
+				try {
+					int partitionSize = Integer.parseInt(csvRow.size.getText());
+					double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
+					JPanel partitionPanel = new JPanel();
 
-						String partName = (String) getPartitionName(i).getText();
-						String partType = (String) getPartitionType(i).getSelectedItem();
-						String partSubType = (String) getPartitionSubType(i).getText();
+					String partName = (String) getPartitionName(i).getText();
+					String partType = (String) getPartitionType(i).getSelectedItem();
+					String partSubType = (String) getPartitionSubType(i).getText();
 
-						Color partColor = partType.equals("app") ? new Color(66, 176, 245) : new Color(47, 98, 207);
-						if (partSubType.equals("factory")) {
-							partColor = new Color(40, 87, 163); // Darker Blue for Factory
-						} else if (partSubType.equals("spiffs")) {
-							partColor = new Color(154, 65, 194); // Purple for SPIFFS
-						} else if (partSubType.equals("coredump")) {
-							partColor = new Color(200, 50, 50); // Dark Red for coredump
-						} else if (partName.equals("nvs")) {
-							partColor = new Color(215, 166, 49); // Gold for NVS
-						} else if (partName.equals("otadata")) {
-							partColor = new Color(191, 69, 122); // Magenta for OTA Data
-						}
-
-						partitionPanel.setBackground(partColor);
-						// Set the text color to white
-						JLabel label = new JLabel(getPartitionSubType(i).getText());
-						label.setForeground(Color.WHITE);
-						partitionPanel.add(label);
-
-						partitionPanel.setBorder(BorderFactory.createEtchedBorder());
-
-						gbc.weightx = weight;
-						csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
-					} catch (NumberFormatException e) {
+					Color partColor = partType.equals("app") ? new Color(66, 176, 245) : new Color(47, 98, 207);
+					if (partSubType.equals("factory")) {
+						partColor = new Color(40, 87, 163); // Darker Blue for Factory
+					} else if (partSubType.equals("spiffs")) {
+						partColor = new Color(154, 65, 194); // Purple for SPIFFS
+					} else if (partSubType.equals("coredump")) {
+						partColor = new Color(200, 50, 50); // Dark Red for coredump
+					} else if (partName.equals("nvs")) {
+						partColor = new Color(215, 166, 49); // Gold for NVS
+					} else if (partName.equals("otadata")) {
+						partColor = new Color(191, 69, 122); // Magenta for OTA Data
 					}
+
+					partitionPanel.setBackground(partColor);
+					// Set the text color to white
+					JLabel label = new JLabel(getPartitionSubType(i).getText());
+					label.setForeground(Color.WHITE);
+					partitionPanel.add(label);
+
+					partitionPanel.setBorder(BorderFactory.createEtchedBorder());
+
+					gbc.weightx = weight;
+					csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
+				} catch (NumberFormatException e) {
 				}
 			}
 
@@ -505,42 +543,42 @@ public class UI extends JPanel {
 					System.err.println("csv line # " + i + " not found, skipping");
 					continue;
 				}
-				if (csvRow.enabled.isSelected()) {
-					try {
-						int partitionSize = Integer.parseInt(csvRow.size.getText());
-						double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
-						JPanel partitionPanel = new JPanel();
+				if (!csvRow.enabled.isSelected()) continue;
+				try {
+					int partitionSize = Integer.parseInt(csvRow.size.getText());
+					double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
+					JPanel partitionPanel = new JPanel();
 
-						String partName    = (String) getPartitionName(i).getText();
-						String partType    = (String) getPartitionType(i).getSelectedItem();
-						String partSubType = (String) getPartitionSubType(i).getText();
+					String partName    = (String) getPartitionName(i).getText();
+					String partType    = (String) getPartitionType(i).getSelectedItem();
+					String partSubType = (String) getPartitionSubType(i).getText();
 
-						Color partColor = partType.equals("app") ? new Color(66, 176, 245) : new Color(47, 98, 207);
-						if (partSubType.equals("factory")) {
-							partColor = new Color(40, 87, 163); // Darker Blue for Factory
-						} else if (partSubType.equals("spiffs")) {
-							partColor = new Color(154, 65, 194); // Purple for SPIFFS
-						} else if (partSubType.equals("coredump")) {
-							partColor = new Color(200, 50, 50); // Dark Red for coredump
-						} else if (partName.equals("nvs")) {
-							partColor = new Color(215, 166, 49); // Gold for NVS
-						} else if (partName.equals("otadata")) {
-							partColor = new Color(191, 69, 122); // Magenta for OTA Data
-						}
-
-						partitionPanel.setBackground(partColor);
-						// Set the text color to white
-						JLabel label = new JLabel(partSubType);
-						label.setForeground(Color.WHITE);
-						partitionPanel.add(label);
-
-						partitionPanel.setBorder(BorderFactory.createEtchedBorder());
-
-						gbc.weightx = weight;
-						csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
-					} catch (NumberFormatException e) {
+					Color partColor = partType.equals("app") ? new Color(66, 176, 245) : new Color(47, 98, 207);
+					if (partSubType.equals("factory")) {
+						partColor = new Color(40, 87, 163); // Darker Blue for Factory
+					} else if (partSubType.equals("spiffs")) {
+						partColor = new Color(154, 65, 194); // Purple for SPIFFS
+					} else if (partSubType.equals("coredump")) {
+						partColor = new Color(200, 50, 50); // Dark Red for coredump
+					} else if (partName.equals("nvs")) {
+						partColor = new Color(215, 166, 49); // Gold for NVS
+					} else if (partName.equals("otadata")) {
+						partColor = new Color(191, 69, 122); // Magenta for OTA Data
 					}
+
+					partitionPanel.setBackground(partColor);
+					// Set the text color to white
+					JLabel label = new JLabel(partSubType);
+					label.setForeground(Color.WHITE);
+					partitionPanel.add(label);
+
+					partitionPanel.setBorder(BorderFactory.createEtchedBorder());
+
+					gbc.weightx = weight;
+					csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
+				} catch (NumberFormatException e) {
 				}
+
 			}
 		}
 
@@ -657,6 +695,7 @@ public class UI extends JPanel {
 		int spiffsIndex = -1; // Initialize spiffsIndex to -1 to indicate not found
 		// Iterate through the partition subtypes to find the SPIFFS partition
 		for (int i = 0; i < getNumOfItems(); i++) {
+		  if (!getCSVRow(i).enabled.isSelected()) continue;
 			JTextField partitionSubType = getPartitionSubType(i);
 			if (partitionSubType != null && partitionSubType.getText().equals("spiffs")) {
 				spiffsIndex = i;

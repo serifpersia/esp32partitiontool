@@ -48,24 +48,9 @@ public class CSVRow extends JPanel {
     formatter.setCommitsOnValidEdit(true); // true = value committed on each keystroke instead of focus loss
     size = new JFormattedTextField(formatter);
 
-
 		final Font currFont = name.getFont();
 
 		type.setRenderer(new DefaultListCellRenderer(){{ setHorizontalAlignment(DefaultListCellRenderer.CENTER); }});
-
-		// size.addKeyListener(new KeyAdapter() {
-		// 		public void keyPressed(KeyEvent ke) {
-		// 			String value = size.getText();
-		// 			int l = value.length();
-		// 			if (ke.getKeyChar() >= '0' && ke.getKeyChar() <= '9') {
-		// 					size.setEditable(true);
-		// 					//label.setText("");
-		// 			} else {
-		// 					size.setEditable(false);
-		// 					//label.setText("* Enter only numeric digits(0-9)");
-		// 			}
-		// 		}
-		// });
 
 		enabled.setHorizontalAlignment(SwingConstants.CENTER);
 		name.   setHorizontalAlignment(SwingConstants.CENTER);
@@ -93,11 +78,7 @@ public class CSVRow extends JPanel {
 			this.setRowOffset(  values[5] );
 			this.setRowEnabled( true );
 		} else {
-			enabled.setSelected( false );
-			name.   setEditable( false );
-			type.   setEnabled(  false );
-			subtype.setEditable( false );
-			size.   setEditable( false );
+			disableRow();
 		}
 
 		Component[] components = { enabled, name, type, subtype, size, sizeHex, offset };
@@ -105,6 +86,26 @@ public class CSVRow extends JPanel {
 		  add( wrap( components[i] ), BorderLayout.CENTER );
 		}
 
+	}
+
+
+	public void enableRow() {
+		enabled.setSelected( true );
+		name.   setEditable( true );
+		type.   setEnabled(  true );
+		subtype.setEditable( true );
+		size.   setEditable( true );
+	}
+
+
+	public void disableRow() {
+		enabled.setSelected( false );
+		name.   setEditable( false );
+		type.   setEnabled(  false );
+		subtype.setEditable( false );
+		size.   setEditable( false );
+		sizeHex.setText("");
+		offset. setText("");
 	}
 
 
@@ -119,15 +120,15 @@ public class CSVRow extends JPanel {
 	public void setDefaults( int rowid ) {
 		// Set text if isSelected is true
 		String[] defaultPartitionNameText    = { "nvs", "otadata", "app0", "app1", "spiffs", "coredump" };
-		int[]    defaultPartitionTypeText    = { 0, 0, 1, 1, 0, 0 };
+		//int[]    defaultPartitionTypeText    = { 0, 0, 1, 1, 0, 0 };
 		String[] defaultPartitionSubTypeText = { "nvs", "ota", "ota_0", "ota_1", "spiffs", "coredump", };
 		String[] defaultPartitionSizeText    = { "20", "8", "1280", "1280", "1408", "64" };
 
 		if (rowid >=0 && rowid < defaultPartitionNameText.length) {
-			name.   setText(defaultPartitionNameText[rowid]);
-			type.   setSelectedIndex(defaultPartitionTypeText[rowid%type.getItemCount()]);
-			subtype.setText(defaultPartitionSubTypeText[rowid]);
-			size.   setText(defaultPartitionSizeText[rowid]);
+			if( name.getText().isEmpty() )    setRowName(defaultPartitionNameText[rowid]);
+			//type.   setSelectedIndex(defaultPartitionTypeText[rowid%type.getItemCount()]);
+			if( subtype.getText().isEmpty() ) setRowSubtype(defaultPartitionSubTypeText[rowid]);
+			if( size.getText().isEmpty() ) 		setRowSize(defaultPartitionSizeText[rowid]);
 			sizeHex.setText("");
 			offset. setText("");
 		} else {
@@ -159,10 +160,74 @@ public class CSVRow extends JPanel {
 	}
 
 
+	public boolean isValidSubtype( String type ) {
+		final String[] validSubtypes = {
+			"factory", "test", "nvs", "phy", "nvs_keys", "undefined", "efuse", "ota", "spiffs", "littlefs", "coredump",
+			"ota_0", "ota_1", "ota_2", "ota_3", "ota_4", "ota_5", "ota_6", "ota_7",
+			"ota_8", "ota_9", "ota_10", "ota_11", "ota_12", "ota_13", "ota_14", "ota_15"
+		};
+		for( int i=0; i<validSubtypes.length; i++ ) {
+			if( type.equals( validSubtypes[i] ) ) return true;
+		}
+
+		if( type.startsWith("0x" ) ) {
+			try {
+				int value = Integer.decode( type );
+				if( value < 0xff ) return true;
+			} catch( NumberFormatException e ) { };
+		}
+		return false;
+	}
+
+
+	public String subtypeToString( String value ) {
+	  if( value.startsWith("0x") ) {
+			String typeStr = (String) type.getSelectedItem();
+			int subTypeVal = -1;
+			try {
+				subTypeVal = Integer.decode( value );
+			} catch( NumberFormatException e ) {
+				return value;
+			}
+			if( typeStr.equals("app") ) {
+				// When type is app, the SubType field can be specified as factory (0x00), ota_0 (0x10) ... ota_15 (0x1F) or test (0x20).
+				if     ( subTypeVal == 0x00 ) value = "factory";
+				else if( subTypeVal >= 0x10 && subTypeVal<=0x1f ) value = String.format("ota_%d", subTypeVal);
+				else if( subTypeVal == 0x20 ) value = "test";
+			} else {
+				// When type is data, the subtype field can be specified as ota (0x00), phy (0x01), nvs (0x02), nvs_keys (0x04), or a range of other component-specific subtypes
+				if     ( subTypeVal == 0x00 ) value = "ota";
+				else if( subTypeVal == 0x01 ) value = "phy";
+				else if( subTypeVal == 0x02 ) value = "nvs";
+				else if( subTypeVal == 0x03 ) value = "coredump";
+				else if( subTypeVal == 0x04 ) value = "nvs_keys";
+				else if( subTypeVal == 0x05 ) value = "efuse";
+				else if( subTypeVal == 0x06 ) value = "undefined";
+				else if( subTypeVal == 0x81 ) value = "fat";
+				else if( subTypeVal == 0x82 ) value = "spiffs";
+				else if( subTypeVal == 0x83 ) value = "littlefs";
+			}
+	  } else {
+
+	  }
+	  return value;
+	}
+
+
 	private CSVRow setRowEnabled(boolean enable) { enabled.setSelected( enable ); return this; }
 	private CSVRow setRowName(String value)      { name.setText( value );         return this; }
 	private CSVRow setRowType(String value)      { type.setSelectedItem(value);   return this; }
-	private CSVRow setRowSubtype(String value)   { subtype.setText( value );      return this; }
+
+	private CSVRow setRowSubtype(String value)   {
+		String vSubType = subtypeToString( value );
+		if( !vSubType.equals( value ) ) {
+			value = vSubType;
+		}
+		subtype.setForeground( isValidSubtype(value) ? Color.BLACK : Color.RED );
+		subtype.setText( value );
+		return this;
+	}
+
 	private CSVRow setRowSize(String value)      { size.setText( value );         return this; }
 	private CSVRow setRowSizeHex(String value)   { sizeHex.setText( value );      return this; }
 	private CSVRow setRowOffset(String value)    { offset.setText( value );       return this; }

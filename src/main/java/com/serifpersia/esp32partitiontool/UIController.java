@@ -110,7 +110,8 @@ public class UIController implements ActionListener {
 		csvRow.offset. setEditable( isSelected );
 
 		if( isSelected) {
-			csvRow.setDefaults( csvRowId );
+			if( csvRowId<6 ) csvRow.setDefaults( csvRowId );
+			else csvRow.enableRow();
 			if( csvRowId == ui.csvRows.size()-1 ) { // we're enabling the last checkbox, add one!
 			  if( csvRowId > 0 ) {
 					//CSVRow prevLine = ui.getCSVRow(csvRowId-1);
@@ -120,7 +121,8 @@ public class UIController implements ActionListener {
 			  }
 			}
 		} else {
-			csvRow.setDefaults( -1 );
+			//csvRow.setDefaults( -1 );
+			csvRow.disableRow();
 			if( csvRowId>=ui.MIN_ITEMS-1 && csvRowId == ui.csvRows.size()-2 ) { // we're disabling the last enabled checkbox
 				ui.popCSVRow();
 				ui.popCSVRow();
@@ -186,10 +188,10 @@ public class UIController implements ActionListener {
 	private void handleAboutButton() {
 
 			String boxpadding   = "padding-top: 0px;padding-right: 10px;padding-bottom: 10px;padding-left: 10px;";
-			String titleSpanned = "<span style=\"background-color: #d7a631\">&nbsp;ESP32</span>"
-													+ "<span style=\"background-color: #bf457a\">Partition</span>"
-													+ "<span style=\"background-color: #42b0f5\">Tool&nbsp;</span>"
-													+ "<span style=\"background-color: #9a41c2\">v1.3&nbsp;</span>";
+			String titleSpanned = "<span style=\"background-color: #d7a631\">&nbsp;ESP32&nbsp;</span>"
+													+ "<span style=\"background-color: #bf457a\">&nbsp;Partition&nbsp;</span>"
+													+ "<span style=\"background-color: #42b0f5\">&nbsp;Tool&nbsp;</span>"
+													+ "<span style=\"background-color: #9a41c2\">&nbsp;v1.3&nbsp;</span>";
 			String title        = "<h2 align=center style=\"color: #ffffff;\">"+titleSpanned+"</h2>";
 			String description  = "<p>The ESP32 Partition Tool is a utility designed to ease the manipulation<br>"
 													+ "of custom partition schemes in the Arduino IDE 1.8.x environment.<br>"

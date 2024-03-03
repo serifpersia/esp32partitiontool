@@ -256,19 +256,14 @@ public class FileManager {
 		createdPartitionsData.add("# Name,   Type, SubType,  Offset,   Size,  Flags");
 
 		for (int i = 0; i < numOfItems; i++) {
-			JCheckBox checkBox                 = ui.getCheckBox(i);
-			JTextField partitionNameField      = ui.getPartitionName(i);
-			JComboBox<?> partitionTypeComboBox = ui.getPartitionType(i);
-			JTextField partitionSubTypeField   = ui.getPartitionSubType(i);
-			JTextField partitionSizeField      = ui.getPartitionSizeHex(i);
-			JTextField partitionOffset         = ui.getPartitionOffsets(i);
+			CSVRow csvRow = ui.getCSVRow(i);
 
-			if (checkBox.isSelected()) {
-				String name    = partitionNameField.getText();
-				String type    = (String) partitionTypeComboBox.getSelectedItem();
-				String subType = partitionSubTypeField.getText();
-				String size    = partitionSizeField.getText();
-				String offset  = partitionOffset.getText(); // Assuming offset is same as size
+			if (csvRow.enabled.isSelected()) {
+				String name    = csvRow.name.getText();
+				String type    = (String) csvRow.type.getSelectedItem();
+				String subType = csvRow.subtype.getText();
+				String size    = csvRow.size.getText();
+				String offset  = csvRow.offset.getText(); // Assuming offset is same as size
 
 				String exported_csvPartition = name + ", " + type + ", " + subType + ", " + "0x" + offset + ", " + "0x"
 						+ size + ", ";
@@ -306,6 +301,7 @@ public class FileManager {
 		ui.calculateSizeHex();
 		ui.calculateOffsets();
 		ui.updatePartitionFlashVisual();
+		ui.validateSubtypes();
 
 		JTextField lastPartitionOffsetField = ui.getPartitionOffsets(ui.lastIndex + 1);
 
@@ -322,6 +318,7 @@ public class FileManager {
 
 		String flashSizeString = String.valueOf(ui.flashSizeMB);
 		ui.getFlashSize().setSelectedItem(flashSizeString);
+
 	}
 
 	private void processCSV(BufferedReader reader) throws IOException {
