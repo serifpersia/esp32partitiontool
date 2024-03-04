@@ -98,18 +98,16 @@ public class ESP32PartitionTool implements Tool {
 
 			// Set frame position to the center of the screen
 			frame.setLocationRelativeTo(null);
-			// Ensure visibility of the frame
-			frame.setVisible(true);
-
 		} else {
 			// If the frame is already open, bring it to the front and make it visible
 			frame.toFront();
-			frame.setVisible(true);
 		}
 
+		if( fileManager.canRun() ) {
+			frame.setVisible(true);
+			fileManager.loadCSV();
+		}
 
-		//fileManager.loadProperties();
-		fileManager.loadCSV();
 	}
 
 	public void run() {

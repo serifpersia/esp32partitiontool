@@ -110,10 +110,14 @@ public class CSVRow extends JPanel {
 
 
 	public String toString() {
-		return name.getText() + ", " + type.getSelectedItem().toString() + ", "
-			+ subtype.getText() + ", " + "0x" + offset.getText() + ", " + "0x"
-			+ sizeHex.getText() + ", "
-		;
+	  String comma = ",";
+	  return String.format("%-10s %-5s %-10s %10s %10s",
+			name.getText()+comma ,
+			type.getSelectedItem().toString()+comma ,
+			subtype.getText()+comma ,
+			"0x" + offset.getText()+comma ,
+			"0x" + sizeHex.getText()+comma
+		);
 	}
 
 

@@ -59,6 +59,8 @@ public class UIController implements ActionListener {
 		ui.getFlashMergedBin().addActionListener(this);
 		ui.getHelpButton().addActionListener(this);
 		ui.getAboutButton().addActionListener(this);
+		ui.getOverwriteCheckBox().addActionListener(this);
+		ui.getConfirmDataEmptyCheckBox().addActionListener(this);
 	}
 
 	@Override
@@ -76,11 +78,11 @@ public class UIController implements ActionListener {
 		} else if (e.getSource() instanceof JComboBox<?>) {
 			handleComboBoxAction((JComboBox<?>) e.getSource());
 		} else if (e.getSource() == ui.getCreatePartitionsBin()) {
-			fileManager.createPartitionsBin();
+			fileManager.createPartitionsBin(null);
 		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
-			fileManager.handleSPIFFS();
+			fileManager.handleSPIFFSButton(null);
 		} else if (e.getSource() == ui.getFlashMergedBin()) {
-			fileManager.handleMergedBin();
+			fileManager.handleMergedBinButton(null);
 		} else if (e.getSource() == ui.getHelpButton()) {
 			handleHelpButton();
 		} else if (e.getSource() == ui.getAboutButton()) {
@@ -94,6 +96,16 @@ public class UIController implements ActionListener {
 
 		if( checkBox == ui.getDebug() ) {
 			fileManager.setDebug(isSelected);
+			return;
+		}
+
+		if( checkBox == ui.getOverwriteCheckBox() ) {
+			fileManager.setConfirmOverwrite( ! isSelected );
+			return;
+		}
+
+		if( checkBox == ui.getConfirmDataEmptyCheckBox() ) {
+			fileManager.setConfirmDataEmpty( isSelected );
 			return;
 		}
 
@@ -175,7 +187,7 @@ public class UIController implements ActionListener {
 			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
 			String toolPath = fileManager.prefs.getProperty("mk"+fsName.toLowerCase()+".path");
 			if( toolPath == null ) {
-				System.err.println("Invalid filesystem:" + fsName);
+				fileManager.emitError("Invalid filesystem:" + fsName);
 			} else {
 			  if( ! fsName.equals(lastFsName) ) {
 					// no need to spam the console with repeated messages

@@ -18,6 +18,7 @@ import java.nio.file.*;
 
 import processing.app.PreferencesData;
 import processing.app.Editor;
+import processing.app.EditorToolbar;
 import processing.app.BaseNoGui;
 import processing.app.Sketch;
 import processing.app.helpers.ProcessUtils;
@@ -34,9 +35,6 @@ public class FileManager {
 	private String imagePath;
 	Boolean isNetwork = false;
 	private String serialPort;
-	File espota;
-	File esptool;
-	File gen_esp32part;
 	String uploadSpeed;
 	long spiStart;
 	// Declare spiSize, spiPage, spiBlock here
@@ -45,16 +43,22 @@ public class FileManager {
 	int spiBlock;
 	private ArrayList<String> createdPartitionsData;
 
-	boolean isWindows    = PreferencesData.get("runtime.os").contentEquals("windows");
-	String mcu           = BaseNoGui.getBoardPreferences().get("build.mcu");
-	String flashMode     = BaseNoGui.getBoardPreferences().get("build.flash_mode");
-	String flashFreq     = BaseNoGui.getBoardPreferences().get("build.flash_freq");
-	String pythonCmd     = isWindows ? "python3.exe" : "python3";
-	String toolExtension = isWindows ? ".exe" : ".py";
-	String espotaCmd     = "espota"  + toolExtension;
-	String esptoolCmd    = "esptool" + toolExtension;
+	boolean isWindows      = PreferencesData.get("runtime.os").contentEquals("windows");
+	String mcu             = BaseNoGui.getBoardPreferences().get("build.mcu");
+	String flashMode       = BaseNoGui.getBoardPreferences().get("build.flash_mode");
+	String flashFreq       = BaseNoGui.getBoardPreferences().get("build.flash_freq");
+	String pythonCmd       = isWindows ? "python3.exe" : "python3";
+	String toolExtension   = isWindows ? ".exe" : ".py";
+	String espotaCmd       = "espota"  + toolExtension;
+	String esptoolCmd      = "esptool" + toolExtension;
+	String genEsp32PartCmd = "gen_esp32part" + toolExtension;
 
-	boolean debug_ui     = false;
+
+	boolean debug_ui     			= false;
+	boolean confirm_overwrite = true;
+	// Not all projects have a /data folder, and the confirmation window can be annoying
+	// TODO: rename this veeeeery_looooooong_variable to something shorter
+	boolean creating_empty_spiffs_needs_confirmation = false;
 
 	TargetPlatform platform      = BaseNoGui.getTargetPlatform();
 	File platformPath            = platform.getFolder();
@@ -66,9 +70,11 @@ public class FileManager {
 	String classPath             = jarFile.getParent();                 // => /path/to/ESP32PartitionTool/tool
 	String propertiesFile        = classPath + "/prefs.properties";     // => /path/to/ESP32PartitionTool/tool/prefs.properties
 
-	String sketchName;
-	String sketchPath;
-	String sketchDir;
+	String espotaPath;   // populated by loadProperties()
+	String esptoolPath;  // populated by loadProperties()
+	String sketchName;   // populated by loadProperties()
+	String sketchPath;   // populated by loadProperties()
+	String sketchDir;    // populated by loadProperties()
 
 	Properties prefs             = new Properties();
 
@@ -77,6 +83,11 @@ public class FileManager {
 	public FileManager(UI ui, Editor editor) {
 		this.ui = ui;
 		this.editor = editor;
+	}
+
+	public void emitError( String msg ) {
+		System.err.println();
+		editor.statusError( msg );
 	}
 
 
@@ -93,10 +104,40 @@ public class FileManager {
 	}
 
 
+	public void setConfirmDataEmpty( boolean enable ) {
+		creating_empty_spiffs_needs_confirmation = enable;
+		prefs.setProperty("spiffs.confirm_empty_data_creation", creating_empty_spiffs_needs_confirmation?"true":"false");
+		saveProperties();
+	}
+
+
+	public void setConfirmOverwrite( boolean enable ) {
+	  confirm_overwrite = enable;
+		prefs.setProperty("files.confirm_overwrite", confirm_overwrite?"true":"false");
+		saveProperties();
+	}
+
+
 	public void setDebug( boolean enable ) {
 		debug_ui = enable;
 		prefs.setProperty("debug.enabled", debug_ui?"true":"false");
 		saveProperties();
+	}
+
+	public boolean canRun() {
+
+		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
+			emitError("Unsupported platform: " + PreferencesData.get("target_platform"));
+			emitError("This tools only runs on esp32 platform");
+			return false;
+		}
+
+		if (!BaseNoGui.getBoardPreferences().containsKey("build.partitions")) {
+			emitError("No partitions defined for " + BaseNoGui.getBoardPreferences().get("name") + " in boards.txt");
+			return false;
+		}
+
+		return true;
 	}
 
 
@@ -104,8 +145,7 @@ public class FileManager {
 
 		sketchName   = editor.getSketch().getName();
 		sketchPath   = editor.getSketch().getMainFilePath();
-		File inoFile = new File( sketchPath );
-		sketchDir    = inoFile.getParent();
+		sketchDir    = editor.getSketch().getFolder().toString();
 
 		if (Files.notExists(Paths.get(propertiesFile))) {
 			try {
@@ -121,7 +161,13 @@ public class FileManager {
 			// load the properties file
 			prefs.load(input);
 
-			debug_ui = Boolean.parseBoolean( prefs.getProperty("debug.enabled") );
+			debug_ui 					= Boolean.parseBoolean( prefs.getProperty("debug.enabled") );
+			confirm_overwrite = Boolean.parseBoolean( prefs.getProperty("files.confirm_overwrite") );
+			creating_empty_spiffs_needs_confirmation = Boolean.parseBoolean( prefs.getProperty("spiffs.confirm_empty_data_creation") );
+
+			ui.getDebug().setSelected( debug_ui );
+			ui.getOverwriteCheckBox().setSelected( !confirm_overwrite );
+			ui.getConfirmDataEmptyCheckBox().setSelected( creating_empty_spiffs_needs_confirmation );
 
 			// print key and values
 			if( debug_ui ) {
@@ -146,6 +192,19 @@ public class FileManager {
 
 			if( !findFile( esptoolCmd, espToolSearchPaths, "esptool" ) ) {
 				editor.statusError(" Error: esptool not found!");
+			}
+
+
+			// search for esptool.[py|exe] in all the following folders
+			String otaToolSearchPaths[] = {
+				prefs.getProperty("espota.path"), // user.properties (always first)
+				platformPath + "/tools",
+				defaultSketchbookFolder+"/tools",
+				toolsPathBase,
+			};
+
+			if( !findFile( esptoolCmd, espToolSearchPaths, "espota" ) ) {
+				editor.statusError(" Error: espota not found!");
 			}
 
 			int size = ui.getPartitionFlashType().getItemCount();
@@ -180,6 +239,9 @@ public class FileManager {
 				ex.printStackTrace();
 		}
 
+		espotaPath  = prefs.getProperty("espota.path");
+		esptoolPath = prefs.getProperty("esptool.path");
+
 		if( debug_ui ) {
 			System.out.println("sketchDir               = " + sketchDir );
 			System.out.println("jarPath                 = " + jarPath);
@@ -189,10 +251,12 @@ public class FileManager {
 			System.out.println("defaultSketchbookFolder = " + defaultSketchbookFolder);
 		}
 
-
 	}
 
+
 	public void loadCSV() {
+
+
 		// figure out what csv file is selected in the boards menu, and where it is
 		String csvName        = BaseNoGui.getBoardPreferences().get("build.partitions");
 		String customCsvName  = BaseNoGui.getBoardPreferences().get("build.custom_partitions");
@@ -217,35 +281,33 @@ public class FileManager {
 			System.out.println("csvPath                 = " + csvPath );
 		}
 
-		String searchPaths[] = { variantCsvPath, csvPath };
+		String searchPaths[] = { sketchDir+"/partitions.csv", variantCsvPath, csvPath };
 
-		// load csv file
 		for(int i=0;i<searchPaths.length;i++) {
-			File csvFile = new File(searchPaths[i]); // check binary is in the tools folder
-			if (csvFile.exists() && csvFile.isFile() ) {
+			if ( Files.exists( Paths.get( searchPaths[i] )) ) {
+				// load csv file
 				importCSV( searchPaths[i] );
 				break;
 			}
 		}
+
+	}
+
+
+	public String findFile( String fileName, String searchPaths[] ) {
+		for( int j=0; j<searchPaths.length; j++ ) {
+			if( searchPaths[j] == null ) continue;
+			if ( Files.exists( Paths.get( searchPaths[j]+"/"+fileName ))) {
+				return searchPaths[j]+"/"+fileName;
+			}
+		}
+		return null;
 	}
 
 
 	public boolean findFile( String fileName, String searchPaths[], String propertyName ) {
-		String full_path = "";
-		boolean found = false;
-		for( int j=0; j<searchPaths.length; j++ ) {
-			if( searchPaths[j] == null ) continue;
-			File tool = new File(searchPaths[j], fileName); // check binary is in the tools folder
-			if (tool.exists() && tool.isFile() ) {
-				found = true;
-				full_path = searchPaths[j]+"/"+fileName;
-				break;
-			}
-			if( debug_ui )
-				System.out.println("[" + propertyName + "] "+fileName+" not at "+searchPaths[j]);
-		}
-
-
+		String full_path = findFile( fileName, searchPaths);
+		boolean found = full_path != null;
 		if( found ) { // save found path in properties file
 			if( debug_ui )
 				System.out.println("[" + propertyName + "] "+fileName+" found at " + full_path);
@@ -268,6 +330,34 @@ public class FileManager {
 		catch (Exception e ) {
 			e.printStackTrace();
 		}
+	}
+
+	public boolean CompileSketch() {
+		try {
+			if( editor.getSketchController().build(true, true) != null )
+				return true;
+		} catch( Exception e ) {
+			emitError( e.getMessage() );
+		}
+		return false;
+	}
+
+
+	public boolean checkBuildFile( String path ) {
+		if (Files.notExists(Paths.get(path))) {
+			int option = JOptionPane.showConfirmDialog(null, "Build path " + path + " not found.\nCompile sketch?\nNote: the applet will appear frozen during build.", "Build Project?", JOptionPane.YES_NO_OPTION);
+			if (option == JOptionPane.YES_OPTION) {
+				if( ! CompileSketch() ) {
+					return false;
+				};
+			}
+
+			if (Files.notExists(Paths.get(path))) {
+				emitError("Build path "+path+" still not found after compiling, giving up");
+				return false;
+			}
+		}
+		return true;
 	}
 
 
@@ -314,7 +404,7 @@ public class FileManager {
 				ui.updatePartitionLabel(csvBasename);
 
 			} catch (IOException e) {
-				System.err.println("Error reading CSV file: " + e.getMessage());
+				emitError("Error reading CSV file: " + e.getMessage());
 			}
 		} else {
 			System.out.println("No file selected.");
@@ -342,6 +432,7 @@ public class FileManager {
 		ui.getFlashSize().setSelectedItem(flashSizeString);
 		ui.updatePartitionFlashTypeLabel();
 	}
+
 
 	private void processCSV(BufferedReader reader) throws IOException {
 		int rowIndex = 0;
@@ -421,7 +512,7 @@ public class FileManager {
 	}
 
 
-	public void generateCSV() {
+	public boolean generateCSV() {
 		calculateCSV();
 
 		// Get the default directory path
@@ -434,18 +525,25 @@ public class FileManager {
 		dialog.setVisible(true);
 		String fileName = dialog.getFile();
 
-		if (fileName != null) {
-			String filePath = dialog.getDirectory() + fileName; // Construct the full file path
-			try (FileWriter writer = new FileWriter(filePath)) {
-				// Write the exported data to the CSV file
-				for (String partitionData : createdPartitionsData) {
-					writer.write(partitionData + "\n");
-				}
-				System.out.println("partitions.csv created at: " + filePath);
-			} catch (IOException ex) {
-				System.err.println("Error creating CSV: " + ex.getMessage());
+		if( fileName == null ) return false;
+
+		String filePath = dialog.getDirectory() + fileName; // Construct the full file path
+		try (FileWriter writer = new FileWriter(filePath)) {
+			// Write the exported data to the CSV file
+			for (String partitionData : createdPartitionsData) {
+				writer.write(partitionData + "\n");
 			}
+
+			if (Files.notExists(Paths.get(filePath))) {
+				emitError("Failed to write " + filePath);
+			  return false;
+			}
+			System.out.println("partitions.csv written at: " + filePath);
+			return true;
+		} catch (IOException ex) {
+			emitError("Error creating CSV: " + ex.getMessage());
 		}
+		return false;
 	}
 
 
@@ -495,18 +593,19 @@ public class FileManager {
 	}
 
 
-	private String getBuildFolderPath(Sketch s) {
+	private String getBuildFolderPath() {
+	  Sketch sketch = editor.getSketch();
 		// first of all try the getBuildPath() function introduced with IDE 1.6.12
 		// see commit arduino/Arduino#fd1541eb47d589f9b9ea7e558018a8cf49bb6d03
 		try {
-			String buildpath = s.getBuildPath().getAbsolutePath();
+			String buildpath = sketch.getBuildPath().getAbsolutePath();
 			return buildpath;
 		} catch (IOException er) {
 			editor.statusError(er);
 		} catch (Exception er) {
 			try {
 				File buildFolder = FileUtils.createTempFolder("build",
-						DigestUtils.md5Hex(s.getMainFilePath()) + ".tmp");
+						DigestUtils.md5Hex(sketch.getMainFilePath()) + ".tmp");
 				return buildFolder.getAbsolutePath();
 			} catch (IOException e) {
 				editor.statusError(e);
@@ -533,26 +632,62 @@ public class FileManager {
 	}
 
 
-	public void createPartitionsBin() {
+	public void buidBootloaderBin( String output_path ) {
 
-		String gen_esp32partCmd = "gen_esp32part.py";
-		gen_esp32part = new File(platform.getFolder() + "/tools", gen_esp32partCmd);
-		if (!gen_esp32part.exists() || !gen_esp32part.isFile()) {
-			System.err.println();
-			editor.statusError("Partitions Bin Generate Error: gen_esp32part not found!");
+		String flash_mode  = BaseNoGui.getBoardPreferences().get("build.flash_mode");
+		String flash_freq  = BaseNoGui.getBoardPreferences().get("build.flash_freq");
+		String flash_size  = BaseNoGui.getBoardPreferences().get("build.flash_size");
+		String target_chip = BaseNoGui.getBoardPreferences().get("build.mcu");
+		String sdk_path    = platformPath + "/tools/sdk/" + target_chip; // {runtime.platform.path}/tools/sdk/{build.mcu}
+		String elf_path    = sdk_path + "/bin/bootloader_" + flash_mode + "_" + flash_freq + ".elf";
+
+		if( output_path == null ) {
+			String buildPath   = getBuildFolderPath();
+			String sketch_name = editor.getSketch().getName();
+			output_path = buildPath + "/" + sketch_name + ".ino.bootloader.bin";
+		}
+
+		if( Files.notExists(Paths.get(elf_path)) ) {
+			emitError(" Error: bootloader_" + flash_mode + "_" + flash_freq + ".elf not found at " + elf_path);
 			return;
 		}
 
-		editor.statusNotice("Creating partitions.bin...");
+		String[] elf2imageLinux = {
+			pythonCmd, esptoolPath,
+			"--chip", target_chip, "elf2image",
+			"--flash_mode", flash_mode,
+			"--flash_freq", flash_freq,
+			"--flash_size", flash_size,
+			"-o", output_path,
+			elf_path
+		};
 
-		String buildPath = getBuildFolderPath(editor.getSketch());
-		String sketchName = editor.getSketch().getName();
-		String csvFilePath = buildPath + "/partitions.csv";
+		String[] elf2imageWindows = {
+			esptoolPath,
+			"--chip", target_chip, "elf2image",
+			"--flash_mode", flash_mode,
+			"--flash_freq", flash_freq,
+			"--flash_size", flash_size,
+			"-o", output_path,
+			elf_path
+		};
 
-		if (Files.notExists(Paths.get(buildPath))) {
-			System.err.println();
-			editor.statusError("No build path found. Forgot to compile the sketch?");
-			return;
+		try {
+			if (listenOnProcess(esptoolPath.endsWith(".py")? elf2imageLinux : elf2imageWindows) != 0) {
+			} else {
+				editor.statusNotice("Bootloader created!");
+			}
+		} catch (Exception e) {
+			emitError("Process error" + e.getMessage() );
+		}
+	}
+
+
+	public boolean createPartitionCsv( String csvFilePath ) {
+		if( confirm_overwrite && Files.exists(Paths.get(csvFilePath)) ) {
+			if ( !ui.confirmDialogOverwrite(csvFilePath + " exists\nOverwrite?", "File exists" ) )
+				return false;
+			System.out.println("Will overwrite " + csvFilePath);
 		}
 
 		// Assuming you have access to the UI components
@@ -563,115 +698,125 @@ public class FileManager {
 			for (String partitionData : createdPartitionsData) {
 				writer.write(partitionData + "\n");
 			}
-			System.out.println("partitions.csv successfully created at: " + csvFilePath);
 		} catch (IOException ex) {
-			System.err.println("Error exporting CSV: " + ex.getMessage());
+			emitError("Error exporting CSV: " + ex.getMessage());
+			return false;
 		}
 
+		if (Files.notExists(Paths.get(csvFilePath))) {
+			emitError("Failed to create " + csvFilePath);
+			return false;
+		}
+
+		editor.statusNotice("Created partitions.csv" );
+
+		return true;
+	}
+
+
+
+	public boolean createPartitionsBin( String buildPath ) {
+
+		String csvFilePath = sketchDir + "/partitions.csv";
+
+		if (! createPartitionCsv(csvFilePath) )
+			return false;
+
+		String sketchName       = editor.getSketch().getName();
+		String getEsp32PartPath = platform.getFolder() + "/tools/" + genEsp32PartCmd;
+		// Full path to the file that will be created
 		String partitionsBinPath = buildPath + "/" + sketchName + ".ino" + ".partitions.bin";
+
+		if (Files.notExists(Paths.get(getEsp32PartPath))) {
+			emitError("Partitions Bin Generate Error: gen_esp32part not found!");
+			return false;
+		}
+
+		if( buildPath == null ) {
+			buildPath = getBuildFolderPath();
+		}
+
 		// Command to generate partitions.bin
-		String[] command = { "python3", gen_esp32part.getAbsolutePath(), buildPath + "/partitions.csv",
-				partitionsBinPath };
+		String[] command = { "python3", getEsp32PartPath, csvFilePath, partitionsBinPath };
+
+		editor.statusNotice("Creating partitions.bin...");
 
 		try {
 			// Execute the command
 			int exitCode = listenOnProcess(command);
 			if (exitCode == 0) {
 				editor.statusNotice("partitions.bin created successfully.");
-				System.out.println("partitions.bin created successfully.");
+				System.out.println("partitions.bin successfully written at: " + partitionsBinPath);
 			} else {
-				editor.statusError("Failed to create partitions.bin.");
+				editor.statusError("Failed to write partitions.bin.");
+				return false;
 			}
 		} catch (Exception e) {
 			editor.statusError("An error occurred while creating partitions.bin.");
 			e.printStackTrace(); // Print the stack trace for debugging
-			return;
+			return false;
 		}
 
+		return true;
 	}
 
 
-	public void handleSPIFFS() {
+	public void handleSPIFFSButton(String buildPath ) {
 
-		// Create a JOptionPane to prompt the user
+		if( buildPath == null ) {
+			buildPath = getBuildFolderPath();
+		}
+
 		String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
 
+		if( !createSPIFFS( buildPath ) ) return;
+
+		// Create a JOptionPane to prompt the user for upload
 		int option = JOptionPane.showConfirmDialog(null,
-				"Do you want to upload " + fsName + " after it has been created?", "Upload SPIFFS" + fsName,
+				"Do you want to upload " + fsName + "?", "Upload SPIFFS" + fsName,
 				JOptionPane.YES_NO_OPTION);
 
-		// Check user's choice
 		if (option == JOptionPane.YES_OPTION) {
-			createSPIFFS();
 			uploadSPIFFS();
-		} else {
-			createSPIFFS();
 		}
 	}
 
 
-	private void createSPIFFS() {
+	private boolean createSPIFFS( String buildPath ) {
+
+		if( buildPath == null ) {
+			buildPath = getBuildFolderPath();
+		}
 
 		spiStart = 0;
 		spiSize = 0;
 		spiPage = 256;
 		spiBlock = ui.flashSizeMB * 1024;
 
-		String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
-		String toolBinName = "mk" + fsName.toLowerCase();
-		String toolPath = prefs.getProperty(toolBinName+".path");//tool.getAbsolutePath();
-		if( toolPath == null ) return;
+		String fsName      = ui.getPartitionFlashType().getSelectedItem().toString();
+		String mkFsBinName = "mk" + fsName.toLowerCase();
+		String mkFsPath    = prefs.getProperty(mkFsBinName+".path");//tool.getAbsolutePath();
 
-		// fail fast
-		File tool = new File(toolPath);
-		if (!tool.exists() || !tool.isFile()) {
-			System.err.println();
-			editor.statusError(fsName + " Error: executable " + toolBinName + " not found at " + toolPath);
-			return;
-		}
-
-		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
-			System.err.println();
-			editor.statusError(fsName + " Not Supported on " + PreferencesData.get("target_platform"));
-			return;
+		if( mkFsPath == null  || Files.notExists(Paths.get(mkFsPath)) ) {
+			emitError(mkFsBinName + " path not found");
+			return false;
 		}
 
 		if( debug_ui ) {
 			System.out.println("Selected filesystem: " + fsName);
-			System.out.println("Selected tool: " + toolBinName);
-			System.out.println("Selected exe: " + toolPath);
+			System.out.println("Selected tool: " + mkFsBinName);
+			System.out.println("Selected exe: " + mkFsPath);
 		}
 
-		isNetwork  = false;
-		espota     = new File(platform.getFolder() + "/tools");
-		esptool    = new File(platform.getFolder() + "/tools");
 		serialPort = PreferencesData.get("serial.port");
-
-		if (!BaseNoGui.getBoardPreferences().containsKey("build.partitions")) {
-			System.err.println();
-			editor.statusError("Partitions Not Defined for " + BaseNoGui.getBoardPreferences().get("name"));
-			return;
-		}
 
 		calculateCSV();
 
-		String buildPath = getBuildFolderPath(editor.getSketch());
-		String csvFilePath = buildPath + "/partitions.csv";
+		String csvFilePath = sketchDir + "/partitions.csv";
 
-		if (Files.notExists(Paths.get(buildPath))) {
-			System.err.println();
-			editor.statusError("No build path found. Forgot to compile the sketch?");
-			return;
-		}
-
-		try (FileWriter writer = new FileWriter(csvFilePath)) {
-			// Write the exported data to the CSV file
-			for (String partitionData : createdPartitionsData) {
-				writer.write(partitionData + "\n");
-			}
-			System.out.println("CSV exported successfully to: " + csvFilePath);
-		} catch (IOException ex) {
-			System.err.println("Error exporting CSV: " + ex.getMessage());
+		if ( Files.notExists(Paths.get(csvFilePath))) {
+			if( ! createPartitionCsv(csvFilePath) )
+				return false;
 		}
 
 		// Read the partitions.csv file
@@ -690,45 +835,29 @@ public class FileManager {
 				}
 			}
 			if (spiSize == 0) {
-				System.err.println();
-				editor.statusError(fsName + " Error: partition size could not be found!");
-				return;
+				emitError(fsName + " Error: partition size could not be found!");
+				return false;
 			}
 		} catch (Exception e) {
 			editor.statusError(e);
-			return;
+			return false;
 		}
 
 		// make sure the serial port or IP is defined
 		if (serialPort == null || serialPort.isEmpty()) {
-			System.err.println();
-			editor.statusError(fsName + " Error: serial port not defined!");
-			return;
+			emitError(fsName + " Error: serial port not defined!");
+			return false;
 		}
 
 		// find espota if IP else find esptool
-		if (serialPort.split("\\.").length == 4) {
-			isNetwork = true;
-			espota = new File(platform.getFolder() + "/tools", espotaCmd);
-			if (!espota.exists() || !espota.isFile()) {
-				System.err.println();
-				editor.statusError(fsName + " Error: espota not found!");
-				return;
-			}
-		} else {
-			String esptoolpath = prefs.getProperty("esptool.path");
-			if( esptoolpath == null ) return;
-			esptool = new File( esptoolpath );
-			if (!esptool.exists() || !esptool.isFile()) {
-				System.err.println();
-				editor.statusError(fsName + " Error: esptool not found!");
-				return;
-			}
-		}
+		isNetwork = (serialPort.split("\\.").length == 4);
 
-		// load a list of all files
+		// load a list of all files in the data folder, if any
+
 		int fileCount = 0;
+
 		File dataFolder = new File(editor.getSketch().getFolder(), "data");
+
 		if (!dataFolder.exists()) {
 			dataFolder.mkdirs();
 		}
@@ -744,19 +873,22 @@ public class FileManager {
 
 		String dataPath = dataFolder.getAbsolutePath();
 		String sketchName = editor.getSketch().getName();
-		imagePath = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".spiffs.bin";
+		imagePath = buildPath + "/" + sketchName + ".spiffs.bin";
 		uploadSpeed = BaseNoGui.getBoardPreferences().get("upload.speed");
 
-		Object[] options = { "Yes", "No" };
-		String title = "Create " + fsName;
-		String message = "No files have been found in your data folder!\nAre you sure you want to create an empty "
-				+ fsName + " image?";
+		if( fileCount == 0 && creating_empty_spiffs_needs_confirmation ) {
+			Object[] options = { "Yes", "No" };
+			String title = "Create " + fsName;
+			String message = "No files have been found in your data folder!\nAre you sure you want to create an empty "
+					+ fsName + " image?";
 
-		if (fileCount == 0 && JOptionPane.showOptionDialog(editor, message, title, JOptionPane.YES_NO_OPTION,
-				JOptionPane.QUESTION_MESSAGE, null, options, options[1]) != JOptionPane.YES_OPTION) {
-			System.err.println();
-			editor.statusError(fsName + " Warning: " + toolBinName + " canceled!");
-			return;
+			if (JOptionPane.showOptionDialog(editor, message, title, JOptionPane.YES_NO_OPTION,
+					JOptionPane.QUESTION_MESSAGE, null, options, options[1]) != JOptionPane.YES_OPTION) {
+				emitError(fsName + " Warning: " + mkFsBinName + " canceled!");
+				return false;
+			}
+		} else {
+			System.out.println("Creating empty spiffs.bin (no data folder found in sketch folder)");
 		}
 
 		editor.statusNotice("Creating " + fsName + "...");
@@ -768,32 +900,25 @@ public class FileManager {
 
 		try {
 
-			String baseMkFsArgs[] = { toolPath, "-c", dataPath, "-p", spiPage + "", "-b", spiBlock + "", "-s", spiSize + "", imagePath };
-			String mkFatFsArgs[]  = { toolPath, "-c", dataPath,                                          "-s", spiSize + "", imagePath };
+			String baseMkFsArgs[] = { mkFsPath, "-c", dataPath, "-p", spiPage + "", "-b", spiBlock + "", "-s", spiSize + "", imagePath };
+			String mkFatFsArgs[]  = { mkFsPath, "-c", dataPath,                                          "-s", spiSize + "", imagePath };
 
 			String mkFsArgs[] =  fsName.equals("FatFS") ? mkFatFsArgs : baseMkFsArgs;
 
 			if (listenOnProcess( mkFsArgs ) != 0) {
-				System.err.println();
-				editor.statusError("Failed to create " + fsName + "!");
-				return;
+				emitError("Failed to create " + fsName + "!");
+				return false;
 			}
 			editor.statusNotice("Completed creating " + fsName);
-			System.out.println("[" + fsName + "] Data partition successfully created at " + imagePath);
+			System.out.println("[" + fsName + "] Data partition successfully written at " + imagePath);
 		} catch (Exception e) {
-			editor.statusError(e);
-			editor.statusError("Failed to create " + fsName + "!");
-			return;
+			emitError("Failed to create " + fsName + "!");
+			return false;
 		} finally {
-			// Delete the partitions.csv file after reading its contents
-			File csvFile = new File(csvFilePath);
-			if (csvFile.exists()) {
-				if (csvFile.delete()) {
-				} else {
-					System.err.println("Failed to delete partitions.csv file");
-				}
-			}
+		  // NOTE: since partitions.csv is now taken from the sketch folder it
+		  //       is no longer pertinent to delete it after use
 		}
+		return true;
 	}
 
 	private void uploadSPIFFS() {
@@ -801,14 +926,24 @@ public class FileManager {
 		editor.statusNotice("Uploading " + fsName + "...");
 		System.out.println("[" + fsName + "] upload : " + imagePath);
 
+		if( espotaPath == null || Files.notExists(Paths.get(espotaPath)) ) {
+			emitError("espota tool not found");
+			return;
+		}
+		if( esptoolPath == null || Files.notExists(Paths.get(esptoolPath)) ) {
+			emitError("esptool path not found");
+			return;
+		}
+
 		if (isNetwork) {
 			System.out.println("[" + fsName + "] IP     : " + serialPort);
 			System.out.println();
-			if (espota.getAbsolutePath().endsWith(".py"))
-				sysExec(new String[] { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s", "-f",
+
+			if (espotaPath.endsWith(".py"))
+				sysExec(new String[] { pythonCmd, espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f",
 						imagePath });
 			else
-				sysExec(new String[] { espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s", "-f",
+				sysExec(new String[] { espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f",
 						imagePath });
 		} else {
 			System.out.println("[" + fsName + "] address: " + spiStart);
@@ -817,13 +952,13 @@ public class FileManager {
 			System.out.println("[" + fsName + "] mode   : " + flashMode);
 			System.out.println("[" + fsName + "] freq   : " + flashFreq);
 			System.out.println();
-			if (esptool.getAbsolutePath().endsWith(".py"))
-				sysExec(new String[] { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+			if (esptoolPath.endsWith(".py"))
+				sysExec(new String[] { pythonCmd, esptoolPath, "--chip", mcu, "--baud", uploadSpeed,
 						"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
 						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", "" + spiStart,
 						imagePath });
 			else
-				sysExec(new String[] { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed, "--port",
+				sysExec(new String[] { esptoolPath, "--chip", mcu, "--baud", uploadSpeed, "--port",
 						serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
 						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", "" + spiStart,
 						imagePath });
@@ -831,104 +966,127 @@ public class FileManager {
 	}
 
 
-	public void handleMergedBin() {
+	public void handleMergedBinButton(String buildPath ) {
+
+		if( buildPath == null ) {
+			buildPath = getBuildFolderPath();
+		}
+
+		String sketchName  = editor.getSketch().getName();
+		String appImage    = buildPath + "/" + sketchName + ".ino" + ".bin";
+
+		// NOTE: It's not a good idea to trigger Arduino build from the applet, everything appears
+		// frozen until the build is finished. Just nudge the user with an alert box.
+		if (Files.notExists(Paths.get(appImage))) {
+			JOptionPane.showMessageDialog(null, "Please compile the sketch in Arduino IDE first!");
+			return;
+		}
+
+		if( ! createPartitionsBin(buildPath) ) return;
+		if( ! createSPIFFS(buildPath) ) return;
+		if( ! createMergedBin(buildPath) ) return;
 
 		// Create a JOptionPane to prompt the user
 		int option = JOptionPane.showConfirmDialog(null,
-				"Do you want to upload merged binary after it has been created?", "Upload merged binary",
+				"Do you want to upload merged binary?", "Upload merged binary",
 				JOptionPane.YES_NO_OPTION);
 
-		// Check user's choice
 		if (option == JOptionPane.YES_OPTION) {
-			createPartitionsBin();
-			createSPIFFS();
-			createMergedBin();
 			try {
 				Thread.sleep(2000);
-				uploadMergedBin();
+				uploadMergedBin(buildPath);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		} else {
-			createPartitionsBin();
-			createSPIFFS();
-			createMergedBin();
 		}
 	}
 
 
-	private void createMergedBin() {
 
-		String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
+	public String getBootloaderImagePath() {
+		String sketchName  = editor.getSketch().getName();
+		String buildPath   = getBuildFolderPath();
+		String variantName = BaseNoGui.getBoardPreferences().get("build.variant");
+		String variantDir  = platformPath+"/variants/" + variantName;
+		// precedence: source > variant > build files
+		String searchPaths[] = {
+			sketchDir  + "/bootloader.bin", // in source directory
+			variantDir + "/bootloader.bin", // in board variants directory
+			buildPath  + "/" + sketchName + ".ino" + ".bootloader.bin" // in build directory
+		};
+		// walk the array
+		for( int i=0; i<searchPaths.length; i++ ) {
+			if( Files.exists(Paths.get(searchPaths[i])) ) {
+				// got a match!
+				return searchPaths[i];
+			}
+		}
+		// ask confirmation to build bootloader
+		int option = JOptionPane.showConfirmDialog(null, "bootloader.bin not found, buil it?", "Build bootloader?", JOptionPane.YES_NO_OPTION);
+		if (option == JOptionPane.YES_OPTION) {
+			String saveBootloaderPath = buildPath  + "/" + sketchName + ".ino" + ".bootloader.bin";
+			buidBootloaderBin( saveBootloaderPath );
+			// if successful, the build path now has a bootloader.bin newly created
+			if( Files.exists(Paths.get(saveBootloaderPath)) ) {
+				// bootloader build succeeded
+				return saveBootloaderPath;
+			}
+			emitError("esptool Failed to create " + saveBootloaderPath );
+		} else {
+			emitError("Action cancelled by user");
+		}
+		return null;
+	}
 
-		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
-			System.err.println();
-			editor.statusError("Tool Not Supported on " + PreferencesData.get("target_platform"));
-			return;
+
+
+	private boolean createMergedBin( String buildPath ) {
+
+		if( buildPath == null ) {
+			buildPath = getBuildFolderPath();
 		}
 
-		isNetwork = false;
-		espota = new File(platform.getFolder() + "/tools");
-		esptool = new File(platform.getFolder() + "/tools");
-		serialPort = PreferencesData.get("serial.port");
+		if (Files.notExists(Paths.get(buildPath))) {
+			JOptionPane.showMessageDialog(null, "Please compile the sketch in Arduino IDE first!");
+			return false;
+		}
 
-		if (!BaseNoGui.getBoardPreferences().containsKey("build.partitions")) {
-			System.err.println();
-			editor.statusError("Partitions Not Defined for " + BaseNoGui.getBoardPreferences().get("name"));
-			return;
+		String fsName          = ui.getPartitionFlashType().getSelectedItem().toString();
+		String bootImage       = platform.getFolder() + "/tools/partitions/boot_app0.bin";
+		String partitionsImage = buildPath + "/" + sketchName + ".ino.partitions.bin";
+		String spiffsImage     = buildPath + "/" + sketchName + ".spiffs.bin";
+		String mergedImage     = buildPath + "/" + sketchName + ".merged.bin";
+		String appImage        = buildPath + "/" + sketchName + ".ino.bin";
+
+		if( espotaPath == null || Files.notExists(Paths.get(espotaPath)) ) {
+			emitError("espota tool not found");
+			return false;
+		}
+
+		if( esptoolPath == null || Files.notExists(Paths.get(esptoolPath)) ) {
+			emitError("esptool path not found");
+			return false;
 		}
 
 		// make sure the serial port or IP is defined
+		serialPort = PreferencesData.get("serial.port");
 		if (serialPort == null || serialPort.isEmpty()) {
-			System.err.println();
-			editor.statusError(fsName + " Error: serial port not defined!");
-			return;
+			emitError(fsName + " Error: serial port not defined!");
+			return false;
 		}
-
 		// find espota if IP else find esptool
-		if (serialPort.split("\\.").length == 4) {
-			isNetwork = true;
-			espota = new File(platform.getFolder() + "/tools", espotaCmd);
-			if (!espota.exists() || !espota.isFile()) {
-				System.err.println();
-				editor.statusError(fsName + " Error: espota not found!");
-				return;
-			}
-		} else {
-			String esptoolpath = prefs.getProperty("esptool.path");
-			if( esptoolpath == null ) return;
-			esptool = new File( esptoolpath );
-			if (!esptool.exists() || !esptool.isFile()) {
-				System.err.println();
-				editor.statusError(fsName + " Error: esptool not found!");
-				return;
-			}
+		isNetwork = (serialPort.split("\\.").length == 4);
+		// figure out the path to the relevant bootloader.bin, create it if necessary
+		String bootloaderImage = getBootloaderImagePath();
+		if( bootloaderImage == null ) {
+			return false;
 		}
-
-		String buildPath = getBuildFolderPath(editor.getSketch());
-		if (Files.notExists(Paths.get(buildPath))) {
-			System.err.println();
-			editor.statusError("No build path found. Forgot to compile the sketch?");
-			return;
-		}
-
-
-
-		String bootloaderImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bootloader.bin";
-		String partitionsImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".partitions.bin";
-		String bootImage       = platform.getFolder() + "/tools/partitions/boot_app0.bin";
-		String appImage        = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".ino" + ".bin";
-		String spiffsImage     = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + ".spiffs.bin";
-		String mergedImage     = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + "merged" + ".bin";
-
+		// check that all necessary files are in place
 		String checkFiles[] = { bootloaderImage, partitionsImage, bootImage, appImage, spiffsImage };
-
 		for( int i=0; i<checkFiles.length; i++ ) {
-			File test = new File(checkFiles[i]);
-			if( !test.exists() || !test.isFile() ) {
-				System.err.println();
-				editor.statusError("Missing file: " + checkFiles[i] + ". Forgot to compile the sketch?");
-				return;
+			if (Files.notExists(Paths.get(checkFiles[i]))) {
+				emitError("Missing file: " + checkFiles[i] + ". Forgot to compile the sketch?");
+				return false;
 			}
 		}
 
@@ -954,78 +1112,51 @@ public class FileManager {
 		System.out.println("[Merged binary] mode   : " + flashMode);
 		System.out.println("[Merged bbinary freq   : " + flashFreq);
 
-		String[] mergeCommand = { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o", mergedImage,
+		String[] mergeCommand = { pythonCmd, esptoolPath, "--chip", mcu, "merge_bin", "-o", mergedImage,
 				"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize, bootloaderOffset,
 				bootloaderImage, partitionsOffset, partitionsImage, bootOffset, bootImage, appOffset, appImage,
 				spiffsOffset, spiffsImage };
 
-		String[] mergeWindowsCommand = { esptool.getAbsolutePath(), "--chip", mcu, "merge_bin", "-o", mergedImage,
+		String[] mergeWindowsCommand = { esptoolPath, "--chip", mcu, "merge_bin", "-o", mergedImage,
 				"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", flashSize, bootloaderOffset,
 				bootloaderImage, partitionsOffset, partitionsImage, bootOffset, bootImage, appOffset, appImage,
 				spiffsOffset, spiffsImage };
 
-		if (esptool.getAbsolutePath().endsWith(".py")) {
-			sysExec(mergeCommand);
-		} else {
-			sysExec(mergeWindowsCommand);
-		}
+		sysExec( esptoolPath.endsWith(".py") ? mergeCommand : mergeWindowsCommand );
+
+		return true;
 	}
 
-	private void uploadMergedBin() {
+	private void uploadMergedBin( String buildPath ) {
 
-		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
-			System.err.println();
-			editor.statusError("Tool Not Supported on " + PreferencesData.get("target_platform"));
-			return;
+		if( buildPath == null ) {
+			buildPath = getBuildFolderPath();
 		}
 
 		String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
 
-		isNetwork = false;
-		espota = new File(platform.getFolder() + "/tools");
-		esptool = new File(platform.getFolder() + "/tools");
-		serialPort = PreferencesData.get("serial.port");
-
-		if (!BaseNoGui.getBoardPreferences().containsKey("build.partitions")) {
-			System.err.println();
-			editor.statusError("Partitions Not Defined for " + BaseNoGui.getBoardPreferences().get("name"));
+		if( espotaPath == null || Files.notExists(Paths.get(espotaPath)) ) {
+			emitError("espota tool not found");
+			return;
+		}
+		if( esptoolPath == null || Files.notExists(Paths.get(esptoolPath)) ) {
+			emitError("esptool path not found");
 			return;
 		}
 
+		serialPort = PreferencesData.get("serial.port");
+
 		// make sure the serial port or IP is defined
 		if (serialPort == null || serialPort.isEmpty()) {
-			System.err.println();
-			editor.statusError(fsName + " Error: serial port not defined!");
+			emitError(fsName + " Error: serial port not defined!");
 			return;
 		}
 
 		// find espota if IP else find esptool
-		if (serialPort.split("\\.").length == 4) {
-			isNetwork = true;
-			espota = new File(platform.getFolder() + "/tools", espotaCmd);
-			if (!espota.exists() || !espota.isFile()) {
-				System.err.println();
-				editor.statusError("Merged Bin Upload Error: espota not found!");
-				return;
-			}
-		} else {
-			String esptoolCmd = "esptool" + toolExtension;
-			esptool = new File(platform.getFolder() + "/tools", esptoolCmd);
-			if (!esptool.exists() || !esptool.isFile()) {
-				esptool = new File(platform.getFolder() + "/tools/esptool_py", esptoolCmd);
-				if (!esptool.exists()) {
-					esptool = new File(PreferencesData.get("runtime.tools.esptool_py.path"), esptoolCmd);
-					if (!esptool.exists()) {
-						System.err.println();
-						editor.statusError("Flashing Merged Bin Error: esptool not found!");
-						return;
-					}
-				}
-			}
-		}
+		isNetwork = (serialPort.split("\\.").length == 4);
 
 		String sketchName = editor.getSketch().getName();
-		String mergedImage = getBuildFolderPath(editor.getSketch()) + "/" + sketchName + "merged" + ".bin";
+		String mergedImage = buildPath + "/" + sketchName + "merged" + ".bin";
 
 		String mergedOffset = "0x0";
 
@@ -1033,40 +1164,33 @@ public class FileManager {
 		System.out.println("[Merged binary] creation:");
 
 		if (isNetwork) {
+
 			System.out.println("[Merged bin] IP: " + serialPort);
 			System.out.println();
+			String[] writeFlashCmdLinux   = { pythonCmd, espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", mergedImage };
+			String[] writeFlashCmdWindows = { espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", mergedImage };
 
-			String[] writeFlashCommand = { pythonCmd, espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s",
-					"-f", mergedImage };
-			String[] writeWindowsFlashCommand = { espota.getAbsolutePath(), "-i", serialPort, "-p", "3232", "-s", "-f",
-					mergedImage };
+			sysExec(espotaPath.endsWith(".py")?writeFlashCmdLinux:writeFlashCmdWindows);
 
-			if (espota.getAbsolutePath().endsWith(".py")) {
-				sysExec(writeFlashCommand);
-			} else {
-				sysExec(writeWindowsFlashCommand);
-			}
 		} else {
+
 			System.out.println("[Merged binary] mcu: " + mcu);
 			System.out.println("[Merged binary] port   : " + serialPort);
 			System.out.println("[Merged binary] speed  : " + uploadSpeed);
 			System.out.println("[Merged binary] mode   : " + flashMode);
 			System.out.println("[Merged binary] freq(exec)   : " + flashFreq);
 
-			String[] writeFlashCommand = { pythonCmd, esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+			String[] writeFlashCmdLinux   = { pythonCmd, esptoolPath, "--chip", mcu, "--baud", uploadSpeed,
 					"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
 					"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
 					mergedImage };
-			String[] writeWindowsFlashCommand = { esptool.getAbsolutePath(), "--chip", mcu, "--baud", uploadSpeed,
+			String[] writeFlashCmdWindows = { esptoolPath, "--chip", mcu, "--baud", uploadSpeed,
 					"--port", serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
 					"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset,
 					mergedImage };
 
-			if (esptool.getAbsolutePath().endsWith(".py")) {
-				sysExec(writeFlashCommand);
-			} else {
-				sysExec(writeWindowsFlashCommand);
-			}
+			sysExec(esptoolPath.endsWith(".py")?writeFlashCmdLinux:writeFlashCmdWindows);
+
 		}
 	}
 }

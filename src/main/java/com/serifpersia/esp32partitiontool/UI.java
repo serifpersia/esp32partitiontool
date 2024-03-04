@@ -10,12 +10,11 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Component;
+import java.awt.event.WindowEvent;
 import javax.swing.*;
 import java.io.*;
 
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
+import javax.swing.event.*;
 
 
 public class UI extends JPanel {
@@ -72,9 +71,12 @@ public class UI extends JPanel {
 	private JButton btn_about;
 	private JButton partitions_ImportCSVButton;
 
-	private JCheckBox ui_DebugChckb;
+	private JCheckBox enableDebugCheckBox;      // used in pref panel
+	private JCheckBox confirmOverwriteCheckBox; // used in pref panel
+	private JCheckBox confirmDataEmptyCheckBox; // used in pref panel
+	private JCheckBox rememberChoiceCheckBox = new JCheckBox("Remember my decision"); // used in confirmDialogs
 
-  public ArrayList<CSVRow> csvRows = new ArrayList<CSVRow>();
+	public ArrayList<CSVRow> csvRows = new ArrayList<CSVRow>();
 
 
 	public UI() {
@@ -88,12 +90,13 @@ public class UI extends JPanel {
 		createFreeSpaceBox();
 		createHelpButton();
 		createAboutButton();
+		createOverwriteCheckBox();
+		createConfirmDataEmptyCheckBox();
 		createDebugCheckBox();
 		calculateOffsets();
 		createPartitionFlashVisualPanel();
 		updatePartitionFlashVisual();
 	}
-
 
 
 	public void addCSVRow( CSVRow line ) {
@@ -184,6 +187,24 @@ public class UI extends JPanel {
 		}
 		csvPanel.add( titleLinePanel );
 	}
+
+
+	// confirm dialog with optional "Remember my decision" checkbox
+	public boolean confirmDialogOverwrite( String msg, String title ) {
+		JPanel panel = new JPanel(new BorderLayout());
+		panel.add(new JLabel(msg), BorderLayout.NORTH);
+
+		panel.add(rememberChoiceCheckBox, BorderLayout.SOUTH);
+
+		int userConfirm = JOptionPane.showConfirmDialog(new JFrame(), panel, title, JOptionPane.YES_NO_OPTION);
+
+		if( rememberChoiceCheckBox.isSelected()  ) {
+			getOverwriteCheckBox().setSelected( userConfirm != JOptionPane.YES_OPTION );
+		}
+
+		return userConfirm == JOptionPane.YES_OPTION;
+	}
+
 
 
 	private void createPanels() {
@@ -316,9 +337,23 @@ public class UI extends JPanel {
 	}
 
 
+	private void createConfirmDataEmptyCheckBox() {
+		confirmDataEmptyCheckBox = new JCheckBox("[?]");
+		confirmDataEmptyCheckBox.setToolTipText("Will ask for confirmation if a 'data' folder is missing from the sketch folder before creating spiffs.bin.");
+		partitions_UtilButtonsPanel.add(confirmDataEmptyCheckBox);
+	}
+
+
+	private void createOverwriteCheckBox() {
+		confirmOverwriteCheckBox = new JCheckBox("Overwrite");
+		confirmOverwriteCheckBox.setToolTipText("Automatically overwrite partitions.csv without asking for confirmation.");
+		partitions_UtilButtonsPanel.add(confirmOverwriteCheckBox);
+	}
+
+
 	private void createDebugCheckBox() {
-		ui_DebugChckb = new JCheckBox("debug");
-		partitions_UtilButtonsPanel.add(ui_DebugChckb);
+		enableDebugCheckBox = new JCheckBox("debug");
+		partitions_UtilButtonsPanel.add(enableDebugCheckBox);
 	}
 
 
@@ -617,7 +652,9 @@ public class UI extends JPanel {
 	public JButton      getHelpButton() { return btn_help; }
 	public JButton      getAboutButton() { return btn_about; }
 	public JTextField   getSpiffsBlockSize() { return spiffs_blockSize; }
-	public JCheckBox    getDebug() { return ui_DebugChckb; }
+	public JCheckBox    getDebug() { return enableDebugCheckBox; }
+	public JCheckBox    getConfirmDataEmptyCheckBox() { return confirmDataEmptyCheckBox; }
+	public JCheckBox    getOverwriteCheckBox() { return confirmOverwriteCheckBox; }
 	public JComboBox<?> getPartitionFlashType() { return partitionsFlashTypes; }
 	public JComboBox<?> getFlashSize() { return partitions_FlashSizes; }
 	public JLabel       getFlashFreeLabel() { return csv_partitionFlashFreeSpace; }
