@@ -38,7 +38,7 @@ public class UIController implements ActionListener {
 
 
 	private int getRowIndexForComponent(Component component) {
-		for( int i=0; i<ui.csvRows.size(); i++ ) {
+		for( int i=0; i<ui.getCSVRows().size(); i++ ) {
 			if( ui.getCSVRow(i) == component.getParent().getParent() ) {
 				return i;
 			}
@@ -61,6 +61,10 @@ public class UIController implements ActionListener {
 		ui.getAboutButton().addActionListener(this);
 		ui.getOverwriteCheckBox().addActionListener(this);
 		ui.getConfirmDataEmptyCheckBox().addActionListener(this);
+		ui.getSettingsButton().addActionListener(this);
+		ui.getCancelButton().addActionListener(this);
+		ui.getSaveButton().addActionListener(this);
+
 	}
 
 	@Override
@@ -87,6 +91,13 @@ public class UIController implements ActionListener {
 			handleHelpButton();
 		} else if (e.getSource() == ui.getAboutButton()) {
 			handleAboutButton();
+		} else if( e.getSource() == ui.getSettingsButton() ) {
+			ui.showSettingsPanel();
+		} else if( e.getSource() == ui.prefsPanel.getCancelButton() ) {
+			ui.hideSettingsPanel();
+		} else if( e.getSource() == ui.prefsPanel.getSaveButton() ) {
+			fileManager.saveProperties();
+			ui.hideSettingsPanel();
 		}
 
 	}
@@ -124,14 +135,14 @@ public class UIController implements ActionListener {
 		if( isSelected) {
 			if( csvRowId<6 ) csvRow.setDefaults( csvRowId );
 			else csvRow.enableRow();
-			if( csvRowId == ui.csvRows.size()-1 ) { // we're enabling the last checkbox, add one!
-			  if( csvRowId > 0 ) {
+			if( csvRowId == ui.getCSVRows().size()-1 ) { // we're enabling the last checkbox, add one!
+				if( csvRowId > 0 ) {
 					ui.renderCSVRows(); // an extra empty line will be inserted by renderCSVRows()
-			  }
+				}
 			}
 		} else {
 			csvRow.disableRow();
-			if( csvRowId>=ui.MIN_ITEMS-1 && csvRowId == ui.csvRows.size()-2 ) { // we're disabling the last enabled checkbox
+			if( csvRowId>=ui.MIN_ITEMS-1 && csvRowId == ui.getCSVRows().size()-2 ) { // we're disabling the last enabled checkbox
 				ui.popCSVRow();
 				ui.popCSVRow();
 				ui.renderCSVRows();
@@ -189,7 +200,7 @@ public class UIController implements ActionListener {
 			if( toolPath == null ) {
 				fileManager.emitError("Invalid filesystem:" + fsName);
 			} else {
-			  if( ! fsName.equals(lastFsName) ) {
+				if( ! fsName.equals(lastFsName) ) {
 					// no need to spam the console with repeated messages
 					lastFsName = fsName;
 					System.out.println("Selected filesystem:" + fsName);

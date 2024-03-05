@@ -1,8 +1,8 @@
 /*
-    ESP32 Partition Tool was developed to facilitate the creation of custom partition schemes
-    for ESP32 projects within the Arduino IDE 1.8.x environment.
+		ESP32 Partition Tool was developed to facilitate the creation of custom partition schemes
+		for ESP32 projects within the Arduino IDE 1.8.x environment.
 
-    Copyright (c) 2024 serifpersia, github.com/serifpersia
+		Copyright (c) 2024 serifpersia, github.com/serifpersia
 
 	This program is open-source software distributed under the terms of the MIT License.
 	You are free to redistribute and/or modify it under the conditions of the MIT License,
@@ -52,6 +52,11 @@ public class ESP32PartitionTool implements Tool {
 	Editor editor;
 	private JFrame frame;
 
+	public static void main(String[] args) {
+		ESP32PartitionTool tool = new ESP32PartitionTool();
+		tool.run();
+	}
+
 	public void init(Editor editor) {
 		this.editor = editor;
 		// Pass the Editor instance when creating FileManager
@@ -90,7 +95,7 @@ public class ESP32PartitionTool implements Tool {
 				@Override
 				public void windowClosing(WindowEvent e) {
 					// save window dimensions
-				  fileManager.saveProperties();
+					fileManager.saveProperties();
 					// Just hide the frame instead of disposing
 					frame.setVisible(false);
 				}

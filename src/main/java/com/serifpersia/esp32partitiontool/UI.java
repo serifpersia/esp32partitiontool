@@ -24,59 +24,45 @@ public class UI extends JPanel {
 	public 	static final int MIN_ITEMS = 15;
 	public int lastIndex;
 
-	public UIController controller;
-
-
-	private JPanel csv_GenPanel;
-	private JLabel csv_GenLabel;
-
-	private JPanel csvPanel;
-	private JScrollPane csvScrollPanel;
-
-	private JPanel csv_PartitionsVisual;
-	private JPanel partitions_UtilButtonsPanel;
-	private JPanel csv_partitionsCenterVisualPanel;
-
-	private JLabel SPIFFS_GenLabel;
-	private JPanel SPIFFS_AND_MERGE_AND_FLASH_RootPanel;
-	private JPanel SPIFFS_AND_MERGE_AND_FLASH_InnerPanel;
-
-	private JComboBox<?> partitionsFlashTypes;
-	private JLabel lb_filesystems;
-	private JComboBox<?> partitions_FlashSizes;
 	long FlashSizeBytes = 4 * 1024 * 1024 - 36864;
 	int flashSizeMB = 4;
-	// long FlashSizeBytes = 0;
 
-	private JButton partitions_CSVButton;
-	private JButton partitions_BinButton;
-	private JPanel csv_PartitionSizeHexPanel;
-	private JLabel csv_PartitionSizeHexLabel;
-	private JPanel csv_PartitionSizeHexInnerPanel;
-	private JLabel csv_partitionFlashFreeSpace;
+	private UIController controller;
 
-	private JPanel SPIFFS_InnerPanel;
-	private JLabel lb_blockSize;
-	private JTextField spiffs_blockSize;
-	private JPanel SPIFFS_AND_MERGE_AND_FLASH_Panel;
-	private JPanel panel_2;
-	private JButton btn_flashSPIFFS;
-	private JPanel panel_3;
-	private JLabel lblNewLabel_3;
-	private JPanel panel_4;
-	private JPanel panel_5;
-	// private JButton btn_flashSketch;
-	private JButton btn_flashMergedBin;
-	private JButton btn_help;
-	private JButton btn_about;
-	private JButton partitions_ImportCSVButton;
+	public PrefsPanel prefsPanel;
 
-	private JCheckBox enableDebugCheckBox;      // used in pref panel
-	private JCheckBox confirmOverwriteCheckBox; // used in pref panel
-	private JCheckBox confirmDataEmptyCheckBox; // used in pref panel
+	private JScrollPane csvScrollPanel;
+
+	private JPanel csvGenPanel;
+	private JPanel csvPanel;
+	private JPanel csvPartitionsVisual;
+	private JPanel partitionsUtilButtonsPanel;
+	private JPanel csvpartitionsCenterVisualPanel;
+	private JPanel SPIFFSGenPanel;
+	private JPanel partitionSizeHexPanel;
+	private JPanel partitionSizeHexInnerPanel;
+
+	private JLabel partitionFlashFreeSpace;
+	private JLabel csvGenLabel;
+	private JLabel SPIFFSGenLabel;
+	private JLabel partitionSizeHexLabel;
+
+	private JComboBox<?> partitionsFlashTypes;
+	private JComboBox<?> partitions_FlashSizes;
+
+	private JTextField spiffsBlockSize;
+
+	private JButton btnSettings;
+	private JButton btnFlashSPIFFS;
+	private JButton mergeBinBtn;
+	private JButton aboutBtn;
+	private JButton importCsvBtn;
+	private JButton exporCsvBtn;
+	private JButton createBinBtn;
+
 	private JCheckBox rememberChoiceCheckBox = new JCheckBox("Remember my decision"); // used in confirmDialogs
 
-	public ArrayList<CSVRow> csvRows = new ArrayList<CSVRow>();
+	private ArrayList<CSVRow> csvRows = new ArrayList<CSVRow>();
 
 
 	public UI() {
@@ -88,14 +74,16 @@ public class UI extends JPanel {
 	private void init() {
 		createPanels();
 		createFreeSpaceBox();
-		createHelpButton();
+		createSettingsButton();
 		createAboutButton();
-		createOverwriteCheckBox();
-		createConfirmDataEmptyCheckBox();
-		createDebugCheckBox();
 		calculateOffsets();
 		createPartitionFlashVisualPanel();
 		updatePartitionFlashVisual();
+	}
+
+
+	public void setController( UIController controller ) {
+		this.controller = controller;
 	}
 
 
@@ -124,6 +112,7 @@ public class UI extends JPanel {
 			}
 		});
 
+		line.attachListeners( getController() );
 		csvRows.add( line );
 	}
 
@@ -131,8 +120,8 @@ public class UI extends JPanel {
 	public void popCSVRow() {
 		int lastIndex = csvRows.size() -1;
 		if( lastIndex >= 0 ) {
-		  CSVRow csvRow = getCSVRow(lastIndex);
-		  csvPanel.remove( csvRow );
+			CSVRow csvRow = getCSVRow(lastIndex);
+			csvPanel.remove( csvRow );
 			csvRows.remove(lastIndex);
 		}
 	}
@@ -153,11 +142,6 @@ public class UI extends JPanel {
 			return csvRows.get(index);
 		}
 		return null;
-	}
-
-
-	public void clearCSVRows() {
-		csvRows.clear();
 	}
 
 
@@ -208,167 +192,191 @@ public class UI extends JPanel {
 
 
 	private void createPanels() {
-		csv_GenPanel = new JPanel();
-		add(csv_GenPanel);
-		csv_GenPanel.setLayout(new BorderLayout(0, 0));
-		csv_GenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-		csv_GenLabel = new JLabel("Partitions");
-		csv_GenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
-		csv_GenLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		csv_GenPanel.add(csv_GenLabel, BorderLayout.NORTH);
+		prefsPanel = new PrefsPanel();
+
+		csvGenPanel = new JPanel();
+		add(csvGenPanel);
+		csvGenPanel.setLayout(new BorderLayout(0, 0));
+		csvGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+		csvGenLabel = new JLabel("Partitions");
+		csvGenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
+		csvGenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		csvGenPanel.add(csvGenLabel, BorderLayout.NORTH);
 
 		csvPanel = new JPanel();
 		csvScrollPanel = new JScrollPane( csvPanel );
 		csvScrollPanel.getVerticalScrollBar().setUnitIncrement(100); // prevent the scroll wheel from going sloth
 
-		csv_GenPanel.add(csvScrollPanel, BorderLayout.CENTER );
+		csvGenPanel.add(csvScrollPanel, BorderLayout.CENTER );
 
-		csv_PartitionsVisual = new JPanel();
-		csv_GenPanel.add(csv_PartitionsVisual, BorderLayout.SOUTH);
-		csv_PartitionsVisual.setLayout(new BorderLayout(0, 0));
+		csvPartitionsVisual = new JPanel();
+		csvGenPanel.add(csvPartitionsVisual, BorderLayout.SOUTH);
+		csvPartitionsVisual.setLayout(new BorderLayout(0, 0));
 
-		partitions_UtilButtonsPanel = new JPanel();
-		csv_PartitionsVisual.add(partitions_UtilButtonsPanel, BorderLayout.NORTH);
+		partitionsUtilButtonsPanel = new JPanel();
+		csvPartitionsVisual.add(partitionsUtilButtonsPanel, BorderLayout.NORTH);
 
 		JLabel csv_FlashSizeLabel = new JLabel("Flash Size: MB");
 		csv_FlashSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		partitions_UtilButtonsPanel.add(csv_FlashSizeLabel);
+		partitionsUtilButtonsPanel.add(csv_FlashSizeLabel);
 
 		partitions_FlashSizes = new JComboBox<>(new String[] { "4", "8", "16", "32" });
-		partitions_UtilButtonsPanel.add(partitions_FlashSizes);
+		partitionsUtilButtonsPanel.add(partitions_FlashSizes);
 
-		partitions_ImportCSVButton = new JButton("Import CSV");
-		partitions_UtilButtonsPanel.add(partitions_ImportCSVButton);
+		importCsvBtn = new JButton("Import CSV");
+		partitionsUtilButtonsPanel.add(importCsvBtn);
 
-		partitions_CSVButton = new JButton("Export CSV");
-		partitions_UtilButtonsPanel.add(partitions_CSVButton);
+		exporCsvBtn = new JButton("Export CSV");
+		partitionsUtilButtonsPanel.add(exporCsvBtn);
 
-		partitions_BinButton = new JButton("Create Bin");
-		partitions_UtilButtonsPanel.add(partitions_BinButton);
+		createBinBtn = new JButton("Create Bin");
+		partitionsUtilButtonsPanel.add(createBinBtn);
 
-		SPIFFS_AND_MERGE_AND_FLASH_RootPanel = new JPanel();
-		add(SPIFFS_AND_MERGE_AND_FLASH_RootPanel, BorderLayout.EAST);
-		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.setLayout(new BorderLayout(0, 0));
-		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		SPIFFSGenPanel = new JPanel();
+		add(SPIFFSGenPanel, BorderLayout.EAST);
+		SPIFFSGenPanel.setLayout(new BorderLayout(0, 0));
+		SPIFFSGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-		SPIFFS_GenLabel = new JLabel("SPIFFS");
-		SPIFFS_GenLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_GenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
-		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.add(SPIFFS_GenLabel, BorderLayout.NORTH);
+		SPIFFSGenLabel = new JLabel("SPIFFS");
+		SPIFFSGenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		SPIFFSGenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
+		SPIFFSGenPanel.add(SPIFFSGenLabel, BorderLayout.NORTH);
 
-		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel = new JPanel();
+		JPanel SPIFFSGenInnerPanel = new JPanel();
 
-		SPIFFS_AND_MERGE_AND_FLASH_RootPanel.add(SPIFFS_AND_MERGE_AND_FLASH_InnerPanel, BorderLayout.CENTER);
-		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.setLayout(new BorderLayout(0, 0));
+		SPIFFSGenPanel.add(SPIFFSGenInnerPanel, BorderLayout.CENTER);
+		SPIFFSGenInnerPanel.setLayout(new BorderLayout(0, 0));
 
-		GridLayout gl_SPIFFS_InnerPanel = new GridLayout(0, 2);
-		gl_SPIFFS_InnerPanel.setHgap(5);
-		SPIFFS_InnerPanel = new JPanel(gl_SPIFFS_InnerPanel); // 0 rows means any number of rows, 2 columns
-		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.add(SPIFFS_InnerPanel, BorderLayout.NORTH);
+		GridLayout gl = new GridLayout(0, 2);
+		gl.setHgap(5);
+		JPanel SPIFFSInnerPanel = new JPanel(gl); // 0 rows means any number of rows, 2 columns
+		SPIFFSGenInnerPanel.add(SPIFFSInnerPanel, BorderLayout.NORTH);
 
-		lb_filesystems = new JLabel("Filesystem:");
-		lb_filesystems.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_InnerPanel.add(lb_filesystems);
+		JLabel LabelFs = new JLabel("Filesystem:");
+		LabelFs.setHorizontalAlignment(SwingConstants.CENTER);
+		SPIFFSInnerPanel.add(LabelFs);
 
 		partitionsFlashTypes = new JComboBox<>(new String[] { "SPIFFS", "LittleFS", "FatFS" });
-		SPIFFS_InnerPanel.add(partitionsFlashTypes);
+		SPIFFSInnerPanel.add(partitionsFlashTypes);
 
-		lb_blockSize = new JLabel("Block Size:");
-		lb_blockSize.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFS_InnerPanel.add(lb_blockSize);
+		JLabel LabelBlockSize = new JLabel("Block Size:");
+		LabelBlockSize.setHorizontalAlignment(SwingConstants.CENTER);
+		SPIFFSInnerPanel.add(LabelBlockSize);
 
-		spiffs_blockSize = new JTextField("4096");
-		spiffs_blockSize.setEditable(false);
-		SPIFFS_InnerPanel.add(spiffs_blockSize);
+		spiffsBlockSize = new JTextField("4096");
+		spiffsBlockSize.setEditable(false);
+		SPIFFSInnerPanel.add(spiffsBlockSize);
 
-		SPIFFS_AND_MERGE_AND_FLASH_Panel = new JPanel();
-		SPIFFS_AND_MERGE_AND_FLASH_InnerPanel.add(SPIFFS_AND_MERGE_AND_FLASH_Panel, BorderLayout.CENTER);
+		JPanel SPIFFS_AND_MERGE_AND_FLASH_Panel = new JPanel();
+		SPIFFSGenInnerPanel.add(SPIFFS_AND_MERGE_AND_FLASH_Panel, BorderLayout.CENTER);
 		SPIFFS_AND_MERGE_AND_FLASH_Panel.setLayout(new BorderLayout(0, 0));
 
-		panel_2 = new JPanel();
-		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel_2, BorderLayout.NORTH);
-		panel_2.setLayout(new BorderLayout(0, 0));
+		JPanel panel2 = new JPanel();
+		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel2, BorderLayout.NORTH);
+		panel2.setLayout(new BorderLayout(0, 0));
 
-		btn_flashSPIFFS = new JButton("SPIFFS");
-		panel_2.add(btn_flashSPIFFS);
+		btnFlashSPIFFS = new JButton("SPIFFS");
+		panel2.add(btnFlashSPIFFS);
 
-		panel_3 = new JPanel();
-		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel_3, BorderLayout.CENTER);
-		panel_3.setLayout(new BorderLayout(0, 0));
-		panel_3.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+		JPanel panel3 = new JPanel();
+		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel3, BorderLayout.CENTER);
+		panel3.setLayout(new BorderLayout(0, 0));
+		panel3.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
-		lblNewLabel_3 = new JLabel("Merge");
-		lblNewLabel_3.setFont(new Font("Tahoma", Font.PLAIN, 18));
-		lblNewLabel_3.setHorizontalAlignment(SwingConstants.CENTER);
+		JLabel lblNewLabel3 = new JLabel("Merge");
+		lblNewLabel3.setFont(new Font("Tahoma", Font.PLAIN, 18));
+		lblNewLabel3.setHorizontalAlignment(SwingConstants.CENTER);
 
-		panel_3.add(lblNewLabel_3, BorderLayout.NORTH);
+		panel3.add(lblNewLabel3, BorderLayout.NORTH);
 
-		panel_4 = new JPanel();
-		panel_3.add(panel_4, BorderLayout.CENTER);
-		panel_4.setLayout(new BorderLayout(0, 0));
+		JPanel panel4 = new JPanel();
+		panel3.add(panel4, BorderLayout.CENTER);
+		panel4.setLayout(new BorderLayout(0, 0));
 
-		panel_5 = new JPanel();
-		panel_4.add(panel_5, BorderLayout.NORTH);
-		panel_5.setLayout(new GridLayout(2, 0, 0, 0));
+		JPanel panel5 = new JPanel();
+		panel4.add(panel5, BorderLayout.NORTH);
+		panel5.setLayout(new GridLayout(2, 0, 0, 0));
 
-		btn_flashMergedBin = new JButton("Merge Binary");
-		panel_5.add(btn_flashMergedBin);
+		mergeBinBtn = new JButton("Merge Binary");
+		panel5.add(mergeBinBtn);
 
 		// TODO: insert image 170 * 384 ?
 
 	}
 
 
-	private void createFreeSpaceBox() {
-		csv_partitionFlashFreeSpace = new JLabel("Free Space: not set");
-		partitions_UtilButtonsPanel.add(csv_partitionFlashFreeSpace);
+	public void showSettingsPanel() {
+		removeAll();
+		add( prefsPanel, BorderLayout.CENTER );
+		revalidate();
+		repaint();
 	}
 
+
+	public void hideSettingsPanel() {
+		removeAll();
+		add( csvGenPanel );
+		add( SPIFFSGenPanel, BorderLayout.EAST );
+		revalidate();
+		repaint();
+	}
+
+
+	private void createSettingsButton() {
+		ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/gear.png"));
+		btnSettings = new JButton(icon);
+		partitionsUtilButtonsPanel.add(btnSettings);
+	}
+
+
+	private void createFreeSpaceBox() {
+		partitionFlashFreeSpace = new JLabel("Free Space: not set");
+		partitionsUtilButtonsPanel.add(partitionFlashFreeSpace);
+	}
+
+
 	private void createAboutButton() {
-		btn_about = new JButton("About");
-		partitions_UtilButtonsPanel.add(btn_about);
+		aboutBtn = new JButton("About");
+		partitionsUtilButtonsPanel.add( aboutBtn );
 	}
 
 
 	private void createHelpButton() {
-		btn_help = new JButton("Help");
-		partitions_UtilButtonsPanel.add(btn_help);
+		partitionsUtilButtonsPanel.add( getHelpButton() );
 	}
 
 
 	private void createConfirmDataEmptyCheckBox() {
-		confirmDataEmptyCheckBox = new JCheckBox("[?]");
-		confirmDataEmptyCheckBox.setToolTipText("Will ask for confirmation if a 'data' folder is missing from the sketch folder before creating spiffs.bin.");
-		partitions_UtilButtonsPanel.add(confirmDataEmptyCheckBox);
+		partitionsUtilButtonsPanel.add(getConfirmDataEmptyCheckBox());
 	}
 
 
 	private void createOverwriteCheckBox() {
-		confirmOverwriteCheckBox = new JCheckBox("Overwrite");
-		confirmOverwriteCheckBox.setToolTipText("Automatically overwrite partitions.csv without asking for confirmation.");
-		partitions_UtilButtonsPanel.add(confirmOverwriteCheckBox);
+		partitionsUtilButtonsPanel.add( getOverwriteCheckBox() );
 	}
 
 
 	private void createDebugCheckBox() {
-		enableDebugCheckBox = new JCheckBox("debug");
-		partitions_UtilButtonsPanel.add(enableDebugCheckBox);
+		partitionsUtilButtonsPanel.add( getDebug() );
 	}
 
 
-	public String[] convertKbToHex(long[] sizes) {
-		String[] hexValues = new String[sizes.length];
-		for (int i = 0; i < sizes.length; i++) {
-			if (sizes[i] != 0) {
-				long bytes = sizes[i] * 1024; // Convert kilobytes to bytes
-				String hexValue = Long.toHexString(bytes); // Convert bytes to hexadecimal
-				hexValues[i] = hexValue.toUpperCase(); // Prefix "0x" and convert to uppercase
-			} else {
-				hexValues[i] = ""; // Set empty string if size is zero
-			}
-		}
-		return hexValues;
+	private void createPartitionFlashVisualPanel() {
+		csvpartitionsCenterVisualPanel = new JPanel(new GridBagLayout());
+		csvPartitionsVisual.add(csvpartitionsCenterVisualPanel, BorderLayout.SOUTH);
+	}
+
+
+	public void updatePartitionFlashTypeLabel() {
+		SPIFFSGenLabel.setText( (String)getPartitionFlashType().getSelectedItem() );
+		btnFlashSPIFFS.setText( (String)getPartitionFlashType().getSelectedItem() );
+	}
+
+
+	public void updatePartitionLabel( String label ) {
+		csvGenLabel.setText( label );
 	}
 
 
@@ -466,18 +474,6 @@ public class UI extends JPanel {
 	}
 
 
-	private void createPartitionFlashVisualPanel() {
-		csv_partitionsCenterVisualPanel = new JPanel(new GridBagLayout());
-		csv_PartitionsVisual.add(csv_partitionsCenterVisualPanel, BorderLayout.SOUTH);
-	}
-
-
-	public void updatePartitionFlashTypeLabel() {
-		SPIFFS_GenLabel.setText( (String)getPartitionFlashType().getSelectedItem() );
-		btn_flashSPIFFS.setText( (String)getPartitionFlashType().getSelectedItem() );
-	}
-
-
 	public void validateSubtypes() {
 		//
 		for( int i=0;i<csvRows.size();i++ ) {
@@ -490,19 +486,13 @@ public class UI extends JPanel {
 			if     ( type.equals("data") && subtype.equals("fat") )      getPartitionFlashType().setSelectedItem("FatFS");
 			else if( type.equals("data") && subtype.equals("spiffs") )   getPartitionFlashType().setSelectedItem("SPIFFS");
 			else if( type.equals("data") && subtype.equals("littlefs") ) getPartitionFlashType().setSelectedItem("LittleFS");
-
 		}
-	}
-
-
-	public void updatePartitionLabel( String label ) {
-		csv_GenLabel.setText( label );
 	}
 
 
 	public void updatePartitionFlashVisual() {
 		// Clear the center panel before updating
-		csv_partitionsCenterVisualPanel.removeAll();
+		csvpartitionsCenterVisualPanel.removeAll();
 
 		int FLASH_SIZE = flashSizeMB * 1024;
 		int RESERVED_SPACE = 36;
@@ -533,7 +523,7 @@ public class UI extends JPanel {
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		//gbc.setForeground( remainingSpace > 0 ? Color.BLACK : Color.RED );
 
-		csv_partitionsCenterVisualPanel.add(initialPanel, gbc);
+		csvpartitionsCenterVisualPanel.add(initialPanel, gbc);
 
 		// TODO: get rid of duplicate code
 		if (remainingSpace > 0) {
@@ -565,17 +555,14 @@ public class UI extends JPanel {
 					} else if (partName.equals("otadata")) {
 						partColor = new Color(191, 69, 122); // Magenta for OTA Data
 					}
-
 					partitionPanel.setBackground(partColor);
 					// Set the text color to white
 					JLabel label = new JLabel(getPartitionSubType(i).getText());
 					label.setForeground(Color.WHITE);
 					partitionPanel.add(label);
-
 					partitionPanel.setBorder(BorderFactory.createEtchedBorder());
-
 					gbc.weightx = weight;
-					csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
+					csvpartitionsCenterVisualPanel.add(partitionPanel, gbc);
 				} catch (NumberFormatException e) {
 				}
 			}
@@ -589,7 +576,7 @@ public class UI extends JPanel {
 			label.setForeground(Color.WHITE);
 			unusedSpacePanel.add(label);
 
-			csv_partitionsCenterVisualPanel.add(unusedSpacePanel, gbc);
+			csvpartitionsCenterVisualPanel.add(unusedSpacePanel, gbc);
 		} else {
 			for (int i = 0; i < getNumOfItems(); i++) {
 				CSVRow csvRow = getCSVRow( i );
@@ -629,36 +616,40 @@ public class UI extends JPanel {
 					partitionPanel.setBorder(BorderFactory.createEtchedBorder());
 
 					gbc.weightx = weight;
-					csv_partitionsCenterVisualPanel.add(partitionPanel, gbc);
+					csvpartitionsCenterVisualPanel.add(partitionPanel, gbc);
 				} catch (NumberFormatException e) {
 				}
 
 			}
 		}
-
 		// Revalidate and repaint the center panel to reflect changes
-		csv_partitionsCenterVisualPanel.revalidate();
-		csv_partitionsCenterVisualPanel.repaint();
+		csvpartitionsCenterVisualPanel.revalidate();
+		csvpartitionsCenterVisualPanel.repaint();
 	}
 
 
+	public ArrayList<CSVRow> getCSVRows() { return csvRows; }
 	public long         getFlashBytes() { return FlashSizeBytes; }
 	public int          getNumOfItems() { return csvRows.size(); }
-	public JButton      getImportCSVButton() { return partitions_ImportCSVButton; }
-	public JButton      getCreatePartitionsCSV() { return partitions_CSVButton; }
-	public JButton      getCreatePartitionsBin() { return partitions_BinButton; }
-	public JButton      getFlashSPIFFSButton() { return btn_flashSPIFFS; }
-	public JButton      getFlashMergedBin() { return btn_flashMergedBin; }
-	public JButton      getHelpButton() { return btn_help; }
-	public JButton      getAboutButton() { return btn_about; }
-	public JTextField   getSpiffsBlockSize() { return spiffs_blockSize; }
-	public JCheckBox    getDebug() { return enableDebugCheckBox; }
-	public JCheckBox    getConfirmDataEmptyCheckBox() { return confirmDataEmptyCheckBox; }
-	public JCheckBox    getOverwriteCheckBox() { return confirmOverwriteCheckBox; }
+	public JButton      getImportCSVButton() { return importCsvBtn; }
+	public JButton      getCreatePartitionsCSV() { return exporCsvBtn; }
+	public JButton      getCreatePartitionsBin() { return createBinBtn; }
+	public JButton      getFlashSPIFFSButton() { return btnFlashSPIFFS; }
+	public JButton      getFlashMergedBin() { return mergeBinBtn; }
+	public JButton 			getSettingsButton() { return btnSettings; }
+	public JButton      getHelpButton() { return getPrefsPanel().getHelpButton(); }
+	public JButton      getAboutButton() { return aboutBtn;/*getPrefsPanel().getAboutButton();*/ }
+	public JTextField   getSpiffsBlockSize() { return spiffsBlockSize; }
+	public JCheckBox    getDebug() { return getPrefsPanel().getDebug(); }
+	public JCheckBox    getConfirmDataEmptyCheckBox() { return getPrefsPanel().getConfirmDataEmptyCheckBox(); }
+	public JCheckBox    getOverwriteCheckBox() { return getPrefsPanel().getOverwriteCheckBox(); }
 	public JComboBox<?> getPartitionFlashType() { return partitionsFlashTypes; }
 	public JComboBox<?> getFlashSize() { return partitions_FlashSizes; }
-	public JLabel       getFlashFreeLabel() { return csv_partitionFlashFreeSpace; }
-
+	public JLabel       getFlashFreeLabel() { return partitionFlashFreeSpace; }
+	public UIController getController() { return controller; }
+	public PrefsPanel   getPrefsPanel() { return prefsPanel; }
+	public JButton 			getCancelButton() { return getPrefsPanel().getCancelButton(); }
+	public JButton 			getSaveButton() { return getPrefsPanel().getSaveButton(); }
 
 
 	// Getter method to access a specific checkbox by index
@@ -751,7 +742,7 @@ public class UI extends JPanel {
 		int spiffsIndex = -1; // Initialize spiffsIndex to -1 to indicate not found
 		// Iterate through the partition subtypes to find the SPIFFS partition
 		for (int i = 0; i < getNumOfItems(); i++) {
-		  if (!getCSVRow(i).enabled.isSelected()) continue;
+			if (!getCSVRow(i).enabled.isSelected()) continue;
 			JTextField partitionSubType = getPartitionSubType(i);
 			if (partitionSubType != null && partitionSubType.getText().equals("spiffs")) {
 				spiffsIndex = i;
@@ -768,4 +759,22 @@ public class UI extends JPanel {
 		return result;
 	}
 
+
+	public String[] convertKbToHex(long[] sizes) {
+		String[] hexValues = new String[sizes.length];
+		for (int i = 0; i < sizes.length; i++) {
+			if (sizes[i] != 0) {
+				long bytes = sizes[i] * 1024; // Convert kilobytes to bytes
+				String hexValue = Long.toHexString(bytes); // Convert bytes to hexadecimal
+				hexValues[i] = hexValue.toUpperCase(); // Prefix "0x" and convert to uppercase
+			} else {
+				hexValues[i] = ""; // Set empty string if size is zero
+			}
+		}
+		return hexValues;
+	}
+
+
 }
+
+

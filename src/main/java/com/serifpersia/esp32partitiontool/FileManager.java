@@ -32,16 +32,8 @@ public class FileManager {
 	private UI ui; // Reference to the UI instance
 	private Editor editor; // Reference to the Editor instance
 
-	private String imagePath;
-	Boolean isNetwork = false;
-	private String serialPort;
-	String uploadSpeed;
-	long spiStart;
-	// Declare spiSize, spiPage, spiBlock here
-	long spiSize;
-	int spiPage;
-	int spiBlock;
 	private ArrayList<String> createdPartitionsData;
+
 
 	boolean isWindows      = PreferencesData.get("runtime.os").contentEquals("windows");
 	String mcu             = BaseNoGui.getBoardPreferences().get("build.mcu");
@@ -53,6 +45,16 @@ public class FileManager {
 	String esptoolCmd      = "esptool" + toolExtension;
 	String genEsp32PartCmd = "gen_esp32part" + toolExtension;
 
+	String imagePath;
+	Boolean isNetwork;
+	String serialPort;
+	String uploadSpeed;
+
+	long spiStart;
+	// Declare spiSize, spiPage, spiBlock here
+	long spiSize;
+	int spiPage;
+	int spiBlock;
 
 	boolean debug_ui     			= false;
 	boolean confirm_overwrite = true;
@@ -65,7 +67,7 @@ public class FileManager {
 	String toolsPathBase         = BaseNoGui.getToolsPath();
 	File defaultSketchbookFolder = BaseNoGui.getDefaultSketchbookFolder();
 	String jarPath               = FileManager.class.getProtectionDomain().getCodeSource()
-	                                          .getLocation().getPath(); // => /path/to/ESP32PartitionTool/tool/ESP32PartitionTool.jar
+																						.getLocation().getPath(); // => /path/to/ESP32PartitionTool/tool/ESP32PartitionTool.jar
 	File jarFile                 = new File(jarPath);
 	String classPath             = jarFile.getParent();                 // => /path/to/ESP32PartitionTool/tool
 	String propertiesFile        = classPath + "/prefs.properties";     // => /path/to/ESP32PartitionTool/tool/prefs.properties
@@ -85,6 +87,7 @@ public class FileManager {
 		this.editor = editor;
 	}
 
+
 	public void emitError( String msg ) {
 		System.err.println();
 		editor.statusError( msg );
@@ -99,8 +102,9 @@ public class FileManager {
 		return filename;
 	}
 
+
 	public void setUIController( UIController controller ) {
-		ui.controller = controller;
+		ui.setController( controller );
 	}
 
 
@@ -112,7 +116,7 @@ public class FileManager {
 
 
 	public void setConfirmOverwrite( boolean enable ) {
-	  confirm_overwrite = enable;
+		confirm_overwrite = enable;
 		prefs.setProperty("files.confirm_overwrite", confirm_overwrite?"true":"false");
 		saveProperties();
 	}
@@ -124,8 +128,8 @@ public class FileManager {
 		saveProperties();
 	}
 
-	public boolean canRun() {
 
+	public boolean canRun() {
 		if (!PreferencesData.get("target_platform").contentEquals("esp32")) {
 			emitError("Unsupported platform: " + PreferencesData.get("target_platform"));
 			emitError("This tools only runs on esp32 platform");
@@ -136,7 +140,6 @@ public class FileManager {
 			emitError("No partitions defined for " + BaseNoGui.getBoardPreferences().get("name") + " in boards.txt");
 			return false;
 		}
-
 		return true;
 	}
 
@@ -174,8 +177,6 @@ public class FileManager {
 				prefs.forEach((key, value) -> {
 					System.out.println("[Loaded pref] " + key + " = " + value);
 				});
-				// Get all keys
-				// prefs.keySet().forEach(x -> System.out.println(x));
 			}
 
 			// search for esptool.[py|exe] in all the following folders
@@ -193,7 +194,6 @@ public class FileManager {
 			if( !findFile( esptoolCmd, espToolSearchPaths, "esptool" ) ) {
 				editor.statusError(" Error: esptool not found!");
 			}
-
 
 			// search for esptool.[py|exe] in all the following folders
 			String otaToolSearchPaths[] = {
@@ -250,13 +250,10 @@ public class FileManager {
 			System.out.println("toolsPathBase           = " + toolsPathBase);
 			System.out.println("defaultSketchbookFolder = " + defaultSketchbookFolder);
 		}
-
 	}
 
 
 	public void loadCSV() {
-
-
 		// figure out what csv file is selected in the boards menu, and where it is
 		String csvName        = BaseNoGui.getBoardPreferences().get("build.partitions");
 		String customCsvName  = BaseNoGui.getBoardPreferences().get("build.custom_partitions");
@@ -267,9 +264,9 @@ public class FileManager {
 		String variantCsvPath = null;
 
 		// check if the board uses a custom partition, could be stored in variants or tools folder
-    if( BaseNoGui.getBoardPreferences().containsKey("build.custom_partitions") ) {
+		if( BaseNoGui.getBoardPreferences().containsKey("build.custom_partitions") ) {
 			variantCsvPath = variantPath + "/" + customCsvName + ".csv";
-    } else {
+		} else {
 			variantCsvPath = variantPath    + "/" + csvName + ".csv";
 		}
 
@@ -290,7 +287,6 @@ public class FileManager {
 				break;
 			}
 		}
-
 	}
 
 
@@ -332,6 +328,8 @@ public class FileManager {
 		}
 	}
 
+
+	// don't use it, it freezes the applet during compilation, not worth the lazyness
 	public boolean CompileSketch() {
 		try {
 			if( editor.getSketchController().build(true, true) != null )
@@ -351,7 +349,6 @@ public class FileManager {
 					return false;
 				};
 			}
-
 			if (Files.notExists(Paths.get(path))) {
 				emitError("Build path "+path+" still not found after compiling, giving up");
 				return false;
@@ -368,7 +365,6 @@ public class FileManager {
 
 		for (int i = 0; i < numOfItems; i++) {
 			CSVRow csvRow = ui.getCSVRow(i);
-
 			if (csvRow.enabled.isSelected()) {
 				String exported_csvPartition = csvRow.toString();
 				if( debug_ui )
@@ -377,6 +373,7 @@ public class FileManager {
 			}
 		}
 	}
+
 
 	public void importCSV( String file ) {
 		File defaultDirectory = editor.getSketch().getFolder();
@@ -438,7 +435,7 @@ public class FileManager {
 		int rowIndex = 0;
 		String line;
 
-		ui.clearCSVRows();
+		ui.getCSVRows().clear();
 
 		while ((line = reader.readLine()) != null && rowIndex < 100) {
 			// Skip comment lines that start with #
@@ -482,7 +479,6 @@ public class FileManager {
 		};
 
 		CSVRow csvRow = new CSVRow( cells );
-		csvRow.attachListeners( ui.controller );
 		ui.addCSVRow( csvRow );
 	}
 
@@ -536,7 +532,7 @@ public class FileManager {
 
 			if (Files.notExists(Paths.get(filePath))) {
 				emitError("Failed to write " + filePath);
-			  return false;
+				return false;
 			}
 			System.out.println("partitions.csv written at: " + filePath);
 			return true;
@@ -594,7 +590,7 @@ public class FileManager {
 
 
 	private String getBuildFolderPath() {
-	  Sketch sketch = editor.getSketch();
+		Sketch sketch = editor.getSketch();
 		// first of all try the getBuildPath() function introduced with IDE 1.6.12
 		// see commit arduino/Arduino#fd1541eb47d589f9b9ea7e558018a8cf49bb6d03
 		try {
@@ -689,10 +685,7 @@ public class FileManager {
 				return false;
 			System.out.println("Will overwrite " + csvFilePath);
 		}
-
-		// Assuming you have access to the UI components
 		calculateCSV();
-
 		try (FileWriter writer = new FileWriter(csvFilePath)) {
 			// Write the exported data to the CSV file
 			for (String partitionData : createdPartitionsData) {
@@ -702,14 +695,11 @@ public class FileManager {
 			emitError("Error exporting CSV: " + ex.getMessage());
 			return false;
 		}
-
 		if (Files.notExists(Paths.get(csvFilePath))) {
 			emitError("Failed to create " + csvFilePath);
 			return false;
 		}
-
 		editor.statusNotice("Created partitions.csv" );
-
 		return true;
 	}
 
@@ -915,8 +905,8 @@ public class FileManager {
 			emitError("Failed to create " + fsName + "!");
 			return false;
 		} finally {
-		  // NOTE: since partitions.csv is now taken from the sketch folder it
-		  //       is no longer pertinent to delete it after use
+			// NOTE: since partitions.csv is now taken from the sketch folder it
+			//       is no longer pertinent to delete it after use
 		}
 		return true;
 	}

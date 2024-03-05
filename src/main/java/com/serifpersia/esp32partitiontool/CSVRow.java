@@ -36,20 +36,20 @@ public class CSVRow extends JPanel {
 		sizeHex   = new JTextField();
 		offset    = new JTextField();
 
-
 		// restrict the 'size' field to numbers, with the help of NumberFormat
-    NumberFormat format = NumberFormat.getInstance();
-    format.setGroupingUsed(false); // no comma separator
-    NumberFormatter formatter = new NumberFormatter(format);
-    formatter.setValueClass(Integer.class);
-    formatter.setMinimum(0);
-    formatter.setMaximum(Integer.MAX_VALUE);
-    formatter.setAllowsInvalid(false);
-    formatter.setCommitsOnValidEdit(true); // true = value committed on each keystroke instead of focus loss
-    size = new JFormattedTextField(formatter);
+		NumberFormat format = NumberFormat.getInstance();
+		format.setGroupingUsed(false); // no comma separator
+		NumberFormatter formatter = new NumberFormatter(format);
+		formatter.setValueClass(Integer.class);
+		formatter.setMinimum(0);
+		formatter.setMaximum(Integer.MAX_VALUE);
+		formatter.setAllowsInvalid(false);
+		formatter.setCommitsOnValidEdit(true); // true = value committed on each keystroke instead of focus loss
+		size = new JFormattedTextField(formatter);
 
 		final Font currFont = name.getFont();
 
+		// center options text in JComboBox
 		type.setRenderer(new DefaultListCellRenderer(){{ setHorizontalAlignment(DefaultListCellRenderer.CENTER); }});
 
 		enabled.setHorizontalAlignment(SwingConstants.CENTER);
@@ -83,7 +83,7 @@ public class CSVRow extends JPanel {
 
 		Component[] components = { enabled, name, type, subtype, size, sizeHex, offset };
 		for( int i=0; i<components.length; i++ ) {
-		  add( wrap( components[i] ), BorderLayout.CENTER );
+			add( wrap( components[i] ), BorderLayout.CENTER );
 		}
 
 	}
@@ -110,8 +110,8 @@ public class CSVRow extends JPanel {
 
 
 	public String toString() {
-	  String comma = ",";
-	  return String.format("%-10s %-5s %-10s %10s %10s",
+		String comma = ",";
+		return String.format("%-10s %-5s %-10s %10s %10s",
 			name.getText()+comma ,
 			type.getSelectedItem().toString()+comma ,
 			subtype.getText()+comma ,
@@ -185,7 +185,7 @@ public class CSVRow extends JPanel {
 
 
 	public String subtypeToString( String value ) {
-	  if( value.startsWith("0x") ) {
+		if( value.startsWith("0x") ) {
 			String typeStr = (String) type.getSelectedItem();
 			int subTypeVal = -1;
 			try {
@@ -211,10 +211,10 @@ public class CSVRow extends JPanel {
 				else if( subTypeVal == 0x82 ) value = "spiffs";
 				else if( subTypeVal == 0x83 ) value = "littlefs";
 			}
-	  } else {
+		} else {
 
-	  }
-	  return value;
+		}
+		return value;
 	}
 
 
