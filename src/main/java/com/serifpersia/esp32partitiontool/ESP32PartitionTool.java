@@ -36,13 +36,64 @@ package com.serifpersia.esp32partitiontool;
 import processing.app.Editor;
 import processing.app.tools.Tool;
 
+
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.Toolkit;
+import java.awt.*;
+import javax.swing.*;
 
 
-import javax.swing.JFrame;
-import java.awt.Dimension;
+
+final class JFrameWithBgImage extends JFrame {
+
+	private JLabel background;
+
+	public JFrameWithBgImage() {
+		super("ESP32 Partition Tool");
+
+		final int minFrameWidth  = 1024;
+		final int minFrameHeight = 640;
+		final int maxFrameWidth  = 1280;
+		final int maxFrameHeight = 800;
+
+		setVisible(true);
+		setLayout(new BorderLayout());
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		setMaximumSize(new Dimension(maxFrameWidth, maxFrameHeight));
+		setMinimumSize(new Dimension(minFrameWidth, minFrameHeight));
+		setSize(new Dimension(minFrameWidth, minFrameHeight));
+		setResizable(false);
+
+		ImageIcon imageIcon = new ImageIcon(UIController.class.getResource("/resources/bg.png"));
+		Image scaledImage   = getScaledImage( imageIcon.getImage(), 1024, 640 );
+		background          = new JLabel(new ImageIcon(scaledImage));
+
+		add( background );
+		background.setLayout(new BorderLayout(0, 0));
+	}
+
+	public void addUI(UI contentPane) {
+		background.add( contentPane );
+	}
+
+
+	private Image getScaledImage(Image srcImg, int w, int h){
+		BufferedImage resizedImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2 = resizedImg.createGraphics();
+
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g2.drawImage(srcImg, 0, 0, w, h, null);
+		g2.dispose();
+
+		return resizedImg;
+	}
+
+}
+
 
 public class ESP32PartitionTool implements Tool {
 
@@ -71,23 +122,13 @@ public class ESP32PartitionTool implements Tool {
 
 		fileManager.loadProperties();
 
-		final int minFrameWidth  = 1024;
-		final int minFrameHeight = 640;
-		final int maxFrameWidth  = 1280;
-		final int maxFrameHeight = 800;
-
 		// Create and show the JFrame
 		if (frame == null) {
-			frame = new JFrame("ESP32 Partition Tool");
-			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			//frame = new JFrame("ESP32 Partition Tool");
+			frame = new JFrameWithBgImage();
 
-			frame.setMaximumSize(new Dimension(maxFrameWidth, maxFrameHeight));
-			frame.setMinimumSize(new Dimension(minFrameWidth, minFrameHeight));
-			frame.setSize(new Dimension(minFrameWidth, minFrameHeight));
-			frame.setResizable(false);
-
-			// Add panel to frame
-			frame.getContentPane().add(contentPane);
+			// Add UI to frame
+			frame.addUI( contentPane );
 
 			fileManager.setUIController( new UIController(contentPane, fileManager) );
 

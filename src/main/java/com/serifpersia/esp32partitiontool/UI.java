@@ -17,6 +17,14 @@ import java.io.*;
 import javax.swing.event.*;
 
 
+final class JTransparentPanel extends JPanel {
+	public JTransparentPanel() {
+		setOpaque( false );
+	}
+}
+
+
+
 public class UI extends JPanel {
 
 	private static final long serialVersionUID = 1L;
@@ -30,6 +38,8 @@ public class UI extends JPanel {
 	private UIController controller;
 
 	public PrefsPanel prefsPanel;
+	public HelpPanel  helpPanel;
+	public AboutPanel aboutPanel;
 
 	private JScrollPane csvScrollPanel;
 
@@ -59,6 +69,7 @@ public class UI extends JPanel {
 	private JButton importCsvBtn;
 	private JButton exporCsvBtn;
 	private JButton createBinBtn;
+	private JButton helpButton;
 
 	private JCheckBox rememberChoiceCheckBox = new JCheckBox("Remember my decision"); // used in confirmDialogs
 
@@ -67,15 +78,13 @@ public class UI extends JPanel {
 
 	public UI() {
 		setLayout(new BorderLayout(0, 0));
+		setOpaque(false); // transparent background!
 		init();
 	}
 
 
 	private void init() {
 		createPanels();
-		createFreeSpaceBox();
-		createSettingsButton();
-		createAboutButton();
 		calculateOffsets();
 		createPartitionFlashVisualPanel();
 		updatePartitionFlashVisual();
@@ -91,7 +100,7 @@ public class UI extends JPanel {
 		if( line == null )  {
 			line = new CSVRow(null);
 		}
-		line.attachListeners( this.controller );
+
 		line.size.getDocument().addDocumentListener(new DocumentListener() {
 			public void changedUpdate(DocumentEvent e) { recalculate(); }
 			public void removeUpdate(DocumentEvent e) { recalculate(); }
@@ -160,12 +169,13 @@ public class UI extends JPanel {
 
 
 	public void addTitleCSVRow() {
-		JPanel titleLinePanel = new JPanel();
+		JPanel titleLinePanel = new JTransparentPanel();
 		titleLinePanel.setLayout(new GridLayout(0, 7, 0, 0));
 
 		String labels[] = { "Enable", "Name", "Type", "SubType", "Size(kB)", "Size(hex)", "Offset(hex)" };
 		for( int i=0; i<labels.length; i++ ) {
 			JLabel label = new JLabel( labels[i] );
+			label.setOpaque(false);
 			label.setHorizontalAlignment(SwingConstants.CENTER);
 			titleLinePanel.add(label, BorderLayout.NORTH);
 		}
@@ -175,7 +185,8 @@ public class UI extends JPanel {
 
 	// confirm dialog with optional "Remember my decision" checkbox
 	public boolean confirmDialogOverwrite( String msg, String title ) {
-		JPanel panel = new JPanel(new BorderLayout());
+		JPanel panel = new JTransparentPanel();
+		panel.setLayout( new BorderLayout() );
 		panel.add(new JLabel(msg), BorderLayout.NORTH);
 
 		panel.add(rememberChoiceCheckBox, BorderLayout.SOUTH);
@@ -194,28 +205,35 @@ public class UI extends JPanel {
 	private void createPanels() {
 
 		prefsPanel = new PrefsPanel();
+		helpPanel  = new HelpPanel();
+		aboutPanel = new AboutPanel();
 
-		csvGenPanel = new JPanel();
+		csvGenPanel = new JTransparentPanel();
+
 		add(csvGenPanel);
 		csvGenPanel.setLayout(new BorderLayout(0, 0));
 		csvGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 		csvGenLabel = new JLabel("Partitions");
+		csvGenLabel.setOpaque(false);
 		csvGenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		csvGenLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		csvGenPanel.add(csvGenLabel, BorderLayout.NORTH);
 
-		csvPanel = new JPanel();
+		csvPanel = new JTransparentPanel();
 		csvScrollPanel = new JScrollPane( csvPanel );
+		csvScrollPanel.setViewportBorder(null);
+		csvScrollPanel.setOpaque( false );
+		csvScrollPanel.getViewport().setOpaque(false);
 		csvScrollPanel.getVerticalScrollBar().setUnitIncrement(100); // prevent the scroll wheel from going sloth
 
 		csvGenPanel.add(csvScrollPanel, BorderLayout.CENTER );
 
-		csvPartitionsVisual = new JPanel();
+		csvPartitionsVisual = new JTransparentPanel();
 		csvGenPanel.add(csvPartitionsVisual, BorderLayout.SOUTH);
 		csvPartitionsVisual.setLayout(new BorderLayout(0, 0));
 
-		partitionsUtilButtonsPanel = new JPanel();
+		partitionsUtilButtonsPanel = new JTransparentPanel();
 		csvPartitionsVisual.add(partitionsUtilButtonsPanel, BorderLayout.NORTH);
 
 		JLabel csv_FlashSizeLabel = new JLabel("Flash Size: MB");
@@ -225,16 +243,16 @@ public class UI extends JPanel {
 		partitions_FlashSizes = new JComboBox<>(new String[] { "4", "8", "16", "32" });
 		partitionsUtilButtonsPanel.add(partitions_FlashSizes);
 
-		importCsvBtn = new JButton("Import CSV");
+		importCsvBtn = new JButton(" Import CSV ");
 		partitionsUtilButtonsPanel.add(importCsvBtn);
 
-		exporCsvBtn = new JButton("Export CSV");
+		exporCsvBtn = new JButton(" Export CSV ");
 		partitionsUtilButtonsPanel.add(exporCsvBtn);
 
-		createBinBtn = new JButton("Create Bin");
+		createBinBtn = new JButton(" Create Bin ");
 		partitionsUtilButtonsPanel.add(createBinBtn);
 
-		SPIFFSGenPanel = new JPanel();
+		SPIFFSGenPanel = new JTransparentPanel();
 		add(SPIFFSGenPanel, BorderLayout.EAST);
 		SPIFFSGenPanel.setLayout(new BorderLayout(0, 0));
 		SPIFFSGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -244,14 +262,18 @@ public class UI extends JPanel {
 		SPIFFSGenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		SPIFFSGenPanel.add(SPIFFSGenLabel, BorderLayout.NORTH);
 
-		JPanel SPIFFSGenInnerPanel = new JPanel();
+		JPanel SPIFFSGenInnerPanel = new JTransparentPanel();
 
 		SPIFFSGenPanel.add(SPIFFSGenInnerPanel, BorderLayout.CENTER);
 		SPIFFSGenInnerPanel.setLayout(new BorderLayout(0, 0));
 
+		//ImageIcon bgImage = new ImageIcon(UIController.class.getResource("/resources/bg.png"));
+		//SPIFFSGenPanel.add( new JLabel(bgImage), BorderLayout.SOUTH);
+
 		GridLayout gl = new GridLayout(0, 2);
 		gl.setHgap(5);
-		JPanel SPIFFSInnerPanel = new JPanel(gl); // 0 rows means any number of rows, 2 columns
+		JPanel SPIFFSInnerPanel = new JTransparentPanel(); // 0 rows means any number of rows, 2 columns
+		SPIFFSInnerPanel.setLayout( gl );
 		SPIFFSGenInnerPanel.add(SPIFFSInnerPanel, BorderLayout.NORTH);
 
 		JLabel LabelFs = new JLabel("Filesystem:");
@@ -269,18 +291,18 @@ public class UI extends JPanel {
 		spiffsBlockSize.setEditable(false);
 		SPIFFSInnerPanel.add(spiffsBlockSize);
 
-		JPanel SPIFFS_AND_MERGE_AND_FLASH_Panel = new JPanel();
+		JPanel SPIFFS_AND_MERGE_AND_FLASH_Panel = new JTransparentPanel();
 		SPIFFSGenInnerPanel.add(SPIFFS_AND_MERGE_AND_FLASH_Panel, BorderLayout.CENTER);
 		SPIFFS_AND_MERGE_AND_FLASH_Panel.setLayout(new BorderLayout(0, 0));
 
-		JPanel panel2 = new JPanel();
+		JPanel panel2 = new JTransparentPanel();
 		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel2, BorderLayout.NORTH);
 		panel2.setLayout(new BorderLayout(0, 0));
 
 		btnFlashSPIFFS = new JButton("SPIFFS");
 		panel2.add(btnFlashSPIFFS);
 
-		JPanel panel3 = new JPanel();
+		JPanel panel3 = new JTransparentPanel();
 		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel3, BorderLayout.CENTER);
 		panel3.setLayout(new BorderLayout(0, 0));
 		panel3.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
@@ -291,80 +313,40 @@ public class UI extends JPanel {
 
 		panel3.add(lblNewLabel3, BorderLayout.NORTH);
 
-		JPanel panel4 = new JPanel();
+		JPanel panel4 = new JTransparentPanel();
 		panel3.add(panel4, BorderLayout.CENTER);
 		panel4.setLayout(new BorderLayout(0, 0));
 
-		JPanel panel5 = new JPanel();
+		JPanel panel5 = new JTransparentPanel();
 		panel4.add(panel5, BorderLayout.NORTH);
 		panel5.setLayout(new GridLayout(2, 0, 0, 0));
 
 		mergeBinBtn = new JButton("Merge Binary");
 		panel5.add(mergeBinBtn);
 
+		// free space box
+		partitionFlashFreeSpace = new JLabel("Free Space: not set");
+		partitionsUtilButtonsPanel.add(partitionFlashFreeSpace);
+		// settings button
+		ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/gear.png"));
+		btnSettings = new JButton(icon);
+		partitionsUtilButtonsPanel.add(btnSettings);
+		// help button
+		helpButton = new JButton(" Help ");
+		partitionsUtilButtonsPanel.add( helpButton );
+		// about button
+		aboutBtn = new JButton(" About ");
+		partitionsUtilButtonsPanel.add( aboutBtn );
+
 		// TODO: insert image 170 * 384 ?
 
 	}
 
 
-	public void showSettingsPanel() {
-		removeAll();
-		add( prefsPanel, BorderLayout.CENTER );
-		revalidate();
-		repaint();
-	}
-
-
-	public void hideSettingsPanel() {
-		removeAll();
-		add( csvGenPanel );
-		add( SPIFFSGenPanel, BorderLayout.EAST );
-		revalidate();
-		repaint();
-	}
-
-
-	private void createSettingsButton() {
-		ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/gear.png"));
-		btnSettings = new JButton(icon);
-		partitionsUtilButtonsPanel.add(btnSettings);
-	}
-
-
-	private void createFreeSpaceBox() {
-		partitionFlashFreeSpace = new JLabel("Free Space: not set");
-		partitionsUtilButtonsPanel.add(partitionFlashFreeSpace);
-	}
-
-
-	private void createAboutButton() {
-		aboutBtn = new JButton("About");
-		partitionsUtilButtonsPanel.add( aboutBtn );
-	}
-
-
-	private void createHelpButton() {
-		partitionsUtilButtonsPanel.add( getHelpButton() );
-	}
-
-
-	private void createConfirmDataEmptyCheckBox() {
-		partitionsUtilButtonsPanel.add(getConfirmDataEmptyCheckBox());
-	}
-
-
-	private void createOverwriteCheckBox() {
-		partitionsUtilButtonsPanel.add( getOverwriteCheckBox() );
-	}
-
-
-	private void createDebugCheckBox() {
-		partitionsUtilButtonsPanel.add( getDebug() );
-	}
-
 
 	private void createPartitionFlashVisualPanel() {
-		csvpartitionsCenterVisualPanel = new JPanel(new GridBagLayout());
+		csvpartitionsCenterVisualPanel = new JTransparentPanel();
+		csvpartitionsCenterVisualPanel.setLayout( new GridBagLayout() );
 		csvPartitionsVisual.add(csvpartitionsCenterVisualPanel, BorderLayout.SOUTH);
 	}
 
@@ -512,7 +494,8 @@ public class UI extends JPanel {
 
 		int remainingSpace = FLASH_SIZE - RESERVED_SPACE - totalPartitionSize;
 
-		JPanel initialPanel = new JPanel(new BorderLayout());
+		JPanel initialPanel = new JTransparentPanel();
+		initialPanel.setLayout( new BorderLayout() );
 		JLabel initialLabel = new JLabel("0x9000");
 		GridBagConstraints gbc = new GridBagConstraints();
 
@@ -567,7 +550,7 @@ public class UI extends JPanel {
 				}
 			}
 
-			JPanel unusedSpacePanel = new JPanel();
+			JPanel unusedSpacePanel = new JTransparentPanel();
 			unusedSpacePanel.setBorder(BorderFactory.createEtchedBorder());
 			unusedSpacePanel.setBackground(Color.GRAY);
 			gbc.weightx = (double) remainingSpace / (FLASH_SIZE - RESERVED_SPACE);
@@ -637,7 +620,7 @@ public class UI extends JPanel {
 	public JButton      getFlashSPIFFSButton() { return btnFlashSPIFFS; }
 	public JButton      getFlashMergedBin() { return mergeBinBtn; }
 	public JButton 			getSettingsButton() { return btnSettings; }
-	public JButton      getHelpButton() { return getPrefsPanel().getHelpButton(); }
+	public JButton      getHelpButton() { return helpButton; }
 	public JButton      getAboutButton() { return aboutBtn;/*getPrefsPanel().getAboutButton();*/ }
 	public JTextField   getSpiffsBlockSize() { return spiffsBlockSize; }
 	public JCheckBox    getDebug() { return getPrefsPanel().getDebug(); }
@@ -648,8 +631,6 @@ public class UI extends JPanel {
 	public JLabel       getFlashFreeLabel() { return partitionFlashFreeSpace; }
 	public UIController getController() { return controller; }
 	public PrefsPanel   getPrefsPanel() { return prefsPanel; }
-	public JButton 			getCancelButton() { return getPrefsPanel().getCancelButton(); }
-	public JButton 			getSaveButton() { return getPrefsPanel().getSaveButton(); }
 
 
 	// Getter method to access a specific checkbox by index

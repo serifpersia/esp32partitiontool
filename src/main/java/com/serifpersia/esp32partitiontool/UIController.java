@@ -2,15 +2,13 @@ package com.serifpersia.esp32partitiontool;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 import java.awt.Rectangle;
 import java.awt.Component;
 import java.awt.Desktop;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
-import javax.swing.ImageIcon;
-import javax.swing.JEditorPane;
+import java.awt.Frame;
+import java.awt.Dialog;
+import javax.swing.*;
 import javax.swing.event.*;
 import java.net.*;
 import java.io.IOException;
@@ -62,8 +60,8 @@ public class UIController implements ActionListener {
 		ui.getOverwriteCheckBox().addActionListener(this);
 		ui.getConfirmDataEmptyCheckBox().addActionListener(this);
 		ui.getSettingsButton().addActionListener(this);
-		ui.getCancelButton().addActionListener(this);
-		ui.getSaveButton().addActionListener(this);
+		//ui.getCancelButton().addActionListener(this);
+		//ui.getSaveButton().addActionListener(this);
 
 	}
 
@@ -92,12 +90,7 @@ public class UIController implements ActionListener {
 		} else if (e.getSource() == ui.getAboutButton()) {
 			handleAboutButton();
 		} else if( e.getSource() == ui.getSettingsButton() ) {
-			ui.showSettingsPanel();
-		} else if( e.getSource() == ui.prefsPanel.getCancelButton() ) {
-			ui.hideSettingsPanel();
-		} else if( e.getSource() == ui.prefsPanel.getSaveButton() ) {
-			fileManager.saveProperties();
-			ui.hideSettingsPanel();
+			handleSettingsButton();
 		}
 
 	}
@@ -212,52 +205,27 @@ public class UIController implements ActionListener {
 
 
 	private void handleAboutButton() {
-
-			String boxpadding   = "padding-top: 0px;padding-right: 10px;padding-bottom: 10px;padding-left: 10px;";
-			String titleSpanned = "<span style=\"background-color: #d7a631\">&nbsp;ESP32&nbsp;</span>"
-													+ "<span style=\"background-color: #bf457a\">&nbsp;Partition&nbsp;</span>"
-													+ "<span style=\"background-color: #42b0f5\">&nbsp;Tool&nbsp;</span>"
-													+ "<span style=\"background-color: #9a41c2\">&nbsp;v1.3&nbsp;</span>";
-			String title        = "<h2 align=center style=\"color: #ffffff;\">"+titleSpanned+"</h2>";
-			String description  = "<p>The ESP32 Partition Tool is a utility designed to ease the manipulation<br>"
-													+ "of custom partition schemes in the Arduino IDE 1.8.x environment.<br>"
-													+ "This tool aims to simplify the process of creating custom partition<br>"
-													+ "schemes for ESP32 projects.</p>";
-			String projectlink  = "<p><b>Source:</b><br>https://github.com/serifpersia/esp32partitiontool</p>";
-			String copyright    = "<p><b>Copyright (c) 2024 @serifpersia</b><br>https://github.com/serifpersia</p>";
-			String credits      = "<p><b>Contributors:</b><br>serifpersia, tobozo</p>";
-			String message      = "<html>"+title+"<div style=\""+boxpadding+"\">"
-													+ description +  projectlink + copyright + credits + "</div></html>";
-
-			JEditorPane ep = new JEditorPane("text/html", message);
-			ep.setEditable(false);
-
-			ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/shrug.png"));
-
-			int option = JOptionPane.showConfirmDialog(null, ep, "About ESP32PartitionTool",
-					JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, icon);
+		// modal dialog with icon
+		ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/shrug.png"));
+		JOptionPane.showConfirmDialog(null, ui.aboutPanel, "About ESP32PartitionTool", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, icon);
 	}
 
 
-	private void handleHelpButton() {
-		int currentStep = 0;
-		String[] messages = {
-				"<html>Usage:Export CSV to sketch dir, under Tools > Partition schemes, select: Huge App/No OTA/1MB SPIFFS to use custom partition scheme.</html>",
-				"<html>Compile sketch to use SPIFFS & Merge tools.",
-				"<html>Partitions like nvs or any other small partitions before the app partition<br>needs to be a multiple of 4.</html>",
-				"<html>Partitions before the first app partition should have a total of 28 kB so the offset<br>for the first app partition will always be correct at 0x10000 offset.<br>Any other configuration will cause the ESP32 board to not function properly.</html>",
-				"<html>The app partition needs to be at 0x10000, and following partitions have to be<br>a multiple of 64.</html>",
-				"<html>The app partition needs to be a minimum of 1024 kB in size.</html>" };
-		while (currentStep < messages.length) {
-			String message = messages[currentStep];
-			int option = JOptionPane.showConfirmDialog(null, message, "Tip " + (currentStep + 1),
-					JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
-			if (option == JOptionPane.OK_OPTION) {
-				currentStep++;
-			} else {
-				break; // Exit the loop if the user cancels
-			}
-		}
+	public void handleSettingsButton() {
+		// modal dialog without icon
+		JOptionPane.showOptionDialog(ui, ui.prefsPanel, "Settings", -1, JOptionPane.PLAIN_MESSAGE, null, null, null);
 	}
+
+
+	public void handleHelpButton() {
+		// modal dialog with minimal decoration
+		final JDialog dialog = new JDialog((Frame)null, "Help Tips", true);
+		dialog.getRootPane().setWindowDecorationStyle(JRootPane.PLAIN_DIALOG);
+		dialog.add(ui.helpPanel);
+		dialog.pack();
+		dialog.setLocationRelativeTo(null);
+		dialog.setVisible(true);
+	}
+
 
 }

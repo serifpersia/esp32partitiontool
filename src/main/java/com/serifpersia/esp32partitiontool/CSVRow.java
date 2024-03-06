@@ -27,6 +27,7 @@ public class CSVRow extends JPanel {
 	public CSVRow( String values[] ) {
 
 		setLayout(new GridLayout(0, 7, 0, 0));
+		setOpaque(false);
 
 		enabled   = new JCheckBox("Enable");
 		name      = new JTextField();
@@ -158,6 +159,7 @@ public class CSVRow extends JPanel {
 
 	private JPanel wrap( Component src ) {
 		JPanel wrapper = new JPanel();
+		wrapper.setOpaque(false);
 		wrapper.setLayout(new BorderLayout(0, 0));
 		wrapper.add( src );
 		return wrapper;
