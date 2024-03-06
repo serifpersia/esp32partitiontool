@@ -101,7 +101,7 @@ public class ESP32PartitionTool implements Tool {
 	private FileManager fileManager; // FileManager instance
 
 	Editor editor;
-	private JFrame frame;
+	private JFrameWithBgImage frame;
 
 	public static void main(String[] args) {
 		ESP32PartitionTool tool = new ESP32PartitionTool();
