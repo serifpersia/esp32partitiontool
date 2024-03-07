@@ -2,12 +2,9 @@ package com.serifpersia.esp32partitiontool;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JOptionPane;
-import javax.swing.JTextField;
-
 import java.awt.Component;
+import java.awt.Frame;
+import javax.swing.*;
 
 public class UIController implements ActionListener {
 	private static UIController instance;
@@ -28,12 +25,9 @@ public class UIController implements ActionListener {
 		return instance;
 	}
 
-	private int getIndexForComponent(Component component) {
-		int numOfItems = ui.getNumOfItems();
-		for (int i = 0; i < numOfItems; i++) {
-			if (component == ui.getCheckBox(i) || component == ui.getPartitionName(i)
-					|| component == ui.getPartitionType(i) || component == ui.getPartitionSubType(i)
-					|| component == ui.getPartitionSize(i)) {
+	private int getRowIndexForComponent(Component component) {
+		for (int i = 0; i < ui.getCSVRows().size(); i++) {
+			if (ui.getCSVRow(i) == component.getParent().getParent()) {
 				return i;
 			}
 		}
@@ -42,30 +36,29 @@ public class UIController implements ActionListener {
 
 	private void attachListeners() {
 		// Attach listener to the "Generate CSV" button
+		ui.getDebug().addActionListener(this);
 		ui.getImportCSVButton().addActionListener(this);
 		ui.getCreatePartitionsCSV().addActionListener(this);
-		int numOfItems = ui.getNumOfItems();
-		for (int i = 0; i < numOfItems; i++) {
-			JCheckBox checkBox = ui.getCheckBox(i);
-			checkBox.addActionListener(this);
-			ui.getPartitionName(i).addActionListener(this);
-			ui.getPartitionType(i).addActionListener(this);
-			ui.getPartitionSubType(i).addActionListener(this);
-			ui.getPartitionSize(i).addActionListener(this);
-		}
 		ui.getCreatePartitionsBin().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
 		ui.getFlashSPIFFSButton().addActionListener(this);
 		ui.getPartitionFlashType().addActionListener(this);
 		ui.getFlashMergedBin().addActionListener(this);
 		ui.getHelpButton().addActionListener(this);
+		ui.getAboutButton().addActionListener(this);
+		ui.getOverwriteCheckBox().addActionListener(this);
+		ui.getConfirmDataEmptyCheckBox().addActionListener(this);
+		ui.getSettingsButton().addActionListener(this);
+		// ui.getCancelButton().addActionListener(this);
+		// ui.getSaveButton().addActionListener(this);
+
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == ui.getImportCSVButton()) {
 			// Handle CSV export
-			fileManager.importCSV();
+			fileManager.importCSV(null);
 		} else if (e.getSource() == ui.getCreatePartitionsCSV()) {
 			// Handle CSV export
 			fileManager.generateCSV();
@@ -76,58 +69,80 @@ public class UIController implements ActionListener {
 		} else if (e.getSource() instanceof JComboBox<?>) {
 			handleComboBoxAction((JComboBox<?>) e.getSource());
 		} else if (e.getSource() == ui.getCreatePartitionsBin()) {
-			fileManager.createPartitionsBin();
+			fileManager.createPartitionsBin(null);
 		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
-			fileManager.handleSPIFFS();
+			fileManager.handleSPIFFSButton(null);
 		} else if (e.getSource() == ui.getFlashMergedBin()) {
-			fileManager.handleMergedBin();
+			fileManager.handleMergedBinButton(null);
 		} else if (e.getSource() == ui.getHelpButton()) {
 			handleHelpButton();
+		} else if (e.getSource() == ui.getAboutButton()) {
+			handleAboutButton();
+		} else if (e.getSource() == ui.getSettingsButton()) {
+			handleSettingsButton();
 		}
 
 	}
 
 	private void handleCheckBoxAction(JCheckBox checkBox) {
-		int toggleID = getIndexForComponent(checkBox);
 		boolean isSelected = checkBox.isSelected();
-		ui.getPartitionName(toggleID).setEditable(isSelected);
-		ui.getPartitionType(toggleID).setEnabled(isSelected);
-		ui.getPartitionSubType(toggleID).setEditable(isSelected);
-		ui.getPartitionSize(toggleID).setEditable(isSelected);
+
+		if (checkBox == ui.getDebug()) {
+			fileManager.setDebug(isSelected);
+			return;
+		}
+
+		if (checkBox == ui.getOverwriteCheckBox()) {
+			fileManager.setConfirmOverwrite(!isSelected);
+			return;
+		}
+
+		if (checkBox == ui.getConfirmDataEmptyCheckBox()) {
+			fileManager.setConfirmDataEmpty(isSelected);
+			return;
+		}
+
+		int csvRowId = getRowIndexForComponent(checkBox);
+		if (csvRowId < 0)
+			return;
+
+		CSVRow csvRow = ui.getCSVRow(csvRowId);
+
+		csvRow.name.setEditable(isSelected);
+		csvRow.type.setEnabled(isSelected);
+		csvRow.subtype.setEditable(isSelected);
+		csvRow.size.setEditable(isSelected);
+		csvRow.sizeHex.setEditable(isSelected);
+		csvRow.offset.setEditable(isSelected);
 
 		if (isSelected) {
-			// Set text if isSelected is true
-			String[] defaultPartitionNameText = { "nvs", "otadata", "app0", "app1", "spiffs", "coredump", "", "", "",
-					"", "", "", "", "", "", "" };
-			int[] defaultPartitionTypeText = { 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-			String[] defaultPartitionSubTypeText = { "nvs", "ota", "ota_0", "ota_1", "spiffs", "coredump", "", "", "",
-					"", "", "", "", "", "" };
-			String[] defaultPartitionSizeText = { "20", "8", "1280", "1280", "1408", "64", "", "", "", "", "", "", "",
-					"", "" };
-
-			if (toggleID < defaultPartitionNameText.length) {
-				ui.getPartitionName(toggleID).setText(defaultPartitionNameText[toggleID]);
-				if (defaultPartitionTypeText[toggleID] < ui.getPartitionType(toggleID).getItemCount()) {
-					ui.getPartitionType(toggleID).setSelectedIndex(defaultPartitionTypeText[toggleID]);
+			if (csvRowId < 6)
+				csvRow.setDefaults(csvRowId);
+			else
+				csvRow.enableRow();
+			if (csvRowId == ui.getCSVRows().size() - 1) { // we're enabling the last checkbox, add one!
+				if (csvRowId > 0) {
+					ui.renderCSVRows(); // an extra empty line will be inserted by renderCSVRows()
 				}
-				ui.getPartitionSubType(toggleID).setText(defaultPartitionSubTypeText[toggleID]);
-				ui.getPartitionSize(toggleID).setText(defaultPartitionSizeText[toggleID]);
-				ui.calculateSizeHex();
-				ui.calculateOffsets();
 			}
 		} else {
-			// Make that index partitionSize an empty string if isSelected is false
-			ui.getPartitionSize(toggleID).setText("");
-			ui.getPartitionName(toggleID).setText("");
-			ui.getPartitionSubType(toggleID).setText("");
-			ui.calculateSizeHex();
-			ui.calculateOffsets();
+			csvRow.disableRow();
+			if (csvRowId >= UI.MIN_ITEMS - 1 && csvRowId == ui.getCSVRows().size() - 2) { // we're disabling the last
+																							// enabled checkbox
+				ui.popCSVRow();
+				ui.popCSVRow();
+				ui.renderCSVRows();
+			}
 		}
+
+		ui.calculateSizeHex();
+		ui.calculateOffsets();
 		ui.updatePartitionFlashVisual();
 	}
 
 	private void handleTextFieldAction(JTextField textField) {
-		int id = getIndexForComponent(textField);
+
+		int id = getRowIndexForComponent(textField);
 
 		JTextField partitionSizeField = ui.getPartitionSize(id);
 		if (partitionSizeField == textField) {
@@ -139,6 +154,8 @@ public class UIController implements ActionListener {
 		}
 	}
 
+	private String lastFsName = "";
+
 	private void handleComboBoxAction(JComboBox<?> comboBox) {
 		if (comboBox == ui.getFlashSize()) {
 			// Get the selected item from the combo box
@@ -148,6 +165,7 @@ public class UIController implements ActionListener {
 			ui.flashSizeMB = Integer.parseInt(selectedItem);
 
 			ui.calculateSizeHex();
+			ui.calculateOffsets();
 			ui.updatePartitionFlashVisual();
 
 			int spiffs_setBlockSize = 0;
@@ -163,29 +181,39 @@ public class UIController implements ActionListener {
 
 		} else if (comboBox == ui.getPartitionFlashType()) {
 			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
-			System.out.println("Changed filesystem to :" + fsName);
+			String toolPath = fileManager.prefs.getProperty("mk" + fsName.toLowerCase() + ".path");
+			if (toolPath == null) {
+				fileManager.emitError("Tool for creating " + fsName + " spiifs.bin" + " not found!");
+			} else {
+				if (!fsName.equals(lastFsName)) {
+					// no need to spam the console with repeated messages
+					lastFsName = fsName;
+					ui.updatePartitionFlashTypeLabel();
+				}
+			}
 		}
 	}
 
-	private void handleHelpButton() {
-		int currentStep = 0;
-		String[] messages = {
-				"<html>Usage:Export CSV to sketch dir, under Tools > Partition schemes, select: Huge App/No OTA/1MB SPIFFS to use custom partition scheme.</html>",
-				"<html>Compile sketch to use SPIFFS & Merge tools.",
-				"<html>Partitions like nvs or any other small partitions before the app partition<br>needs to be a multiple of 4.</html>",
-				"<html>Partitions before the first app partition should have a total of 28 kB so the offset<br>for the first app partition will always be correct at 0x10000 offset.<br>Any other configuration will cause the ESP32 board to not function properly.</html>",
-				"<html>The app partition needs to be at 0x10000, and following partitions have to be<br>a multiple of 64.</html>",
-				"<html>The app partition needs to be a minimum of 1024 kB in size.</html>" };
-		while (currentStep < messages.length) {
-			String message = messages[currentStep];
-			int option = JOptionPane.showConfirmDialog(null, message, "Tip " + (currentStep + 1),
-					JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
-			if (option == JOptionPane.OK_OPTION) {
-				currentStep++;
-			} else {
-				break; // Exit the loop if the user cancels
-			}
-		}
+	private void handleAboutButton() {
+		// modal dialog with icon
+		ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/logo.png"));
+		JOptionPane.showConfirmDialog(null, ui.aboutPanel, "About ESP32PartitionTool", JOptionPane.DEFAULT_OPTION,
+				JOptionPane.INFORMATION_MESSAGE, icon);
+	}
+
+	public void handleSettingsButton() {
+		// modal dialog without icon
+		JOptionPane.showOptionDialog(ui, ui.prefsPanel, "Settings", -1, JOptionPane.PLAIN_MESSAGE, null, null, null);
+	}
+
+	public void handleHelpButton() {
+		// modal dialog with minimal decoration
+		final JDialog dialog = new JDialog((Frame) null, "Help Tips", true);
+		dialog.getRootPane().setWindowDecorationStyle(JRootPane.PLAIN_DIALOG);
+		dialog.add(ui.helpPanel);
+		dialog.pack();
+		dialog.setLocationRelativeTo(null);
+		dialog.setVisible(true);
 	}
 
 }
