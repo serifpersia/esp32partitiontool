@@ -2,18 +2,9 @@ package com.serifpersia.esp32partitiontool;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.Rectangle;
 import java.awt.Component;
-import java.awt.Desktop;
 import java.awt.Frame;
-import java.awt.Dialog;
 import javax.swing.*;
-import javax.swing.event.*;
-import java.net.*;
-import java.io.IOException;
-
-
 
 public class UIController implements ActionListener {
 	private static UIController instance;
@@ -34,16 +25,14 @@ public class UIController implements ActionListener {
 		return instance;
 	}
 
-
 	private int getRowIndexForComponent(Component component) {
-		for( int i=0; i<ui.getCSVRows().size(); i++ ) {
-			if( ui.getCSVRow(i) == component.getParent().getParent() ) {
+		for (int i = 0; i < ui.getCSVRows().size(); i++) {
+			if (ui.getCSVRow(i) == component.getParent().getParent()) {
 				return i;
 			}
 		}
 		return -1;
 	}
-
 
 	private void attachListeners() {
 		// Attach listener to the "Generate CSV" button
@@ -60,8 +49,8 @@ public class UIController implements ActionListener {
 		ui.getOverwriteCheckBox().addActionListener(this);
 		ui.getConfirmDataEmptyCheckBox().addActionListener(this);
 		ui.getSettingsButton().addActionListener(this);
-		//ui.getCancelButton().addActionListener(this);
-		//ui.getSaveButton().addActionListener(this);
+		// ui.getCancelButton().addActionListener(this);
+		// ui.getSaveButton().addActionListener(this);
 
 	}
 
@@ -89,7 +78,7 @@ public class UIController implements ActionListener {
 			handleHelpButton();
 		} else if (e.getSource() == ui.getAboutButton()) {
 			handleAboutButton();
-		} else if( e.getSource() == ui.getSettingsButton() ) {
+		} else if (e.getSource() == ui.getSettingsButton()) {
 			handleSettingsButton();
 		}
 
@@ -98,44 +87,48 @@ public class UIController implements ActionListener {
 	private void handleCheckBoxAction(JCheckBox checkBox) {
 		boolean isSelected = checkBox.isSelected();
 
-		if( checkBox == ui.getDebug() ) {
+		if (checkBox == ui.getDebug()) {
 			fileManager.setDebug(isSelected);
 			return;
 		}
 
-		if( checkBox == ui.getOverwriteCheckBox() ) {
-			fileManager.setConfirmOverwrite( ! isSelected );
+		if (checkBox == ui.getOverwriteCheckBox()) {
+			fileManager.setConfirmOverwrite(!isSelected);
 			return;
 		}
 
-		if( checkBox == ui.getConfirmDataEmptyCheckBox() ) {
-			fileManager.setConfirmDataEmpty( isSelected );
+		if (checkBox == ui.getConfirmDataEmptyCheckBox()) {
+			fileManager.setConfirmDataEmpty(isSelected);
 			return;
 		}
 
 		int csvRowId = getRowIndexForComponent(checkBox);
-		if( csvRowId < 0 ) return;
+		if (csvRowId < 0)
+			return;
 
 		CSVRow csvRow = ui.getCSVRow(csvRowId);
 
-		csvRow.name.   setEditable( isSelected );
-		csvRow.type.   setEnabled(  isSelected );
-		csvRow.subtype.setEditable( isSelected );
-		csvRow.size.   setEditable( isSelected );
-		csvRow.sizeHex.setEditable( isSelected );
-		csvRow.offset. setEditable( isSelected );
+		csvRow.name.setEditable(isSelected);
+		csvRow.type.setEnabled(isSelected);
+		csvRow.subtype.setEditable(isSelected);
+		csvRow.size.setEditable(isSelected);
+		csvRow.sizeHex.setEditable(isSelected);
+		csvRow.offset.setEditable(isSelected);
 
-		if( isSelected) {
-			if( csvRowId<6 ) csvRow.setDefaults( csvRowId );
-			else csvRow.enableRow();
-			if( csvRowId == ui.getCSVRows().size()-1 ) { // we're enabling the last checkbox, add one!
-				if( csvRowId > 0 ) {
+		if (isSelected) {
+			if (csvRowId < 6)
+				csvRow.setDefaults(csvRowId);
+			else
+				csvRow.enableRow();
+			if (csvRowId == ui.getCSVRows().size() - 1) { // we're enabling the last checkbox, add one!
+				if (csvRowId > 0) {
 					ui.renderCSVRows(); // an extra empty line will be inserted by renderCSVRows()
 				}
 			}
 		} else {
 			csvRow.disableRow();
-			if( csvRowId>=ui.MIN_ITEMS-1 && csvRowId == ui.getCSVRows().size()-2 ) { // we're disabling the last enabled checkbox
+			if (csvRowId >= UI.MIN_ITEMS - 1 && csvRowId == ui.getCSVRows().size() - 2) { // we're disabling the last
+																							// enabled checkbox
 				ui.popCSVRow();
 				ui.popCSVRow();
 				ui.renderCSVRows();
@@ -160,7 +153,6 @@ public class UIController implements ActionListener {
 			ui.updatePartitionFlashVisual();
 		}
 	}
-
 
 	private String lastFsName = "";
 
@@ -189,43 +181,39 @@ public class UIController implements ActionListener {
 
 		} else if (comboBox == ui.getPartitionFlashType()) {
 			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
-			String toolPath = fileManager.prefs.getProperty("mk"+fsName.toLowerCase()+".path");
-			if( toolPath == null ) {
-				fileManager.emitError("Invalid filesystem:" + fsName);
+			String toolPath = fileManager.prefs.getProperty("mk" + fsName.toLowerCase() + ".path");
+			if (toolPath == null) {
+				fileManager.emitError("Tool for creating " + fsName + " spiifs.bin" + " not found!");
 			} else {
-				if( ! fsName.equals(lastFsName) ) {
+				if (!fsName.equals(lastFsName)) {
 					// no need to spam the console with repeated messages
 					lastFsName = fsName;
-					System.out.println("Selected filesystem:" + fsName);
 					ui.updatePartitionFlashTypeLabel();
 				}
 			}
 		}
 	}
 
-
 	private void handleAboutButton() {
 		// modal dialog with icon
-		ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/shrug.png"));
-		JOptionPane.showConfirmDialog(null, ui.aboutPanel, "About ESP32PartitionTool", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, icon);
+		ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/logo.png"));
+		JOptionPane.showConfirmDialog(null, ui.aboutPanel, "About ESP32PartitionTool", JOptionPane.DEFAULT_OPTION,
+				JOptionPane.INFORMATION_MESSAGE, icon);
 	}
-
 
 	public void handleSettingsButton() {
 		// modal dialog without icon
 		JOptionPane.showOptionDialog(ui, ui.prefsPanel, "Settings", -1, JOptionPane.PLAIN_MESSAGE, null, null, null);
 	}
 
-
 	public void handleHelpButton() {
 		// modal dialog with minimal decoration
-		final JDialog dialog = new JDialog((Frame)null, "Help Tips", true);
+		final JDialog dialog = new JDialog((Frame) null, "Help Tips", true);
 		dialog.getRootPane().setWindowDecorationStyle(JRootPane.PLAIN_DIALOG);
 		dialog.add(ui.helpPanel);
 		dialog.pack();
 		dialog.setLocationRelativeTo(null);
 		dialog.setVisible(true);
 	}
-
 
 }

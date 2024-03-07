@@ -36,18 +36,13 @@ package com.serifpersia.esp32partitiontool;
 import processing.app.Editor;
 import processing.app.tools.Tool;
 
-
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.*;
 import javax.swing.*;
 
-
-
+@SuppressWarnings("serial")
 final class JFrameWithBgImage extends JFrame {
 
 	private JLabel background;
@@ -55,9 +50,9 @@ final class JFrameWithBgImage extends JFrame {
 	public JFrameWithBgImage() {
 		super("ESP32 Partition Tool");
 
-		final int minFrameWidth  = 1024;
+		final int minFrameWidth = 1024;
 		final int minFrameHeight = 640;
-		final int maxFrameWidth  = 1280;
+		final int maxFrameWidth = 1280;
 		final int maxFrameHeight = 800;
 
 		setVisible(true);
@@ -69,19 +64,18 @@ final class JFrameWithBgImage extends JFrame {
 		setResizable(false);
 
 		ImageIcon imageIcon = new ImageIcon(UIController.class.getResource("/resources/bg.png"));
-		Image scaledImage   = getScaledImage( imageIcon.getImage(), 1024, 640 );
-		background          = new JLabel(new ImageIcon(scaledImage));
+		Image scaledImage = getScaledImage(imageIcon.getImage(), 1024, 640);
+		background = new JLabel(new ImageIcon(scaledImage));
 
-		add( background );
+		add(background);
 		background.setLayout(new BorderLayout(0, 0));
 	}
 
 	public void addUI(UI contentPane) {
-		background.add( contentPane );
+		background.add(contentPane);
 	}
 
-
-	private Image getScaledImage(Image srcImg, int w, int h){
+	private Image getScaledImage(Image srcImg, int w, int h) {
 		BufferedImage resizedImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2 = resizedImg.createGraphics();
 
@@ -94,7 +88,6 @@ final class JFrameWithBgImage extends JFrame {
 
 }
 
-
 public class ESP32PartitionTool implements Tool {
 
 	private UI contentPane = new UI();
@@ -102,11 +95,6 @@ public class ESP32PartitionTool implements Tool {
 
 	Editor editor;
 	private JFrameWithBgImage frame;
-
-	public static void main(String[] args) {
-		ESP32PartitionTool tool = new ESP32PartitionTool();
-		tool.run();
-	}
 
 	public void init(Editor editor) {
 		this.editor = editor;
@@ -124,13 +112,13 @@ public class ESP32PartitionTool implements Tool {
 
 		// Create and show the JFrame
 		if (frame == null) {
-			//frame = new JFrame("ESP32 Partition Tool");
+			// frame = new JFrame("ESP32 Partition Tool");
 			frame = new JFrameWithBgImage();
 
 			// Add UI to frame
-			frame.addUI( contentPane );
+			frame.addUI(contentPane);
 
-			fileManager.setUIController( new UIController(contentPane, fileManager) );
+			fileManager.setUIController(new UIController(contentPane, fileManager));
 
 			frame.addWindowListener(new WindowAdapter() {
 				@Override
@@ -149,7 +137,7 @@ public class ESP32PartitionTool implements Tool {
 			frame.toFront();
 		}
 
-		if( fileManager.canRun() ) {
+		if (fileManager.canRun()) {
 			frame.setVisible(true);
 			fileManager.loadCSV();
 		}
