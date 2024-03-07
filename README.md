@@ -28,7 +28,7 @@ To build the plugin, you need JDK 8 installed. Note that anything newer will cau
 - In your Arduino sketchbook directory, create tools directory if it doesn't exist yet.
 - Unpack the tool into tools directory (the path will look like `<home_dir>/Arduino/tools/ESP32PartitionTool/tool/ESP32PartitionTool.jar`).
 - Restart Arduino IDE
-- 
+
 ## Usage
 - Select Tools > ESP32 Partition Tool menu item.
 - Customize partition scheme.
