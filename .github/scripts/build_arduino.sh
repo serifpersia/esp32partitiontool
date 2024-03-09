@@ -38,4 +38,5 @@ mkdir -p tmp/ESP32PartitionTool/tool
 cp "$output_dir/ESP32PartitionTool.jar" tmp/ESP32PartitionTool/tool/
 cd tmp
 zip -rq ../ESP32PartitionTool-Arduino.zip .
+cd ..
 rm -Rf tmp

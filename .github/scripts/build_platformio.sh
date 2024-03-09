@@ -31,6 +31,14 @@ jar cfe "$output_dir/ESP32PartitionTool.jar" com.serifpersia.esp32partitiontool.
 # Remove the temporary bin folder
 rm -rf "$bin_folder"
 
+
+mkdir -p tmp/esp32partitiontool-1.0.4
+cp "$output_dir/ESP32PartitionTool.jar" tmp/esp32partitiontool-1.0.4/
+cd tmp
+zip -rq ../esp32partitiontool-1.0.4-platformio.zip .
+cd ..
+rm -Rf tmp
+
 # java -jar "$output_dir/ESP32PartitionTool.jar" | exit 1
 
 
