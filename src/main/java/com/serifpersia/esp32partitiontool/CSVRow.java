@@ -61,6 +61,11 @@ public class CSVRow extends JPanel {
 		sizeHex.setHorizontalAlignment(SwingConstants.RIGHT);
 		offset.setHorizontalAlignment(SwingConstants.RIGHT);
 
+		size.setBorder(BorderFactory.createCompoundBorder( offset.getBorder(), BorderFactory.createEmptyBorder(0, 0, 0, 5)));
+		sizeHex.setBorder(BorderFactory.createCompoundBorder( offset.getBorder(), BorderFactory.createEmptyBorder(0, 0, 0, 5)));
+		offset.setBorder(BorderFactory.createCompoundBorder( offset.getBorder(), BorderFactory.createEmptyBorder(0, 0, 0, 5)));
+
+
 		size.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
 		sizeHex.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
 		offset.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));

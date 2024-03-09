@@ -49,14 +49,14 @@ public class ESP32PartitionTool {
 
 	public static void main(String[] args) {
 		ESP32PartitionTool tool = new ESP32PartitionTool();
-		tool.init();
+		tool.init(args);
 	}
 
 	public void addUI(UI contentPane) {
 		frame.add(contentPane);
 	}
 
-	private void init() {
+	private void init(String[] args) {
 
 		this.fileManager = new FileManager(contentPane);
 
@@ -80,6 +80,7 @@ public class ESP32PartitionTool {
 			// Add panel to frame
 			addUI(contentPane);
 
+			fileManager.setContext( args );
 			fileManager.setUIController(new UIController(contentPane, fileManager));
 			fileManager.loadDefaultCSV();
 

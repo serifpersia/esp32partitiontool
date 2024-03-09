@@ -26,6 +26,16 @@ public class FileManager {
 		this.ui = ui;
 	}
 
+	public void setContext( String[] args ) {
+		if( args == null ) {
+			System.out.println("No args given");
+		} else {
+			for( int i=0; i<args.length; i++ ) {
+				System.out.println("Arg#"+i+": "+args[i]);
+			}
+		}
+	}
+
 	public void setUIController(UIController controller) {
 		ui.setController(controller);
 	}
