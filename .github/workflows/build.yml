@@ -23,6 +23,6 @@ jobs:
         distribution: 'temurin' # See 'Supported distributions' for available options
         java-version: '8'
     - name: "Build platformio jar"
-      run: $GITHUB_WORKSPACE/.github/scripts/.github/scripts/build_platformio.sh
+      run: $GITHUB_WORKSPACE/.github/scripts/build_platformio.sh
     - name: "Build arduino jar"
-      run:  $GITHUB_WORKSPACE/.github/scripts/.github/scripts/build_arduino.sh
+      run:  $GITHUB_WORKSPACE/.github/scripts/build_arduino.sh
