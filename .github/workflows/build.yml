@@ -1,0 +1,25 @@
+name: JavaBuild
+on:
+  push:
+    paths:
+    - '**.java'
+    - 'resources/*'
+    - '*manifest*'
+    - '**build.yml'
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+
+  platformio_package_build:
+    name: "Platformio package build"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin' # See 'Supported distributions' for available options
+        java-version: '8'
+    - run: ./build_platformio.sh
