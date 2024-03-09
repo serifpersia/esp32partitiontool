@@ -13,7 +13,7 @@ on:
 
 jobs:
 
-  platformio_package_build:
+  build_packages:
     name: "Platformio package build"
     runs-on: ubuntu-latest
     steps:
@@ -39,8 +39,8 @@ jobs:
   post_build:
     name: Gather Artefacts
     runs-on: ubuntu-latest
-    # wait until matrix jobs are all finished
-    needs: matrix_build
+    # wait until jobs are all finished
+    needs: build_packages
     steps:
       - name: Checkout
         uses: actions/checkout@v4
