@@ -5,22 +5,21 @@ script_dir="$(dirname "$(readlink -f "$0")")"
 
 # Define folder names
 source_folder="$script_dir/src/main/java/com/serifpersia/esp32partitiontool"
-dependencies_folder="$script_dir/dependencies"
 bin_folder="$script_dir/bin"
-tool_folder="$script_dir/tool"
-resources_folder="$script_dir/resources"
+output_dir="$script_dir/output"
+resources_folder="$script_dir/src/main/resources"
 
 # Create necessary folders
-mkdir -p "$bin_folder" "$tool_folder" "$tool_folder/ESP32PartitionTool/tool"
+mkdir -p "$bin_folder" "$output_dir"
 
 # Compile Java files
-javac -cp "$dependencies_folder/pde.jar:$dependencies_folder/arduino-core.jar:$dependencies_folder/commons-codec-1.7.jar" -d "$bin_folder" "$source_folder"/*.java
+javac -d "$bin_folder" "$source_folder"/*.java
 
-# Copy resources directory into the bin folder
-cp -r "$resources_folder" "$bin_folder/resources"
+# Copy resources directory contents into the bin folder
+cp -r "$resources_folder"/* "$bin_folder/"
 
-# Package class files and resources into a JAR file
-jar cvf "$tool_folder/ESP32PartitionTool/tool/ESP32PartitionTool.jar" -C "$bin_folder" .
+# Create the JAR file with the manifest entries
+jar cfe "$output_dir/ESP32PartitionTool.jar" com.serifpersia.esp32partitiontool.ESP32PartitionTool -C "$bin_folder" .
 
-# Remove bin folder
+# Remove the temporary bin folder
 rm -rf "$bin_folder"

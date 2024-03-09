@@ -49,9 +49,6 @@ public class UIController implements ActionListener {
 		ui.getOverwriteCheckBox().addActionListener(this);
 		ui.getConfirmDataEmptyCheckBox().addActionListener(this);
 		ui.getSettingsButton().addActionListener(this);
-		// ui.getCancelButton().addActionListener(this);
-		// ui.getSaveButton().addActionListener(this);
-
 	}
 
 	@Override
@@ -69,11 +66,11 @@ public class UIController implements ActionListener {
 		} else if (e.getSource() instanceof JComboBox<?>) {
 			handleComboBoxAction((JComboBox<?>) e.getSource());
 		} else if (e.getSource() == ui.getCreatePartitionsBin()) {
-			fileManager.createPartitionsBin(null);
+			fileManager.createPartitionsBin();
 		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
-			fileManager.handleSPIFFSButton(null);
+			// fileManager.handleSPIFFSButton(null);
 		} else if (e.getSource() == ui.getFlashMergedBin()) {
-			fileManager.handleMergedBinButton(null);
+			// fileManager.handleMergedBinButton(null);
 		} else if (e.getSource() == ui.getHelpButton()) {
 			handleHelpButton();
 		} else if (e.getSource() == ui.getAboutButton()) {
@@ -88,17 +85,17 @@ public class UIController implements ActionListener {
 		boolean isSelected = checkBox.isSelected();
 
 		if (checkBox == ui.getDebug()) {
-			fileManager.setDebug(isSelected);
+			// fileManager.setDebug(isSelected);
 			return;
 		}
 
 		if (checkBox == ui.getOverwriteCheckBox()) {
-			fileManager.setConfirmOverwrite(!isSelected);
+			// fileManager.setConfirmOverwrite(!isSelected);
 			return;
 		}
 
 		if (checkBox == ui.getConfirmDataEmptyCheckBox()) {
-			fileManager.setConfirmDataEmpty(isSelected);
+			// ileManager.setConfirmDataEmpty(isSelected);
 			return;
 		}
 
@@ -181,10 +178,14 @@ public class UIController implements ActionListener {
 
 		} else if (comboBox == ui.getPartitionFlashType()) {
 			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
-			String toolPath = fileManager.prefs.getProperty("mk" + fsName.toLowerCase() + ".path");
-			if (toolPath == null) {
-				fileManager.emitError("Tool for creating " + fsName + " spiifs.bin" + " not found!");
-			} else {
+			// String toolPath = fileManager.prefs.getProperty("mk" + fsName.toLowerCase() +
+			// ".path");
+			// if (toolPath == null) {
+			// fileManager.emitError("Tool for creating " + fsName + " spiifs.bin" + " not
+			// found!");
+			// }
+			// else
+			{
 				if (!fsName.equals(lastFsName)) {
 					// no need to spam the console with repeated messages
 					lastFsName = fsName;
@@ -196,7 +197,7 @@ public class UIController implements ActionListener {
 
 	private void handleAboutButton() {
 		// modal dialog with icon
-		ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/logo.png"));
+		ImageIcon icon = new ImageIcon(getClass().getResource("/logo.png"));
 		JOptionPane.showConfirmDialog(null, ui.aboutPanel, "About ESP32PartitionTool", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.INFORMATION_MESSAGE, icon);
 	}

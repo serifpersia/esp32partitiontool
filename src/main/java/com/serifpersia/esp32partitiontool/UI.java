@@ -314,11 +314,24 @@ public class UI extends JPanel {
 		mergeBinBtn = new JButton("Merge Binary");
 		panel5.add(mergeBinBtn);
 
+		console_logField = new JTextArea();
+		console_logField.setForeground(Color.WHITE);
+		console_logField.setBackground(Color.BLACK);
+		console_logField.setFont(new Font("Monospaced", Font.PLAIN, 12)); // Set a monospaced font
+		console_logField.setEditable(false); // Make the text area read-only
+		console_logField.setLineWrap(true); // Enable line wrapping
+		console_logField.setWrapStyleWord(true); // Wrap at word boundaries
+
+		JScrollPane scrollPane = new JScrollPane(console_logField);
+		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
+		panel4.add(scrollPane, BorderLayout.CENTER);
+
 		// free space box
 		partitionFlashFreeSpace = new JLabel("Free Space: not set");
 		partitionsUtilButtonsPanel.add(partitionFlashFreeSpace);
 		// settings button
-		ImageIcon icon = new ImageIcon(UIController.class.getResource("/resources/gear.png"));
+		ImageIcon icon = new ImageIcon(getClass().getResource("/gear.png"));
 		btnSettings = new JButton(icon);
 		partitionsUtilButtonsPanel.add(btnSettings);
 		// help button
@@ -457,6 +470,7 @@ public class UI extends JPanel {
 	}
 
 	Color partColor;
+	JTextArea console_logField;
 
 	private Color getPartitionColor(String partName, String partType, String partSubType) {
 		Color partColor = partType.equals("app") ? new Color(66, 176, 245) : new Color(47, 98, 207);

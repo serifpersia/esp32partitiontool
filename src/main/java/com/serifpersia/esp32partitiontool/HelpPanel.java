@@ -54,7 +54,7 @@ class HelpPanel extends JPanel {
 	}
 
 	private void createHelpTipPanel() {
-		infoIcon = new ImageIcon(UIController.class.getResource("/resources/hint.png"));
+		infoIcon = new ImageIcon(getClass().getResource("/hint.png"));
 
 		helpTipPanel = new JPanel();
 		helpTipPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
