@@ -36,6 +36,7 @@ foldername="esp32partitiontool-$(date +"%F")"
 
 mkdir -p tmp/$foldername
 cp "$output_dir/ESP32PartitionTool.jar" tmp/$foldername/
+# TODO: raise package.version in json
 cp "package.json" tmp/$foldername/
 cd tmp
 zip -rq ../esp32partitiontool-platformio.zip .
