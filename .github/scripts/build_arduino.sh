@@ -13,12 +13,14 @@ source_folder="src/main/java/com/serifpersia/esp32partitiontool"
 bin_folder="bin"
 output_dir="tools" # comply with platformio
 resources_folder="src/main/resources"
+class_list="ClassList"
 
 # Create necessary folders
 mkdir -p "$bin_folder" "$output_dir" || die "Unable to create the required folders"
 
-# Compile Java files
-javac -Xlint -d "$bin_folder" "$source_folder"/*.java || die "Unable to compile project"
+# Find Java files and exclude InputArduino.java
+find src/main/java/com/serifpersia/esp32partitiontool -type f \( ! -iname "InputPlatformio.java" \) > $class_list
+javac -Xlint -d "$bin_folder" @$class_list
 
 # Copy resources directory contents into the bin folder
 cp -r "$resources_folder"/* "$bin_folder/" || die "Unable to copy resources directory into bin folder"
@@ -32,3 +34,8 @@ rm -rf "$bin_folder"
 # java -jar "$output_dir/ESP32PartitionTool.jar" | exit 1
 
 
+mkdir -p tmp/ESP32PartitionTool/tool
+cp "$output_dir/ESP32PartitionTool.jar" tmp/ESP32PartitionTool/tool/
+cd tmp
+zip -rq ../ESP32PartitionTool-Arduino.zip .
+rm -Rf tmp

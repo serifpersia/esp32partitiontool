@@ -22,4 +22,6 @@ jobs:
       with:
         distribution: 'temurin' # See 'Supported distributions' for available options
         java-version: '8'
-    - run: ./build_platformio.sh
+    - run: |
+      .github/scripts/build_platformio.sh
+      .github/scripts/build_arduino.sh
