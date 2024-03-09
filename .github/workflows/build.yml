@@ -31,4 +31,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: JarFiles
-        path: *.zip
+        path: |
+          ESP32PartitionTool-Arduino.zip
+          esp32partitiontool-1.0.4-platformio.zip
