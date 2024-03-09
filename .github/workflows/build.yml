@@ -33,8 +33,7 @@ jobs:
         name: JarFiles
         path: |
           ESP32PartitionTool-Arduino.zip
-          esp32partitiontool-1.0.4-platformio.zip
-
+          esp32partitiontool-platformio.zip
 
   post_build:
     name: Gather Artefacts
@@ -44,8 +43,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      # - name: Create artifacts dir
-      #   run: mkdir -p /home/runner/builds
       - name: Download artifacts
         uses: actions/download-artifact@v4
         # with:
@@ -56,4 +53,4 @@ jobs:
         with:
           files: |
             ESP32PartitionTool-Arduino.zip
-            esp32partitiontool-1.0.4-platformio.zip
+            esp32partitiontool-platformio.zip
