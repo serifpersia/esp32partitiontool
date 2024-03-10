@@ -51,12 +51,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Download artifacts
         uses: actions/download-artifact@v4
-        # with:
-        #   path: builds
+        path: archives
       - name: Release check
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            ESP32PartitionTool-Arduino.zip
-            esp32partitiontool-platformio.zip
+            archives/*
