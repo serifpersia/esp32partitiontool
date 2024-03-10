@@ -23,15 +23,20 @@ jobs:
       with:
         distribution: 'temurin' # See 'Supported distributions' for available options
         java-version: '8'
-    - name: "Build platformio jar"
-      run: $GITHUB_WORKSPACE/.github/scripts/build_platformio.sh
-    - name: "Build arduino jar"
-      run:  $GITHUB_WORKSPACE/.github/scripts/build_arduino.sh
+    - name: "Build jar"
+      run: |
+        jar_file="build/ESP32PartitionTool.jar"
+        . $GITHUB_WORKSPACE/.github/scripts/build_jar.sh $jar_file
+        [ $? -eq 0 ] || die "Jar creation failed"
+        $GITHUB_WORKSPACE/.github/scripts/create_arduino_package.sh $jar_file
+        [ $? -eq 0 ] || die "Arduino Package creation failed"
+        $GITHUB_WORKSPACE/.github/scripts/create_platformio_package.sh $jar_file
+        [ $? -eq 0 ] || die "Platformio Package creation failed"
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: JarFiles
+        name: PackageFiles
         path: |
           ESP32PartitionTool-Arduino.zip
           esp32partitiontool-platformio.zip

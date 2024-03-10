@@ -14,6 +14,7 @@ import java.io.*;
 public class FileManager {
 
 	private UI ui; // Reference to the UI instance
+	public AppSettings settings;
 
 	private ArrayList<String> createdPartitionsData;
 
@@ -22,19 +23,20 @@ public class FileManager {
 	private String gen_esp32partLocation;
 
 	// Constructor to initialize FileManager with UI instance and Editor instance
-	public FileManager(UI ui) {
+	public FileManager(UI ui, AppSettings settings) {
 		this.ui = ui;
+		this.settings = settings;
 	}
 
-	public void setContext( String[] args ) {
-		if( args == null ) {
-			System.out.println("No args given");
-		} else {
-			for( int i=0; i<args.length; i++ ) {
-				System.out.println("Arg#"+i+": "+args[i]);
-			}
-		}
-	}
+	// public void setContext( String[] args ) {
+	// 	if( args == null ) {
+	// 		System.out.println("No args given");
+	// 	} else {
+	// 		for( int i=0; i<args.length; i++ ) {
+	// 			System.out.println("Arg#"+i+": "+args[i]);
+	// 		}
+	// 	}
+	// }
 
 	public void setUIController(UIController controller) {
 		ui.setController(controller);
@@ -45,6 +47,12 @@ public class FileManager {
 	}
 
 	public void loadDefaultCSV() {
+		if( settings.csvFilePath != null ) {
+			importCSV( settings.csvFilePath );
+			return;
+		}
+
+
 		String defaultCSVData = "# Name,   Type, SubType,  Offset,   Size,  Flags\n"
 				+ "nvs,       data, nvs,          0x9000,    0x5000,\n"
 				+ "otadata,   data, ota,          0xE000,    0x2000,\n"
@@ -79,7 +87,7 @@ public class FileManager {
 
 		String flashSizeString = String.valueOf(ui.flashSizeMB);
 		ui.getFlashSize().setSelectedItem(flashSizeString);
-		ui.updatePartitionFlashTypeLabel();
+		//ui.updatePartitionFlashTypeLabel();
 	}
 
 	public void importCSV(String file) {
@@ -103,8 +111,8 @@ public class FileManager {
 		try (BufferedReader reader = new BufferedReader(new FileReader(readerFile))) {
 			processCSV(reader);
 
-			String csvBasename = basename(file);
-			ui.updatePartitionLabel(csvBasename);
+			settings.csvFilePath = basename(file);
+			ui.updatePartitionLabel(settings.csvFilePath);
 
 		} catch (IOException e) {
 			emitError("Error reading CSV file: " + e.getMessage());
@@ -130,7 +138,7 @@ public class FileManager {
 
 		String flashSizeString = String.valueOf(ui.flashSizeMB);
 		ui.getFlashSize().setSelectedItem(flashSizeString);
-		ui.updatePartitionFlashTypeLabel();
+		//ui.updatePartitionFlashTypeLabel();
 	}
 
 	private void processCSV(BufferedReader reader) throws IOException {
@@ -236,7 +244,13 @@ public class FileManager {
 
 		// Export to CSV
 		FileDialog dialog = new FileDialog(new Frame(), "Create Partitions CSV", FileDialog.SAVE);
-		dialog.setFile("partitions.csv");
+
+		if( settings.csvFilePath != null ) {
+			dialog.setFile( settings.csvFilePath );
+			//dialog.setDirectory(homeDir);
+		} else {
+			dialog.setFile("partitions.csv");
+		}
 		dialog.setVisible(true);
 		String fileName = dialog.getFile();
 
@@ -255,6 +269,9 @@ public class FileManager {
 				return false;
 			}
 			System.out.println("partitions.csv written at: " + filePath);
+
+			settings.csvFilePath = filePath;
+
 			return true;
 		} catch (IOException ex) {
 			emitError("Error creating CSV: " + ex.getMessage());
@@ -262,113 +279,113 @@ public class FileManager {
 		return false;
 	}
 
-	public void createPartitionsBin() {
-		// Create a file dialog for selecting the CSV file
-		FileDialog fileDialog = new FileDialog((Frame) null, "Select CSV File", FileDialog.LOAD);
-		fileDialog.setFile("*.csv");
-		fileDialog.setVisible(true);
-
-		// Get the selected file path
-		String selectedFilePath = fileDialog.getFile();
-		if (selectedFilePath != null) {
-			// Get the directory of the selected file
-			String selectedDirectory = fileDialog.getDirectory();
-
-			// Now, let the user select the output directory for the partitions.bin file
-			FileDialog outputFileDialog = new FileDialog((Frame) null, "Select Output Directory", FileDialog.SAVE);
-			outputFileDialog.setFile("partitions.bin");
-			outputFileDialog.setVisible(true);
-
-			// Get the selected output directory
-			String selectedOutputDirectory = outputFileDialog.getDirectory();
-			String outputFile = null;
-
-			// Check if the user selected an output directory
-			if (selectedOutputDirectory != null) {
-				outputFile = selectedOutputDirectory + File.separator + "partitions.bin";
-
-				// Execute the Python script with the selected input file and output directory
-				setOsCommands();
-
-				// Construct the command arguments
-				String[] arguments = { pythonLocation, gen_esp32partLocation, selectedDirectory + selectedFilePath,
-						outputFile };
-
-				// Execute the command using executeCommand method
-				executeCommand(arguments);
-			}
-		}
-	}
-
-	private void setOsCommands() {
-		if (os.contains("win")) {
-			pythonLocation = System.getenv("HOMEPATH") + "\\.platformio\\python3\\python.exe";
-			gen_esp32partLocation = System.getenv("HOMEPATH")
-					+ "\\.platformio\\packages\\framework-arduinoespressif32\\tools\\gen_esp32part.py";
-		} else {
-			pythonLocation = "~/.platformio/python3/python";
-			gen_esp32partLocation = "~/.platformio/packages/arduinoespressif32/tools/gen_esp32part.py";
-		}
-	}
-
-	private void executeCommand(String[] commandArguments) {
-
-		try {
-			// Execute the command
-			int exitCode = listenOnProcess(commandArguments);
-
-			// Check the exit status of the process
-			if (exitCode != 0) {
-				System.err.println("Error: Command exited with error code " + exitCode);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private int listenOnProcess(String[] arguments) {
-		try {
-			// Start the process
-			ProcessBuilder processBuilder = new ProcessBuilder(arguments);
-			Process p = processBuilder.start();
-
-			// Create a thread to capture the process output
-			Thread thread = new Thread() {
-				public void run() {
-					try {
-						// Read the process output stream
-						InputStreamReader reader = new InputStreamReader(p.getInputStream());
-						int c;
-						StringBuilder outputBuilder = new StringBuilder();
-						while ((c = reader.read()) != -1) {
-							outputBuilder.append((char) c);
-						}
-						reader.close();
-
-						// Read the process error stream
-						reader = new InputStreamReader(p.getErrorStream());
-						while ((c = reader.read()) != -1) {
-							outputBuilder.append((char) c);
-						}
-						reader.close();
-
-						// Set the text of ui.console_logField with the output
-						ui.console_logField.setText(outputBuilder.toString());
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-			};
-			thread.start();
-
-			// Wait for the process to finish
-			int res = p.waitFor();
-			thread.join();
-
-			return res;
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-			return -1;
-		}
-	}
+	// public void createPartitionsBin() {
+	// 	// Create a file dialog for selecting the CSV file
+	// 	FileDialog fileDialog = new FileDialog((Frame) null, "Select CSV File", FileDialog.LOAD);
+	// 	fileDialog.setFile("*.csv");
+	// 	fileDialog.setVisible(true);
+ //
+	// 	// Get the selected file path
+	// 	String selectedFilePath = fileDialog.getFile();
+	// 	if (selectedFilePath != null) {
+	// 		// Get the directory of the selected file
+	// 		String selectedDirectory = fileDialog.getDirectory();
+ //
+	// 		// Now, let the user select the output directory for the partitions.bin file
+	// 		FileDialog outputFileDialog = new FileDialog((Frame) null, "Select Output Directory", FileDialog.SAVE);
+	// 		outputFileDialog.setFile("partitions.bin");
+	// 		outputFileDialog.setVisible(true);
+ //
+	// 		// Get the selected output directory
+	// 		String selectedOutputDirectory = outputFileDialog.getDirectory();
+	// 		String outputFile = null;
+ //
+	// 		// Check if the user selected an output directory
+	// 		if (selectedOutputDirectory != null) {
+	// 			outputFile = selectedOutputDirectory + File.separator + "partitions.bin";
+ //
+	// 			// Execute the Python script with the selected input file and output directory
+	// 			setOsCommands();
+ //
+	// 			// Construct the command arguments
+	// 			String[] arguments = { pythonLocation, gen_esp32partLocation, selectedDirectory + selectedFilePath,
+	// 					outputFile };
+ //
+	// 			// Execute the command using executeCommand method
+	// 			executeCommand(arguments);
+	// 		}
+	// 	}
+	// }
+ //
+	// private void setOsCommands() {
+	// 	if (os.contains("win")) {
+	// 		pythonLocation = System.getenv("HOMEPATH") + "\\.platformio\\python3\\python.exe";
+	// 		gen_esp32partLocation = System.getenv("HOMEPATH")
+	// 				+ "\\.platformio\\packages\\framework-arduinoespressif32\\tools\\gen_esp32part.py";
+	// 	} else {
+	// 		pythonLocation = "~/.platformio/python3/python";
+	// 		gen_esp32partLocation = "~/.platformio/packages/arduinoespressif32/tools/gen_esp32part.py";
+	// 	}
+	// }
+ //
+	// private void executeCommand(String[] commandArguments) {
+ //
+	// 	try {
+	// 		// Execute the command
+	// 		int exitCode = listenOnProcess(commandArguments);
+ //
+	// 		// Check the exit status of the process
+	// 		if (exitCode != 0) {
+	// 			System.err.println("Error: Command exited with error code " + exitCode);
+	// 		}
+	// 	} catch (Exception e) {
+	// 		e.printStackTrace();
+	// 	}
+	// }
+ //
+	// private int listenOnProcess(String[] arguments) {
+	// 	try {
+	// 		// Start the process
+	// 		ProcessBuilder processBuilder = new ProcessBuilder(arguments);
+	// 		Process p = processBuilder.start();
+ //
+	// 		// Create a thread to capture the process output
+	// 		Thread thread = new Thread() {
+	// 			public void run() {
+	// 				try {
+	// 					// Read the process output stream
+	// 					InputStreamReader reader = new InputStreamReader(p.getInputStream());
+	// 					int c;
+	// 					StringBuilder outputBuilder = new StringBuilder();
+	// 					while ((c = reader.read()) != -1) {
+	// 						outputBuilder.append((char) c);
+	// 					}
+	// 					reader.close();
+ //
+	// 					// Read the process error stream
+	// 					reader = new InputStreamReader(p.getErrorStream());
+	// 					while ((c = reader.read()) != -1) {
+	// 						outputBuilder.append((char) c);
+	// 					}
+	// 					reader.close();
+ //
+	// 					// Set the text of ui.console_logField with the output
+	// 					ui.console_logField.setText(outputBuilder.toString());
+	// 				} catch (IOException e) {
+	// 					e.printStackTrace();
+	// 				}
+	// 			}
+	// 		};
+	// 		thread.start();
+ //
+	// 		// Wait for the process to finish
+	// 		int res = p.waitFor();
+	// 		thread.join();
+ //
+	// 		return res;
+	// 	} catch (IOException | InterruptedException e) {
+	// 		e.printStackTrace();
+	// 		return -1;
+	// 	}
+	// }
 }

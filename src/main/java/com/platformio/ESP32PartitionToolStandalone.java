@@ -40,15 +40,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.ImageIcon;
 
-public class ESP32PartitionTool {
+public class ESP32PartitionToolStandalone {
 
 	private UI contentPane = new UI();
 	private FileManager fileManager; // FileManager instance
+	private AppSettingsStandalone settings;
 
 	private JFrame frame;
 
 	public static void main(String[] args) {
-		ESP32PartitionTool tool = new ESP32PartitionTool();
+		ESP32PartitionToolStandalone tool = new ESP32PartitionToolStandalone();
 		tool.init(args);
 	}
 
@@ -58,7 +59,10 @@ public class ESP32PartitionTool {
 
 	private void init(String[] args) {
 
-		this.fileManager = new FileManager(contentPane);
+		settings = new AppSettingsStandalone(args);
+		settings.load();
+
+		fileManager = new FileManager(contentPane, settings);
 
 		// Create and show the JFrame
 		if (frame == null) {
@@ -80,9 +84,8 @@ public class ESP32PartitionTool {
 			// Add panel to frame
 			addUI(contentPane);
 
-			fileManager.setContext( args );
+			//fileManager.setContext( args );
 			fileManager.setUIController(new UIController(contentPane, fileManager));
-			fileManager.loadDefaultCSV();
 
 			frame.addWindowListener(new WindowAdapter() {
 				@Override
@@ -91,12 +94,13 @@ public class ESP32PartitionTool {
 					frame.setVisible(false);
 				}
 			});
-			// Ensure visibility of the frame
-			frame.setVisible(true);
 		} else {
 			// If the frame is already open, bring it to the front and make it visible
 			frame.toFront();
-			frame.setVisible(true);
 		}
+
+		fileManager.loadDefaultCSV();
+		frame.setVisible(true);
 	}
+
 }

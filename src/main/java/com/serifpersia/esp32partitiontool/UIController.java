@@ -39,11 +39,11 @@ public class UIController implements ActionListener {
 		ui.getDebug().addActionListener(this);
 		ui.getImportCSVButton().addActionListener(this);
 		ui.getCreatePartitionsCSV().addActionListener(this);
-		ui.getCreatePartitionsBin().addActionListener(this);
+		//ui.getCreatePartitionsBin().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
-		ui.getFlashSPIFFSButton().addActionListener(this);
-		ui.getPartitionFlashType().addActionListener(this);
-		ui.getFlashMergedBin().addActionListener(this);
+		//ui.getFlashSPIFFSButton().addActionListener(this);
+		//ui.getPartitionFlashType().addActionListener(this);
+		//ui.getFlashMergedBin().addActionListener(this);
 		ui.getHelpButton().addActionListener(this);
 		ui.getAboutButton().addActionListener(this);
 		ui.getOverwriteCheckBox().addActionListener(this);
@@ -65,12 +65,12 @@ public class UIController implements ActionListener {
 			handleTextFieldAction((JTextField) e.getSource());
 		} else if (e.getSource() instanceof JComboBox<?>) {
 			handleComboBoxAction((JComboBox<?>) e.getSource());
-		} else if (e.getSource() == ui.getCreatePartitionsBin()) {
-			fileManager.createPartitionsBin();
-		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
-			// fileManager.handleSPIFFSButton(null);
-		} else if (e.getSource() == ui.getFlashMergedBin()) {
-			// fileManager.handleMergedBinButton(null);
+		// } else if (e.getSource() == ui.getCreatePartitionsBin()) {
+		// 	fileManager.createPartitionsBin();
+		// } else if (e.getSource() == ui.getFlashSPIFFSButton()) {
+		// 	// fileManager.handleSPIFFSButton(null);
+		// } else if (e.getSource() == ui.getFlashMergedBin()) {
+		// 	// fileManager.handleMergedBinButton(null);
 		} else if (e.getSource() == ui.getHelpButton()) {
 			handleHelpButton();
 		} else if (e.getSource() == ui.getAboutButton()) {
@@ -173,10 +173,10 @@ public class UIController implements ActionListener {
 				// Handle other cases or provide a default value if necessary
 			}
 
-			String blockSizeText = String.valueOf(spiffs_setBlockSize);
-			ui.getSpiffsBlockSize().setText(blockSizeText);
+			//String blockSizeText = String.valueOf(spiffs_setBlockSize);
+			//ui.getSpiffsBlockSize().setText(blockSizeText);
 
-		} else if (comboBox == ui.getPartitionFlashType()) {
+		}/* else if (comboBox == ui.getPartitionFlashType()) {
 			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
 			// String toolPath = fileManager.prefs.getProperty("mk" + fsName.toLowerCase() +
 			// ".path");
@@ -192,7 +192,7 @@ public class UIController implements ActionListener {
 					ui.updatePartitionFlashTypeLabel();
 				}
 			}
-		}
+		}*/
 	}
 
 	private void handleAboutButton() {

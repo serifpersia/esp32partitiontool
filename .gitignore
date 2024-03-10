@@ -6,3 +6,5 @@
 *.prefs
 ClassList
 tools
+build/
+*.zip
