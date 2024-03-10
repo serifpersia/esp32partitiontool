@@ -1,3 +1,6 @@
+# don't run this script directly, it is intended to be called
+# by platformio as a packaged tool
+
 import os.path
 import sys
 from os.path import join
