@@ -52,7 +52,7 @@ def load_pm(env):
       command_format = 'java -cp "%s/%s" com.serifpersia.esp32partitiontool.ESP32PartitionToolStandalone "%s"'
       command = command_format % (jar_pkg_dir, jar_file, csv_file)
 
-      env.AddCustomTarget("ESP32PartitionTool", None, command, "ESP32 Partition Tool", "CSV Partition Editor (requires Java)")
+      env.AddCustomTarget("edit_partition", None, command, "ESP32 Partition Tool", "CSV Partition Editor (requires Java)")
 
   else:
 
