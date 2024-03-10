@@ -22,6 +22,7 @@ def getJavaVersion():
 
 
 
+
 def load_pm(env):
 
   java_version  = getJavaVersion()
@@ -51,11 +52,9 @@ def load_pm(env):
       command_format = 'java -cp "%s/%s" com.serifpersia.esp32partitiontool.ESP32PartitionToolStandalone "%s"'
       command = command_format % (jar_pkg_dir, jar_file, csv_file)
 
-      print (command)
-
-      return_code = subprocess.call(command, shell=True)
+      env.AddCustomTarget("ESP32PartitionTool", None, command)
 
   else:
 
-      print ("No java executale found, cannot start ESP32PartitionTool :(")
+      print ("No java executable found, cannot start ESP32PartitionTool :(")
 
