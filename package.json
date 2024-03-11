@@ -1,9 +1,8 @@
 {
   "name": "tool-esp32partitiontool",
-  "version": "1.4.2",
+  "version": "1.4",
   "description": "Partition utility gui (requires java) to create custom partition table",
   "keywords": ["tools","build tools","filesystem"],
   "license": "MIT",
-  "system": ["linux_x86_64"],
   "repository": {"type": "git","url": "https://github.com/serifpersia/esp32partitiontool"}
 }
