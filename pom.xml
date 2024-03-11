@@ -48,4 +48,28 @@
 			</plugin>
 		</plugins>
 	</build>
+	<dependencies>
+		<dependency>
+			<groupId>processing</groupId>
+			<artifactId>pde</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${pom.basedir}/dependencies/pde.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>arduino</groupId>
+			<artifactId>arduino-core</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${pom.basedir}/dependencies/arduino-core.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>commons</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.7</version>
+			<scope>system</scope>
+			<systemPath>${pom.basedir}/dependencies/commons-codec-1.7.jar</systemPath>
+		</dependency>
+	</dependencies>
+
 </project>

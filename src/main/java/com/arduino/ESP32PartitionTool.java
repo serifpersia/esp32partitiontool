@@ -31,71 +31,30 @@
 	SOFTWARE.
 */
 
-package com.serifpersia.esp32partitiontool;
+package com.arduino;
 
 import processing.app.Editor;
 import processing.app.tools.Tool;
 
-import java.awt.image.BufferedImage;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.*;
 import javax.swing.*;
 
+import com.serifpersia.esp32partitiontool.FileManager;
+import com.serifpersia.esp32partitiontool.UI;
+import com.serifpersia.esp32partitiontool.UIController;
+
 @SuppressWarnings("serial")
-final class JFrameWithBgImage extends JFrame {
+public class ESP32PartitionTool extends JFrame implements Tool {
 
-	private JLabel background;
-
-	public JFrameWithBgImage() {
-		super("ESP32 Partition Tool");
-
-		final int minFrameWidth = 1024;
-		final int minFrameHeight = 640;
-		final int maxFrameWidth = 1280;
-		final int maxFrameHeight = 800;
-
-		//setVisible(true);
-		setLayout(new BorderLayout());
-		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setMaximumSize(new Dimension(maxFrameWidth, maxFrameHeight));
-		setMinimumSize(new Dimension(minFrameWidth, minFrameHeight));
-		setSize(new Dimension(minFrameWidth, minFrameHeight));
-		setResizable(false);
-
-		ImageIcon imageIcon = new ImageIcon(UIController.class.getResource("/bg.png"));
-		Image scaledImage = getScaledImage(imageIcon.getImage(), 1024, 640);
-		background = new JLabel(new ImageIcon(scaledImage));
-
-		add(background);
-		background.setLayout(new BorderLayout(0, 0));
-	}
-
-	public void addUI(UI contentPane) {
-		background.add(contentPane);
-	}
-
-	private Image getScaledImage(Image srcImg, int w, int h) {
-		BufferedImage resizedImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2 = resizedImg.createGraphics();
-
-		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		g2.drawImage(srcImg, 0, 0, w, h, null);
-		g2.dispose();
-
-		return resizedImg;
-	}
-
-}
-
-public class ESP32PartitionTool implements Tool {
-
-	private UI contentPane = new UI();
-	private FileManager fileManager; // FileManager instance
 	private AppSettingsArduino settings;
 
-	Editor editor;
-	private JFrameWithBgImage frame;
+	private JFrame frame;
+	private Editor editor;
+
+	private UI contentPane = new UI();
+	private FileManager fileManager;
 
 	public void init(Editor editor) {
 		this.editor = editor;
@@ -105,42 +64,45 @@ public class ESP32PartitionTool implements Tool {
 		return "ESP32 Partition Tool";
 	}
 
+	public void addUI(UI contentPane) {
+		frame.add(contentPane);
+	}
+
 	private void initGUI() {
 
-		if( settings == null ) {
-			// Pass the Editor instance when creating FileManager
+		if (settings == null) {
 			settings = new AppSettingsArduino(editor);
 		}
 
 		settings.load();
 
-		if( fileManager == null ) {
+		if (fileManager == null) {
 			fileManager = new FileManager(contentPane, settings);
 		}
 
-		// Create and show the JFrame
 		if (frame == null) {
+			frame = new JFrame("ESP32 Partition Tool");
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-			// frame = new JFrame("ESP32 Partition Tool");
-			frame = new JFrameWithBgImage();
+			frame.setSize(1024, 640);
+			frame.setResizable(false);
 
-			// Add UI to frame
-			frame.addUI(contentPane);
+			frame.setLocationRelativeTo(null);
+
+			JLabel background = new JLabel(new ImageIcon(getClass().getResource("/bg.png")));
+			background.setLayout(new BorderLayout());
+			frame.setContentPane(background);
+
+			addUI(contentPane);
+
 			fileManager.setUIController(new UIController(contentPane, fileManager));
 			frame.addWindowListener(new WindowAdapter() {
 				@Override
 				public void windowClosing(WindowEvent e) {
-					// save window dimensions
-					// fileManager.saveProperties();
-					// Just hide the frame instead of disposing
 					frame.setVisible(false);
 				}
 			});
-
-			// Set frame position to the center of the screen
-			frame.setLocationRelativeTo(null);
 		} else {
-			// If the frame is already open, bring it to the front and make it visible
 			frame.toFront();
 		}
 
@@ -152,4 +114,3 @@ public class ESP32PartitionTool implements Tool {
 		initGUI();
 	}
 }
-

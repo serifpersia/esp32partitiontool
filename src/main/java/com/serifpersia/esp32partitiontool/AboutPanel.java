@@ -17,7 +17,7 @@ class AboutPanel extends JEditorPane {
 				+ "<span style=\"background-color: #9a41c2\">&nbsp;v1.3&nbsp;</span>";
 		final String title = "<h2 align=center style=\"color: #ffffff;\">" + titleSpanned + "</h2>";
 		final String description = "<p>The ESP32 Partition Tool is a utility designed to ease the manipulation<br>"
-				+ "of custom partition schemes in the Arduino IDE 1.8.x environment.<br>"
+				+ "of custom partition schemes in the Arduino IDE 1.8.x & PlatformIO environment.<br>"
 				+ "This tool aims to simplify the process of creating custom partition<br>"
 				+ "schemes for ESP32 projects.</p>";
 		final String projectlink = "<p><b>Source:</b><br>https://github.com/serifpersia/esp32partitiontool</p>";

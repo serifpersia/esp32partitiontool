@@ -31,13 +31,18 @@
 	SOFTWARE.
 */
 
-package com.serifpersia.esp32partitiontool;
+package com.platformio;
 
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+
+import com.serifpersia.esp32partitiontool.FileManager;
+import com.serifpersia.esp32partitiontool.UI;
+import com.serifpersia.esp32partitiontool.UIController;
+
 import javax.swing.ImageIcon;
 
 public class ESP32PartitionToolStandalone {
@@ -84,7 +89,7 @@ public class ESP32PartitionToolStandalone {
 			// Add panel to frame
 			addUI(contentPane);
 
-			//fileManager.setContext( args );
+			// fileManager.setContext( args );
 			fileManager.setUIController(new UIController(contentPane, fileManager));
 
 			frame.addWindowListener(new WindowAdapter() {
