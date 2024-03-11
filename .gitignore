@@ -8,3 +8,7 @@ ClassList
 tools
 build/
 *.zip
+plaftormio_example/include/README
+plaftormio_example/lib/README
+plaftormio_example/test/README
+plaftormio_example/.vscode/extensions.json
