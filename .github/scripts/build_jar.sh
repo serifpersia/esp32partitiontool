@@ -8,6 +8,9 @@ die () {
 }
 
 jar_file=$1
+
+[ "" != "$jar_file" ] || die "Missing arg [jar_file]"
+
 jar_dir=`dirname $jar_file`
 
 # Note: Deliberately using relative paths since this will be run by the CI
