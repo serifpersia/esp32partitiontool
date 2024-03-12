@@ -1,6 +1,6 @@
 {
   "name": "tool-esp32partitiontool",
-  "version": "1.4",
+  "version": "1.4.0",
   "description": "Partition utility gui (requires java) to create custom partition table for ESP32",
   "keywords": [
     "tools",
