@@ -107,8 +107,8 @@ pio pkg install -e build-partition --no-save --tool /path/to/esp32partitiontool/
 
 ## Usage (Platformio)
 
-- If building from vsCode: run `edit_partition` project tasks from the `build-partition` environment
-- If building from a shell : `pio run -e build-partition -t edit_partition`
+- If building from vsCode: run  ESP32 Partition Tool Task
+- If building from a shell : `pio run -t edit_partition -e your_environment`
 
 
 
