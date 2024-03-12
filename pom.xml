@@ -1,6 +1,53 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.github.serifpersia</groupId>
+	<artifactId>esp32-partitions-tool</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>ESP32 Partition Tool</name>
+
+	<build>
+		<plugins>
+			<!-- Add the maven-jar-plugin to specify the main class in the
+			manifest -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.2.0</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>
+								com.serifpersia.esp32partitiontool.ESP32PartitionTool</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<!-- Add the maven-clean-plugin to clean the target folder -->
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.1.0</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>${project.build.directory}</directory>
+						</fileset>
+					</filesets>
+				</configuration>
+				<executions>
+					<execution>
+						<id>auto-clean</id>
+						<phase>clean</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 	<dependencies>
 		<dependency>
 			<groupId>processing</groupId>
@@ -24,9 +71,5 @@
 			<systemPath>${pom.basedir}/dependencies/commons-codec-1.7.jar</systemPath>
 		</dependency>
 	</dependencies>
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.github.serifpersia</groupId>
-	<artifactId>esp32-partitions-tool</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>ESP32 Partition Tool</name>
+
 </project>
