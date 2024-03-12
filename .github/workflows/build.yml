@@ -59,4 +59,4 @@ jobs:
         with:
           files: |
             /home/runner/work/esp32partitiontool/esp32partitiontool/archives/**
-        token: ${{ secrets.RELEASE_TOKEN }}  # Use the secret here
+          token: ${{ secrets.RELEASE_TOKEN }}  # Use the secret here
