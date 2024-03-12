@@ -39,7 +39,7 @@ jobs:
       with:
         name: PackageFiles
         path: |
-          ESP32PartitionTool-Arduino.zip
+          esp32partitiontool-arduino.zip
           esp32partitiontool-platformio.zip
 
   post_build:
