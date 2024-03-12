@@ -1,0 +1,61 @@
+name: JavaBuild
+on:
+  push:
+    paths:
+    - '**.java'
+    - 'resources/*'
+    - '*manifest*'
+    - '**build.yml'
+    - '**build_*.sh'
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+
+  build_packages:
+    name: "Platformio package build"
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin' # See 'Supported distributions' for available options
+        java-version: '8'
+    - name: "Build jar"
+      run: |
+        jar_file="build/ESP32PartitionTool.jar"
+        . $GITHUB_WORKSPACE/.github/scripts/build_jar.sh $jar_file
+        [ $? -eq 0 ] || die "Jar creation failed"
+        $GITHUB_WORKSPACE/.github/scripts/create_arduino_package.sh $jar_file
+        [ $? -eq 0 ] || die "Arduino Package creation failed"
+        $GITHUB_WORKSPACE/.github/scripts/create_platformio_package.sh $jar_file
+        [ $? -eq 0 ] || die "Platformio Package creation failed"
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: PackageFiles
+        path: |
+          ESP32PartitionTool-Arduino.zip
+          esp32partitiontool-platformio.zip
+
+  post_build:
+    name: Gather Artefacts
+    runs-on: ubuntu-latest
+    # wait until jobs are all finished
+    needs: build_packages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: archives
+      - name: Release check
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            /home/runner/work/esp32partitiontool/esp32partitiontool/archives/**

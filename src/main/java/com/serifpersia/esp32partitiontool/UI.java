@@ -29,7 +29,6 @@ public class UI extends JPanel {
 
 	private UIController controller;
 
-	public PrefsPanel prefsPanel;
 	public HelpPanel helpPanel;
 	public AboutPanel aboutPanel;
 
@@ -40,25 +39,14 @@ public class UI extends JPanel {
 	private JPanel csvPartitionsVisual;
 	private JPanel partitionsUtilButtonsPanel;
 	private JPanel csvpartitionsCenterVisualPanel;
-	private JPanel SPIFFSGenPanel;
 	private JLabel partitionFlashFreeSpace;
 	private JLabel csvGenLabel;
-	private JLabel SPIFFSGenLabel;
-	private JComboBox<?> partitionsFlashTypes;
 	private JComboBox<?> partitions_FlashSizes;
 
-	private JTextField spiffsBlockSize;
-
-	private JButton btnSettings;
-	private JButton btnFlashSPIFFS;
-	private JButton mergeBinBtn;
 	private JButton aboutBtn;
 	private JButton importCsvBtn;
 	private JButton exporCsvBtn;
-	private JButton createBinBtn;
 	private JButton helpButton;
-
-	private JCheckBox rememberChoiceCheckBox = new JCheckBox("Remember my decision"); // used in confirmDialogs
 
 	private ArrayList<CSVRow> csvRows = new ArrayList<CSVRow>();
 
@@ -178,26 +166,8 @@ public class UI extends JPanel {
 		csvPanel.add(titleLinePanel);
 	}
 
-	// confirm dialog with optional "Remember my decision" checkbox
-	public boolean confirmDialogOverwrite(String msg, String title) {
-		JPanel panel = new JTransparentPanel();
-		panel.setLayout(new BorderLayout());
-		panel.add(new JLabel(msg), BorderLayout.NORTH);
-
-		panel.add(rememberChoiceCheckBox, BorderLayout.SOUTH);
-
-		int userConfirm = JOptionPane.showConfirmDialog(new JFrame(), panel, title, JOptionPane.YES_NO_OPTION);
-
-		if (rememberChoiceCheckBox.isSelected()) {
-			getOverwriteCheckBox().setSelected(userConfirm != JOptionPane.YES_OPTION);
-		}
-
-		return userConfirm == JOptionPane.YES_OPTION;
-	}
-
 	private void createPanels() {
 
-		prefsPanel = new PrefsPanel();
 		helpPanel = new HelpPanel();
 		aboutPanel = new AboutPanel();
 
@@ -242,98 +212,10 @@ public class UI extends JPanel {
 		exporCsvBtn = new JButton(" Export CSV ");
 		partitionsUtilButtonsPanel.add(exporCsvBtn);
 
-		createBinBtn = new JButton(" Create Bin ");
-		partitionsUtilButtonsPanel.add(createBinBtn);
-
-		SPIFFSGenPanel = new JTransparentPanel();
-		add(SPIFFSGenPanel, BorderLayout.EAST);
-		SPIFFSGenPanel.setLayout(new BorderLayout(0, 0));
-		SPIFFSGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-
-		SPIFFSGenLabel = new JLabel("SPIFFS");
-		SPIFFSGenLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFSGenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
-		SPIFFSGenPanel.add(SPIFFSGenLabel, BorderLayout.NORTH);
-
-		JPanel SPIFFSGenInnerPanel = new JTransparentPanel();
-
-		SPIFFSGenPanel.add(SPIFFSGenInnerPanel, BorderLayout.CENTER);
-		SPIFFSGenInnerPanel.setLayout(new BorderLayout(0, 0));
-
-		GridLayout gl = new GridLayout(0, 2);
-		gl.setHgap(5);
-		JPanel SPIFFSInnerPanel = new JTransparentPanel(); // 0 rows means any number of rows, 2 columns
-		SPIFFSInnerPanel.setLayout(gl);
-		SPIFFSGenInnerPanel.add(SPIFFSInnerPanel, BorderLayout.NORTH);
-
-		JLabel LabelFs = new JLabel("Filesystem:");
-		LabelFs.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFSInnerPanel.add(LabelFs);
-
-		partitionsFlashTypes = new JComboBox<>(new String[] { "SPIFFS", "LittleFS", "FatFS" });
-		SPIFFSInnerPanel.add(partitionsFlashTypes);
-
-		JLabel LabelBlockSize = new JLabel("Block Size:");
-		LabelBlockSize.setHorizontalAlignment(SwingConstants.CENTER);
-		SPIFFSInnerPanel.add(LabelBlockSize);
-
-		spiffsBlockSize = new JTextField("4096");
-		spiffsBlockSize.setEditable(false);
-		SPIFFSInnerPanel.add(spiffsBlockSize);
-
-		JPanel SPIFFS_AND_MERGE_AND_FLASH_Panel = new JTransparentPanel();
-		SPIFFSGenInnerPanel.add(SPIFFS_AND_MERGE_AND_FLASH_Panel, BorderLayout.CENTER);
-		SPIFFS_AND_MERGE_AND_FLASH_Panel.setLayout(new BorderLayout(0, 0));
-
-		JPanel panel2 = new JTransparentPanel();
-		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel2, BorderLayout.NORTH);
-		panel2.setLayout(new BorderLayout(0, 0));
-
-		btnFlashSPIFFS = new JButton("SPIFFS");
-		panel2.add(btnFlashSPIFFS);
-
-		JPanel panel3 = new JTransparentPanel();
-		SPIFFS_AND_MERGE_AND_FLASH_Panel.add(panel3, BorderLayout.CENTER);
-		panel3.setLayout(new BorderLayout(0, 0));
-		panel3.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-
-		JLabel lblNewLabel3 = new JLabel("Merge");
-		lblNewLabel3.setFont(new Font("Tahoma", Font.PLAIN, 18));
-		lblNewLabel3.setHorizontalAlignment(SwingConstants.CENTER);
-
-		panel3.add(lblNewLabel3, BorderLayout.NORTH);
-
-		JPanel panel4 = new JTransparentPanel();
-		panel3.add(panel4, BorderLayout.CENTER);
-		panel4.setLayout(new BorderLayout(0, 0));
-
-		JPanel panel5 = new JTransparentPanel();
-		panel4.add(panel5, BorderLayout.NORTH);
-		panel5.setLayout(new GridLayout(2, 0, 0, 0));
-
-		mergeBinBtn = new JButton("Merge Binary");
-		panel5.add(mergeBinBtn);
-
-		console_logField = new JTextArea();
-		console_logField.setForeground(Color.WHITE);
-		console_logField.setBackground(Color.BLACK);
-		console_logField.setFont(new Font("Monospaced", Font.PLAIN, 12)); // Set a monospaced font
-		console_logField.setEditable(false); // Make the text area read-only
-		console_logField.setLineWrap(true); // Enable line wrapping
-		console_logField.setWrapStyleWord(true); // Wrap at word boundaries
-
-		JScrollPane scrollPane = new JScrollPane(console_logField);
-		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-
-		panel4.add(scrollPane, BorderLayout.CENTER);
-
 		// free space box
 		partitionFlashFreeSpace = new JLabel("Free Space: not set");
 		partitionsUtilButtonsPanel.add(partitionFlashFreeSpace);
-		// settings button
-		ImageIcon icon = new ImageIcon(getClass().getResource("/gear.png"));
-		btnSettings = new JButton(icon);
-		partitionsUtilButtonsPanel.add(btnSettings);
+
 		// help button
 		helpButton = new JButton(" Help ");
 		partitionsUtilButtonsPanel.add(helpButton);
@@ -346,11 +228,6 @@ public class UI extends JPanel {
 		csvpartitionsCenterVisualPanel = new JTransparentPanel();
 		csvpartitionsCenterVisualPanel.setLayout(new GridBagLayout());
 		csvPartitionsVisual.add(csvpartitionsCenterVisualPanel, BorderLayout.SOUTH);
-	}
-
-	public void updatePartitionFlashTypeLabel() {
-		SPIFFSGenLabel.setText((String) getPartitionFlashType().getSelectedItem());
-		btnFlashSPIFFS.setText((String) getPartitionFlashType().getSelectedItem());
 	}
 
 	public void updatePartitionLabel(String label) {
@@ -456,16 +333,16 @@ public class UI extends JPanel {
 			CSVRow csvRow = getCSVRow(i);
 			if (!csvRow.enabled.isSelected())
 				continue;
-			String type = (String) csvRow.type.getSelectedItem();
+			csvRow.type.getSelectedItem();
 			String subtype = csvRow.subtype.getText();
 			csvRow.subtype.setForeground(csvRow.isValidSubtype(subtype) ? Color.BLACK : Color.RED);
 
-			if (type.equals("data") && subtype.equals("fat"))
-				getPartitionFlashType().setSelectedItem("FatFS");
-			else if (type.equals("data") && subtype.equals("spiffs"))
-				getPartitionFlashType().setSelectedItem("SPIFFS");
-			else if (type.equals("data") && subtype.equals("littlefs"))
-				getPartitionFlashType().setSelectedItem("LittleFS");
+			// if (type.equals("data") && subtype.equals("fat"))
+			// getPartitionFlashType().setSelectedItem("FatFS");
+			// else if (type.equals("data") && subtype.equals("spiffs"))
+			// getPartitionFlashType().setSelectedItem("SPIFFS");
+			// else if (type.equals("data") && subtype.equals("littlefs"))
+			// getPartitionFlashType().setSelectedItem("LittleFS");
 		}
 	}
 
@@ -539,9 +416,9 @@ public class UI extends JPanel {
 					double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
 					JPanel partitionPanel = new JPanel();
 
-					String partName = (String) getPartitionName(i).getText();
+					String partName = getPartitionName(i).getText();
 					String partType = (String) getPartitionType(i).getSelectedItem();
-					String partSubType = (String) getPartitionSubType(i).getText();
+					String partSubType = getPartitionSubType(i).getText();
 
 					partColor = getPartitionColor(partName, partType, partSubType);
 
@@ -582,9 +459,9 @@ public class UI extends JPanel {
 					double weight = (double) partitionSize / (FLASH_SIZE - RESERVED_SPACE);
 					JPanel partitionPanel = new JPanel();
 
-					String partName = (String) getPartitionName(i).getText();
+					String partName = getPartitionName(i).getText();
 					String partType = (String) getPartitionType(i).getSelectedItem();
-					String partSubType = (String) getPartitionSubType(i).getText();
+					String partSubType = getPartitionSubType(i).getText();
 
 					partColor = getPartitionColor(partName, partType, partSubType);
 
@@ -620,6 +497,10 @@ public class UI extends JPanel {
 		return csvRows.size();
 	}
 
+	public String getPartitionLabel() {
+		return csvGenLabel.getText();
+	}
+
 	public JButton getImportCSVButton() {
 		return importCsvBtn;
 	}
@@ -628,48 +509,12 @@ public class UI extends JPanel {
 		return exporCsvBtn;
 	}
 
-	public JButton getCreatePartitionsBin() {
-		return createBinBtn;
-	}
-
-	public JButton getFlashSPIFFSButton() {
-		return btnFlashSPIFFS;
-	}
-
-	public JButton getFlashMergedBin() {
-		return mergeBinBtn;
-	}
-
-	public JButton getSettingsButton() {
-		return btnSettings;
-	}
-
 	public JButton getHelpButton() {
 		return helpButton;
 	}
 
 	public JButton getAboutButton() {
 		return aboutBtn;
-		/* getPrefsPanel().getAboutButton(); */ }
-
-	public JTextField getSpiffsBlockSize() {
-		return spiffsBlockSize;
-	}
-
-	public JCheckBox getDebug() {
-		return getPrefsPanel().getDebug();
-	}
-
-	public JCheckBox getConfirmDataEmptyCheckBox() {
-		return getPrefsPanel().getConfirmDataEmptyCheckBox();
-	}
-
-	public JCheckBox getOverwriteCheckBox() {
-		return getPrefsPanel().getOverwriteCheckBox();
-	}
-
-	public JComboBox<?> getPartitionFlashType() {
-		return partitionsFlashTypes;
 	}
 
 	public JComboBox<?> getFlashSize() {
@@ -682,10 +527,6 @@ public class UI extends JPanel {
 
 	public UIController getController() {
 		return controller;
-	}
-
-	public PrefsPanel getPrefsPanel() {
-		return prefsPanel;
 	}
 
 	// Getter method to access a specific checkbox by index

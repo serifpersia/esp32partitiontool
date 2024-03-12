@@ -36,19 +36,11 @@ public class UIController implements ActionListener {
 
 	private void attachListeners() {
 		// Attach listener to the "Generate CSV" button
-		ui.getDebug().addActionListener(this);
 		ui.getImportCSVButton().addActionListener(this);
 		ui.getCreatePartitionsCSV().addActionListener(this);
-		ui.getCreatePartitionsBin().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
-		ui.getFlashSPIFFSButton().addActionListener(this);
-		ui.getPartitionFlashType().addActionListener(this);
-		ui.getFlashMergedBin().addActionListener(this);
 		ui.getHelpButton().addActionListener(this);
 		ui.getAboutButton().addActionListener(this);
-		ui.getOverwriteCheckBox().addActionListener(this);
-		ui.getConfirmDataEmptyCheckBox().addActionListener(this);
-		ui.getSettingsButton().addActionListener(this);
 	}
 
 	@Override
@@ -65,39 +57,15 @@ public class UIController implements ActionListener {
 			handleTextFieldAction((JTextField) e.getSource());
 		} else if (e.getSource() instanceof JComboBox<?>) {
 			handleComboBoxAction((JComboBox<?>) e.getSource());
-		} else if (e.getSource() == ui.getCreatePartitionsBin()) {
-			fileManager.createPartitionsBin();
-		} else if (e.getSource() == ui.getFlashSPIFFSButton()) {
-			// fileManager.handleSPIFFSButton(null);
-		} else if (e.getSource() == ui.getFlashMergedBin()) {
-			// fileManager.handleMergedBinButton(null);
 		} else if (e.getSource() == ui.getHelpButton()) {
 			handleHelpButton();
 		} else if (e.getSource() == ui.getAboutButton()) {
 			handleAboutButton();
-		} else if (e.getSource() == ui.getSettingsButton()) {
-			handleSettingsButton();
 		}
-
 	}
 
 	private void handleCheckBoxAction(JCheckBox checkBox) {
 		boolean isSelected = checkBox.isSelected();
-
-		if (checkBox == ui.getDebug()) {
-			// fileManager.setDebug(isSelected);
-			return;
-		}
-
-		if (checkBox == ui.getOverwriteCheckBox()) {
-			// fileManager.setConfirmOverwrite(!isSelected);
-			return;
-		}
-
-		if (checkBox == ui.getConfirmDataEmptyCheckBox()) {
-			// ileManager.setConfirmDataEmpty(isSelected);
-			return;
-		}
 
 		int csvRowId = getRowIndexForComponent(checkBox);
 		if (csvRowId < 0)
@@ -117,15 +85,14 @@ public class UIController implements ActionListener {
 				csvRow.setDefaults(csvRowId);
 			else
 				csvRow.enableRow();
-			if (csvRowId == ui.getCSVRows().size() - 1) { // we're enabling the last checkbox, add one!
+			if (csvRowId == ui.getCSVRows().size() - 1) {
 				if (csvRowId > 0) {
-					ui.renderCSVRows(); // an extra empty line will be inserted by renderCSVRows()
+					ui.renderCSVRows();
 				}
 			}
 		} else {
 			csvRow.disableRow();
-			if (csvRowId >= UI.MIN_ITEMS - 1 && csvRowId == ui.getCSVRows().size() - 2) { // we're disabling the last
-																							// enabled checkbox
+			if (csvRowId >= UI.MIN_ITEMS - 1 && csvRowId == ui.getCSVRows().size() - 2) {
 				ui.popCSVRow();
 				ui.popCSVRow();
 				ui.renderCSVRows();
@@ -151,8 +118,6 @@ public class UIController implements ActionListener {
 		}
 	}
 
-	private String lastFsName = "";
-
 	private void handleComboBoxAction(JComboBox<?> comboBox) {
 		if (comboBox == ui.getFlashSize()) {
 			// Get the selected item from the combo box
@@ -165,32 +130,7 @@ public class UIController implements ActionListener {
 			ui.calculateOffsets();
 			ui.updatePartitionFlashVisual();
 
-			int spiffs_setBlockSize = 0;
-
 			if (ui.flashSizeMB == 4 || ui.flashSizeMB == 8 || ui.flashSizeMB == 16 || ui.flashSizeMB == 32) {
-				spiffs_setBlockSize = ui.flashSizeMB * 1024;
-			} else {
-				// Handle other cases or provide a default value if necessary
-			}
-
-			String blockSizeText = String.valueOf(spiffs_setBlockSize);
-			ui.getSpiffsBlockSize().setText(blockSizeText);
-
-		} else if (comboBox == ui.getPartitionFlashType()) {
-			String fsName = ui.getPartitionFlashType().getSelectedItem().toString();
-			// String toolPath = fileManager.prefs.getProperty("mk" + fsName.toLowerCase() +
-			// ".path");
-			// if (toolPath == null) {
-			// fileManager.emitError("Tool for creating " + fsName + " spiifs.bin" + " not
-			// found!");
-			// }
-			// else
-			{
-				if (!fsName.equals(lastFsName)) {
-					// no need to spam the console with repeated messages
-					lastFsName = fsName;
-					ui.updatePartitionFlashTypeLabel();
-				}
 			}
 		}
 	}
@@ -202,15 +142,9 @@ public class UIController implements ActionListener {
 				JOptionPane.INFORMATION_MESSAGE, icon);
 	}
 
-	public void handleSettingsButton() {
-		// modal dialog without icon
-		JOptionPane.showOptionDialog(ui, ui.prefsPanel, "Settings", -1, JOptionPane.PLAIN_MESSAGE, null, null, null);
-	}
-
 	public void handleHelpButton() {
 		// modal dialog with minimal decoration
 		final JDialog dialog = new JDialog((Frame) null, "Help Tips", true);
-		dialog.getRootPane().setWindowDecorationStyle(JRootPane.PLAIN_DIALOG);
 		dialog.add(ui.helpPanel);
 		dialog.pack();
 		dialog.setLocationRelativeTo(null);
