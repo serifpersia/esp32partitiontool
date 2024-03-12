@@ -11,7 +11,8 @@ The ESP32 Partition Tool is a utility designed to facilitate creating custom par
 This tool aims to simplify the process of creating custom partition schemes for ESP32 projects.
 ## Screenshots
 ![Screenshot 1](https://github.com/serifpersia/esp32partitiontool/assets/62844718/8724d57c-ebb5-404f-97f1-fe09134f53b5)
-![Screenshot 2](https://github.com/serifpersia/esp32partitiontool/assets/62844718/2cdfec8b-710c-41e5-9e0c-50dbb52e4181)
+![image](https://github.com/serifpersia/esp32partitiontool/assets/62844718/b52bfeaf-4cb6-49b9-acc0-6d4adde68652)
+![image](https://github.com/serifpersia/esp32partitiontool/assets/62844718/700a5192-f3a7-4de7-af1b-3fc6c345a35e)
 
 ## Functionality
 - [x] Create partitions csv
