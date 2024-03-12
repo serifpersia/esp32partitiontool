@@ -2,7 +2,7 @@
     <img src="https://img.shields.io/badge/ESP32-f8a631" height="50">
     <img src="https://img.shields.io/badge/Partition-bf457a" height="50">
     <img src="https://img.shields.io/badge/Tool-42b0f5" height="50">
-    <a href="https://github.com/serifpersia/esp32partitiontool/releases/latest"><img src="https://img.shields.io/badge/v1.3-9a41c2" height="50"></a>
+    <a href="https://github.com/serifpersia/esp32partitiontool/releases/latest"><img src="https://img.shields.io/badge/v1.4-9a41c2" height="50"></a>
 </div>
 
 ## Overview
