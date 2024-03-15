@@ -12,13 +12,14 @@ import javax.swing.*;
 import javax.swing.event.*;
 
 @SuppressWarnings("serial")
-final class JTransparentPanel extends JPanel {
-	public JTransparentPanel() {
-		setOpaque(false);
-	}
-}
 
 public class UI extends JPanel {
+
+	final class JTransparentPanel extends JPanel {
+		public JTransparentPanel() {
+			setOpaque(false);
+		}
+	}
 
 	private static final long serialVersionUID = 1L;
 	public static final int MIN_ITEMS = 15;
@@ -28,9 +29,11 @@ public class UI extends JPanel {
 	int flashSizeMB = 4;
 
 	private UIController controller;
+	public AppSettings settings;
 
 	public HelpPanel helpPanel;
 	public AboutPanel aboutPanel;
+	public FSPanel fsPanel;
 
 	private JScrollPane csvScrollPanel;
 
@@ -65,6 +68,14 @@ public class UI extends JPanel {
 
 	public void setController(UIController controller) {
 		this.controller = controller;
+	}
+
+	public void setAppSettings( FileManager fileManager, AppSettings settings ) {
+		this.settings = settings;
+		if( settings.hasFSPanel ) {
+			add(fsPanel, BorderLayout.EAST);
+			fsPanel.attachListeners( this, fileManager );
+		}
 	}
 
 	public void addCSVRow(CSVRow line) {
@@ -170,6 +181,7 @@ public class UI extends JPanel {
 
 		helpPanel = new HelpPanel();
 		aboutPanel = new AboutPanel();
+		fsPanel = new FSPanel();
 
 		csvGenPanel = new JTransparentPanel();
 
@@ -222,6 +234,7 @@ public class UI extends JPanel {
 		// about button
 		aboutBtn = new JButton(" About ");
 		partitionsUtilButtonsPanel.add(aboutBtn);
+
 	}
 
 	private void createPartitionFlashVisualPanel() {
@@ -333,16 +346,17 @@ public class UI extends JPanel {
 			CSVRow csvRow = getCSVRow(i);
 			if (!csvRow.enabled.isSelected())
 				continue;
-			csvRow.type.getSelectedItem();
 			String subtype = csvRow.subtype.getText();
 			csvRow.subtype.setForeground(csvRow.isValidSubtype(subtype) ? Color.BLACK : Color.RED);
-
-			// if (type.equals("data") && subtype.equals("fat"))
-			// getPartitionFlashType().setSelectedItem("FatFS");
-			// else if (type.equals("data") && subtype.equals("spiffs"))
-			// getPartitionFlashType().setSelectedItem("SPIFFS");
-			// else if (type.equals("data") && subtype.equals("littlefs"))
-			// getPartitionFlashType().setSelectedItem("LittleFS");
+			if( settings.hasFSPanel ) {
+				String type = csvRow.type.getSelectedItem().toString().toLowerCase();
+				if (type.equals("data") && subtype.equals("fat"))
+					fsPanel.getPartitionFlashTypes().setSelectedItem("FatFS");
+				else if (type.equals("data") && subtype.equals("spiffs"))
+					fsPanel.getPartitionFlashTypes().setSelectedItem("SPIFFS");
+				else if (type.equals("data") && subtype.equals("littlefs"))
+					fsPanel.getPartitionFlashTypes().setSelectedItem("LittleFS");
+			}
 		}
 	}
 
@@ -621,7 +635,12 @@ public class UI extends JPanel {
 			if (!getCSVRow(i).enabled.isSelected())
 				continue;
 			JTextField partitionSubType = getPartitionSubType(i);
-			if (partitionSubType != null && partitionSubType.getText().equals("spiffs")) {
+			if (partitionSubType != null && (
+					   partitionSubType.getText().equals("spiffs")
+					|| partitionSubType.getText().equals("littlefs")
+					|| partitionSubType.getText().equals("fatfs")
+					|| partitionSubType.getText().equals("ffat")
+			)) {
 				spiffsIndex = i;
 				break; // Exit the loop once SPIFFS partition subtype is found
 			}

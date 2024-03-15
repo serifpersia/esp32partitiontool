@@ -65,7 +65,6 @@ public class ESP32PartitionToolStandalone {
 	private void init(String[] args) {
 
 		settings = new AppSettingsStandalone(args);
-		settings.load();
 
 		fileManager = new FileManager(contentPane, settings);
 

@@ -9,7 +9,7 @@ import javax.swing.*;
 public class UIController implements ActionListener {
 	private static UIController instance;
 	private UI ui;
-	private FileManager fileManager;
+	public FileManager fileManager;
 
 	public UIController(UI ui, FileManager fileManager) {
 		this.ui = ui;

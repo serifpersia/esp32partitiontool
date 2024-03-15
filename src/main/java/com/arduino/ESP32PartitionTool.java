@@ -72,9 +72,9 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 
 		if (settings == null) {
 			settings = new AppSettingsArduino(editor);
+		} else {
+			settings.init();
 		}
-
-		settings.load();
 
 		if (fileManager == null) {
 			fileManager = new FileManager(contentPane, settings);
@@ -82,7 +82,6 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 
 		if (frame == null) {
 			frame = new JFrame("ESP32 Partition Tool");
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 			frame.setSize(1024, 640);
 			frame.setResizable(false);
