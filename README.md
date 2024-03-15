@@ -48,7 +48,6 @@ Note that anything newer will cause the Arduino IDE to crash since its only supp
 
 - Install Java and make sure the executable is in the path
 - Create a `partition_manager.py` in your project folder
-- 
 
 #### partition_manager.py
 
