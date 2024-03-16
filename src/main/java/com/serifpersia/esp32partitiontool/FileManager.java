@@ -1,7 +1,6 @@
 package com.serifpersia.esp32partitiontool;
 
-import java.awt.FileDialog;
-import java.awt.Frame;
+import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -9,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.swing.JTextField;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.lang.Process;
 import java.lang.Runtime;
 import java.io.*;
@@ -80,32 +81,47 @@ public class FileManager {
 	public void importCSV(String file) {
 		File readerFile = null;
 
-		if (file == null) {
-			FileDialog dialog = new FileDialog((Frame) null, "Select CSV File", FileDialog.LOAD);
+		String directory;
+
+		if (file == null) { // show a dialog
+			FileDialog filedialog = new FileDialog(ui.getFrame(), "Select CSV File", FileDialog.LOAD);
+			FilenameFilter csvFilter = new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					return name.toLowerCase().endsWith(".csv");
+				}
+			};
+			filedialog.setFilenameFilter(csvFilter);
+
 			if (settings.get("csvDir.path") != null) {
 				System.out.println("dialog open at last CSV Dir: " + settings.get("csvDir.path") );
-				dialog.setDirectory( settings.get("csvDir.path") );
+				filedialog.setDirectory( settings.get("csvDir.path") );
 			}
-			dialog.setFile("*.csv");
-			dialog.setVisible(true);
-			String directory = dialog.getDirectory();
+			filedialog.setFile("*.csv");
+			filedialog.setAlwaysOnTop(true);
+			filedialog.setVisible(true);
+
+			directory = filedialog.getDirectory();
 			if (directory == null || directory.isEmpty())
 				return;
-			settings.set("csvDir.path", directory );
-			System.out.println("dialog returned CSV Dir: " + settings.get("csvDir.path") );
-			file = dialog.getFile();
+			//settings.set("csvDir.path", directory );
+			//System.out.println("dialog returned CSV Dir: " + settings.get("csvDir.path") );
+			file = filedialog.getFile();
+			filedialog.dispose();
 			if (file == null || file.isEmpty())
 				return;
 			readerFile = new File(directory, file);
 		} else {
 			readerFile = new File(file);
+			directory = readerFile.getParent();
+			// update last csvDir
+			// settings.set("csvDir.path", readerFile.getParent() );
 		}
 
 		try (BufferedReader reader = new BufferedReader(new FileReader(readerFile))) {
 			processCSV(reader);
-
-			settings.set("csvFile.path", basename(file) );
-			ui.updatePartitionLabel(settings.get("csvFile.path"));
+			settings.set("csvFile.path", directory + "/" + basename(file) );
+			ui.updatePartitionLabel( basename(file) );
 
 		} catch (IOException e) {
 			emitError("Error reading CSV file: " + e.getMessage());
@@ -230,50 +246,72 @@ public class FileManager {
 		}
 	}
 
-	public boolean generateCSV() {
+
+	public boolean saveCSV( File file ) {
 		calculateCSV();
 
-		// Get the default directory path
-
-		// Export to CSV
-		FileDialog dialog = new FileDialog(new Frame(), "Create Partitions CSV", FileDialog.SAVE);
-
-		if (settings.get("csvFile.path") != null) {
-			dialog.setFile(settings.get("csvFile.path"));
-			// dialog.setDirectory(homeDir);
-		} else {
-			dialog.setFile("partitions.csv");
-		}
-		dialog.setVisible(true);
-		String fileName = dialog.getFile();
-
-		if (fileName == null)
-			return false;
-
-		String filePath = dialog.getDirectory() + fileName; // Construct the full file path
-		try (FileWriter writer = new FileWriter(filePath)) {
-			// Write the exported data to the CSV file
+		try {
+			FileWriter writer = new FileWriter(file);
 			for (String partitionData : createdPartitionsData) {
 				writer.write(partitionData + "\n");
 			}
-
-			if (Files.notExists(Paths.get(filePath))) {
-				emitError("Failed to write " + filePath);
-				return false;
-			}
-			System.out.println("partitions.csv written at: " + filePath);
-
-			settings.set("csvFile.path", filePath );
-
+			writer.close();
+			//System.out.println("partitions.csv written at: " + csvFile );
 			return true;
-		} catch (IOException ex) {
-			emitError("Error creating CSV: " + ex.getMessage());
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return false;
+	}
+
+
+
+	public boolean saveCSV() {
+		String sketchDir = settings.get("sketchDir.path");
+
+		if( sketchDir == null ) {
+		  sketchDir = new File(FileManager.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
+			System.out.println("Forced sketchDir to " + sketchDir );
+		}
+
+    FilenameFilter csvFilter = new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.toLowerCase().endsWith(".csv");
+			}
+    };
+    FileDialog filedialog = new FileDialog(ui.getFrame(), "Save partitions.csv", FileDialog.SAVE);
+    filedialog.setDirectory(sketchDir);
+    filedialog.setFile("partitions.csv");
+    filedialog.setFilenameFilter(csvFilter);
+    filedialog.setVisible(true);
+
+    if (filedialog.getFile() == null) {
+			// aborted by user
+			return false;
+		}
+
+		String csvPath = filedialog.getDirectory() + filedialog.getFile();
+
+		filedialog.dispose();
+
+		if( Files.notExists(Paths.get(csvPath))) {
+			// can't open
+			return false;
+		}
+
+		File csvFile = new File( csvPath );
+
+		boolean success = saveCSV( csvFile );
+		if( success ) {
+			//settings.set("csvFile.path", csvFile.toString() );
+			//settings.set("csvDir.path", csvFile.getParent() );
+			return true;
 		}
 		return false;
 	}
 
 	public boolean createSPIFFS() {
-
 		settings.load();
 
 		if( ! settings.hasFSPanel ) return false;
@@ -389,7 +427,6 @@ public class FileManager {
 	}
 
 	public boolean uploadSPIFFS() {
-
 		settings.load();
 
 		if( !settings.hasFSPanel ) return false;
@@ -464,7 +501,6 @@ public class FileManager {
 	}
 
 	public boolean createMergedBin() {
-
 		settings.load();
 
 		if( ! settings.hasFSPanel ) return false;

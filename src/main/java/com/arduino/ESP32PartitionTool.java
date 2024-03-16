@@ -65,6 +65,7 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 	}
 
 	public void addUI(UI contentPane) {
+		contentPane.setFrame( frame );
 		frame.add(contentPane);
 	}
 
@@ -77,11 +78,18 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 		}
 
 		if (fileManager == null) {
+
+			// try {
+			// 	UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+			// } catch (Exception e) {
+			// 	// handle exception
+			// }
+
 			fileManager = new FileManager(contentPane, settings);
 		}
 
 		if (frame == null) {
-			frame = new JFrame("ESP32 Partition Tool");
+			frame = new JFrame("ESP32 Partition Tool (Arduino IDE)");
 
 			frame.setSize(1024, 640);
 			frame.setResizable(false);

@@ -28,6 +28,16 @@ public class UI extends JPanel {
 	long FlashSizeBytes = 4 * 1024 * 1024 - 36864;
 	int flashSizeMB = 4;
 
+	private JFrame frame;
+
+	JFrame getFrame() {
+		return frame;
+	}
+
+	public void setFrame( JFrame frame ) {
+		this.frame = frame;
+	}
+
 	private UIController controller;
 	public AppSettings settings;
 
@@ -199,7 +209,10 @@ public class UI extends JPanel {
 		csvScrollPanel = new JScrollPane(csvPanel);
 		csvScrollPanel.setViewportBorder(null);
 		csvScrollPanel.setOpaque(false);
+		csvScrollPanel.setBorder(null);
 		csvScrollPanel.getViewport().setOpaque(false);
+		csvScrollPanel.getViewport().setBorder(null);
+		csvScrollPanel.getViewport().getInsets().set(0, 0, 0, 0);
 		csvScrollPanel.getVerticalScrollBar().setUnitIncrement(100); // prevent the scroll wheel from going sloth
 
 		csvGenPanel.add(csvScrollPanel, BorderLayout.CENTER);
@@ -519,7 +532,7 @@ public class UI extends JPanel {
 		return importCsvBtn;
 	}
 
-	public JButton getCreatePartitionsCSV() {
+	public JButton getExporCsvBtn() {
 		return exporCsvBtn;
 	}
 

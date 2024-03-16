@@ -33,17 +33,32 @@
 
 package com.platformio;
 
-import java.awt.BorderLayout;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
+import javax.swing.*;
+import javax.swing.border.*;
+
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.*;
 
 import com.serifpersia.esp32partitiontool.FileManager;
 import com.serifpersia.esp32partitiontool.UI;
 import com.serifpersia.esp32partitiontool.UIController;
 
 import javax.swing.ImageIcon;
+
+// local implementation of rounded borders to overwrite global styles
+@SuppressWarnings("serial")
+final class CustomBorder extends AbstractBorder {
+    @Override
+    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+        super.paintBorder(c, g, x, y, width, height);
+        Graphics2D g2d = (Graphics2D)g;
+        g2d.setPaint( new Color(0xcc, 0xcc, 0xcc) );
+        Shape shape = new RoundRectangle2D.Float(1, 1, c.getWidth()-2, c.getHeight()-2, 5, 5);
+        g2d.draw(shape);
+    }
+}
+
 
 public class ESP32PartitionToolStandalone {
 
@@ -64,13 +79,24 @@ public class ESP32PartitionToolStandalone {
 
 	private void init(String[] args) {
 
+		// apply some style fixes globally
+
+		CompoundBorder borderTextField = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(0, 0, 0, 0), new CustomBorder() );
+		CompoundBorder borderComboBox = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(2, 2, 2, 2), new CustomBorder() );
+
+		UIManager.put("TextField.background", Color.WHITE);
+		UIManager.put("TextField.border", borderTextField);
+
+		UIManager.put("ComboBox.background", Color.WHITE);
+		UIManager.put("ComboBox.border", borderComboBox);
+
 		settings = new AppSettingsStandalone(args);
 
 		fileManager = new FileManager(contentPane, settings);
 
 		// Create and show the JFrame
 		if (frame == null) {
-			frame = new JFrame("ESP32 Partition Tool");
+			frame = new JFrame("ESP32 Partition Tool (standalone)");
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 			// Size and display the frame
@@ -103,6 +129,7 @@ public class ESP32PartitionToolStandalone {
 			frame.toFront();
 		}
 
+		contentPane.setFrame( frame );
 		fileManager.loadDefaultCSV();
 		frame.setVisible(true);
 	}

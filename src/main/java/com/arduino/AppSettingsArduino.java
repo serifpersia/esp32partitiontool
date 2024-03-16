@@ -34,6 +34,12 @@ public class AppSettingsArduino extends AppSettings {
 
 	public void init() {
 
+		// these don't need to be evaluated more than once
+		isWindows = PreferencesData.get("runtime.os").contentEquals("windows");
+		espotaCmd = "espota" + (isWindows ? ".exe" : ".py");
+		esptoolCmd = "esptool" + (isWindows ? ".exe" : ".py");
+		genEsp32PartCmd = "gen_esp32part" + (isWindows ? ".exe" : ".py");
+
 		load();
 
 		set("csvDir.path", get("sketchDir.path") );
@@ -70,14 +76,11 @@ public class AppSettingsArduino extends AppSettings {
 
 	@Override
 	public void load() {
-		// figure out what csv file is selected in the boards menu, and where it is
-		isWindows = PreferencesData.get("runtime.os").contentEquals("windows");
-		espotaCmd = "espota" + (isWindows ? ".exe" : ".py");
-		esptoolCmd = "esptool" + (isWindows ? ".exe" : ".py");
-		genEsp32PartCmd = "gen_esp32part" + (isWindows ? ".exe" : ".py");
+
 		defaultSketchbookFolder = BaseNoGui.getDefaultSketchbookFolder();
 		toolsPathBase = BaseNoGui.getToolsPath();
 		platform = BaseNoGui.getTargetPlatform();
+
 		set("sketch.name", editor.getSketch().getName() );
 		set("sketch.path", editor.getSketch().getMainFilePath() );
 		set("sketchDir.path", editor.getSketch().getFolder().getAbsolutePath() );

@@ -37,7 +37,7 @@ public class UIController implements ActionListener {
 	private void attachListeners() {
 		// Attach listener to the "Generate CSV" button
 		ui.getImportCSVButton().addActionListener(this);
-		ui.getCreatePartitionsCSV().addActionListener(this);
+		ui.getExporCsvBtn().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
 		ui.getHelpButton().addActionListener(this);
 		ui.getAboutButton().addActionListener(this);
@@ -48,9 +48,9 @@ public class UIController implements ActionListener {
 		if (e.getSource() == ui.getImportCSVButton()) {
 			// Handle CSV export
 			fileManager.importCSV(null);
-		} else if (e.getSource() == ui.getCreatePartitionsCSV()) {
+		} else if (e.getSource() == ui.getExporCsvBtn()) {
 			// Handle CSV export
-			fileManager.generateCSV();
+			fileManager.saveCSV();
 		} else if (e.getSource() instanceof JCheckBox) {
 			handleCheckBoxAction((JCheckBox) e.getSource());
 		} else if (e.getSource() instanceof JTextField) {

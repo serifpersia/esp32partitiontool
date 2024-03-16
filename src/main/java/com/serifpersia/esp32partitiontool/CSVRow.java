@@ -34,6 +34,8 @@ public class CSVRow extends JPanel {
 		sizeHex = new JTextField();
 		offset = new JTextField();
 
+		enabled.setOpaque(false);
+
 		// restrict the 'size' field to numbers, with the help of NumberFormat
 		NumberFormat format = NumberFormat.getInstance();
 		format.setGroupingUsed(false); // no comma separator
