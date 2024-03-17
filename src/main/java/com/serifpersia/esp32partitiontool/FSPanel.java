@@ -106,9 +106,9 @@ public class FSPanel extends JPanel {
 		mergeBinButton = new JButton("Merge Binary");
 		uploadMergedBinButton = new JButton("Merge Binary & Upload");
 		cleanLogsButton = new JButton();
+		consoleLogPanel = new JPanel();
 		consoleScrollPanel = new JScrollPane(consoleLogPanel);
 		progressBar = new JProgressBar(0, 100);
-		consoleLogPanel = new JPanel();
 		buildWidgetsPanel = new JPanel(){
 			@Override
 			public boolean isOptimizedDrawingEnabled() {
