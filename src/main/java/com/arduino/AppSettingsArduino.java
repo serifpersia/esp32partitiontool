@@ -4,19 +4,38 @@ package com.arduino;
 import processing.app.Editor;
 import processing.app.Sketch;
 import processing.app.PreferencesData;
+
 import org.apache.commons.codec.digest.DigestUtils;
+
 import processing.app.BaseNoGui;
 import processing.app.debug.TargetPlatform;
 import processing.app.helpers.FileUtils;
+
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.*;
 import java.io.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import cc.arduino.Compiler;
+import cc.arduino.CompilerProgressListener;
+import cc.arduino.utils.Progress;
+
+import processing.app.helpers.PreferencesMapException;
+import processing.app.debug.RunnerException;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
 
 import com.serifpersia.esp32partitiontool.AppSettings;
 
 public class AppSettingsArduino extends AppSettings {
 
-	private Editor editor;
+	private final Editor editor;
 	private boolean debug_ui = true;
 	private boolean isWindows;
 	private File defaultSketchbookFolder;
@@ -33,7 +52,6 @@ public class AppSettingsArduino extends AppSettings {
 	}
 
 	public void init() {
-
 		// these don't need to be evaluated more than once
 		isWindows = PreferencesData.get("runtime.os").contentEquals("windows");
 		espotaCmd = "espota" + (isWindows ? ".exe" : ".py");
@@ -75,8 +93,34 @@ public class AppSettingsArduino extends AppSettings {
 
 
 	@Override
-	public void load() {
+	public void clean() {
+		try {
+			deleteCompiledFiles();
+		} catch (IOException e) {
+			System.err.println( e.getMessage() );
+		}
+	}
 
+	@Override
+	public void build(JProgressBar progressBar, Runnable onSuccess) {
+
+		ProgressListener progressListener = new ProgressListener(progressBar);// {{ }};
+		progressBar.setIndeterminate(true);
+		progressBar.setVisible(true);
+
+		EventQueue.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				boolean success = build( progressListener );
+				progressBar.setIndeterminate(false);
+				progressBar.setVisible(false);
+				if( success ) onSuccess.run();
+			}
+		});
+	}
+
+	@Override
+	public void load() {
 		defaultSketchbookFolder = BaseNoGui.getDefaultSketchbookFolder();
 		toolsPathBase = BaseNoGui.getToolsPath();
 		platform = BaseNoGui.getTargetPlatform();
@@ -146,7 +190,6 @@ public class AppSettingsArduino extends AppSettings {
 
 			findFile(toolExeName, searchPaths, toolBinName);
 		}
-
 	}
 
 	private String getBootloaderImagePath() {
@@ -225,8 +268,60 @@ public class AppSettingsArduino extends AppSettings {
 				}
 			}
 		}
-		return "";
+		return null;
 	}
+
+
+	private class ProgressListener implements CompilerProgressListener {
+
+		JProgressBar progressBar;
+
+		public ProgressListener(JProgressBar progressBar) {
+			this.progressBar = progressBar;
+			progressBar.setValue(0);
+		}
+		public void progress(int value) {
+			progressBar.setValue( value );
+			progressBar.repaint();
+			//System.out.printf("Progress: %d\n", value );
+		}
+	}
+
+	private boolean build(ProgressListener progressListener ) {
+		try {
+			boolean deleteTemp = false;
+			File pathToSketch = editor.getSketch().getPrimaryFile().getFile();
+			try {
+				boolean save = true;
+				String ret = new Compiler(pathToSketch, editor.getSketch()).build(progressListener, save);
+			} finally {
+			}
+		} catch( Exception e ) {
+			System.err.println(e.getMessage());
+			return false;
+		}
+		return true;
+	}
+
+	private boolean deleteCompiledFiles() throws IOException {
+		String buildFolderPath = getBuildFolderPath();
+		if( buildFolderPath == null ) return false;
+		Path tempBuildFolder = Paths.get( buildFolderPath );
+		List<File> tempFiles = Files.list(tempBuildFolder)
+			.map(Path::toFile)
+			.filter(File::isFile)
+			.collect(Collectors.toList());
+
+		for (File tempFile : tempFiles) {
+			if( !tempFile.delete() ) {
+				System.err.println("Can't delete " + tempFile );
+				return false;
+			}
+			System.out.println("Deleted " + tempFile );
+		}
+		return true;
+	}
+
 
 
 }

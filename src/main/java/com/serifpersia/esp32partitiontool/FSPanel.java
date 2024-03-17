@@ -1,13 +1,7 @@
 package com.serifpersia.esp32partitiontool;
 
 import java.util.ArrayList;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
@@ -30,6 +24,8 @@ public class FSPanel extends JPanel {
 	public JTextField FSBlockSize;
 	public JButton uploadFSBtn;
 	public JButton mergeBinBtn;
+	public JButton uploadMergedBinBtn;
+	JProgressBar progressBar;
 
 
 	public FSPanel() {
@@ -58,6 +54,10 @@ public class FSPanel extends JPanel {
 
 	public JButton getMergeBinBtn() {
 		return mergeBinBtn;
+	}
+
+	public JButton getUploadMergedBinBtn() {
+		return uploadMergedBinBtn;
 	}
 
 
@@ -127,10 +127,19 @@ public class FSPanel extends JPanel {
 
 		JPanel panel5 = new JTransparentPanel();
 		panel4.add(panel5, BorderLayout.NORTH);
-		panel5.setLayout(new GridLayout(2, 0, 0, 0));
+		panel5.setLayout(new GridLayout(3, 0, 0, 0));
 
 		mergeBinBtn = new JButton("Merge Binary");
 		panel5.add(mergeBinBtn);
+
+		uploadMergedBinBtn = new JButton("Merge Binary & Upload");
+		panel5.add(uploadMergedBinBtn);
+
+		progressBar = new JProgressBar(0, 100);
+		progressBar.setStringPainted(true);
+		progressBar.setValue(0);
+		progressBar.setVisible(false);
+		panel5.add(progressBar);
 
 	}
 
@@ -151,16 +160,40 @@ public class FSPanel extends JPanel {
 				getFSBlockSize().setText(blockSizeText);
 			}
 		});
+
 		getUploadFSBtn().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				fileManager.uploadSPIFFS();
+				EventQueue.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						fileManager.uploadSPIFFS();
+					}
+				});
 			}
 		});
+
 		getMergeBinBtn().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				fileManager.createMergedBin();
+				EventQueue.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						fileManager.createMergedBin(null);
+					}
+				});
 			}
 		});
+
+		getUploadMergedBinBtn().addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				EventQueue.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						fileManager.uploadMergedBin();
+					}
+				});
+			}
+		});
+
 		getPartitionFlashTypes().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String fsName = getPartitionFlashTypes().getSelectedItem().toString();

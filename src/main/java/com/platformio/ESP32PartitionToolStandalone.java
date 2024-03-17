@@ -96,7 +96,7 @@ public class ESP32PartitionToolStandalone {
 
 		// Create and show the JFrame
 		if (frame == null) {
-			frame = new JFrame("ESP32 Partition Tool (standalone)");
+			frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 			// Size and display the frame
@@ -129,7 +129,7 @@ public class ESP32PartitionToolStandalone {
 			frame.toFront();
 		}
 
-		contentPane.setFrame( frame );
+		contentPane.setFrame( frame, "ESP32 Partition Tool (standalone)" );
 		fileManager.loadDefaultCSV();
 		frame.setVisible(true);
 	}

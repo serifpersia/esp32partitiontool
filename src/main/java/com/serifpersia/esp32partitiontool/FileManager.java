@@ -39,6 +39,7 @@ public class FileManager {
 	public void loadDefaultCSV() {
 		if (settings.get("csvFile.path") != null) {
 			importCSV(settings.get("csvFile.path"));
+			ui.setFrameTitleNeedsSaving(false);
 			return;
 		}
 
@@ -76,6 +77,7 @@ public class FileManager {
 
 		String flashSizeString = String.valueOf(ui.flashSizeMB);
 		ui.getFlashSize().setSelectedItem(flashSizeString);
+		ui.setFrameTitleNeedsSaving(true);
 	}
 
 	public void importCSV(String file) {
@@ -295,23 +297,22 @@ public class FileManager {
 
 		filedialog.dispose();
 
-		if( Files.notExists(Paths.get(csvPath))) {
-			// can't open
-			return false;
-		}
-
 		File csvFile = new File( csvPath );
 
 		boolean success = saveCSV( csvFile );
 		if( success ) {
 			//settings.set("csvFile.path", csvFile.toString() );
 			//settings.set("csvDir.path", csvFile.getParent() );
+			System.out.println("Saved file as " + csvPath );
 			return true;
 		}
+
+		emitError("Failed to save file as " + csvPath );
+
 		return false;
 	}
 
-	public boolean createSPIFFS() {
+	public boolean createSPIFFS( Runnable onSuccess ) {
 		settings.load();
 
 		if( ! settings.hasFSPanel ) return false;
@@ -341,7 +342,16 @@ public class FileManager {
 
 		if (Files.notExists(Paths.get(csvFilePath))) {
 		  // TODO: prompt user to hit the "Export CSV" in the applet, and "compile" button in Arduino IDE
-		  emitError(csvFilePath + " path not found, compile the sketch first?");
+			settings.build( ui.fsPanel.progressBar, new Runnable(){
+				@Override
+				public void run() {
+					// prevent recursion
+					if( !createSPIFFS( onSuccess ) ) {
+						emitError(csvFilePath + " path not found, compile the sketch first?");
+						return;
+					}
+				}
+			});
 			return false;
 		}
 
@@ -420,10 +430,14 @@ public class FileManager {
 			emitError("Failed to create " + fsName + "!");
 			return false;
 		} finally {
-			// NOTE: since partitions.csv is now taken from the sketch folder it
-			// is no longer pertinent to delete it after use
+
 		}
-		return Files.exists(Paths.get(imagePath));
+
+		boolean success = Files.exists(Paths.get(imagePath));
+
+		if( success && onSuccess != null ) onSuccess.run();
+
+		return success;
 	}
 
 	public boolean uploadSPIFFS() {
@@ -446,13 +460,20 @@ public class FileManager {
 		String spiStart = settings.get("spiffs.addr");
 
 		String imagePath = buildPath + "/" + sketchName + ".spiffs.bin";
+		boolean isNetwork = serialPort!=null && (serialPort.split("\\.").length == 4);
+
+		if( Files.notExists(Paths.get(imagePath)) ) {
+			return createSPIFFS( new Runnable() {
+				@Override
+				public void run() {
+					uploadSPIFFS();
+				}
+			});
+		}
+		// if( ! createSPIFFS() ) return false;
 
 		System.out.println("Uploading " + fsName + "...");
 		System.out.println("[" + fsName + "] upload : " + imagePath);
-
-		boolean isNetwork = serialPort!=null && (serialPort.split("\\.").length == 4);
-
-		if( ! createSPIFFS() ) return false;
 
 		if (isNetwork == false && serialPort == null ) {
 			emitError("serialPort not found, try to close and reopen the applet");
@@ -500,7 +521,7 @@ public class FileManager {
 		return true;
 	}
 
-	public boolean createMergedBin() {
+	public boolean createMergedBin( Runnable onSuccess ) {
 		settings.load();
 
 		if( ! settings.hasFSPanel ) return false;
@@ -535,7 +556,12 @@ public class FileManager {
 		}
 
 		if (Files.notExists(Paths.get(spiffsImage))) {
-			if( !createSPIFFS() ) return false;
+			return createSPIFFS( new Runnable() {
+				@Override
+				public void run() {
+					createMergedBin( onSuccess );
+				}
+			});
 		}
 
 		// check that all necessary files are in place
@@ -572,9 +598,13 @@ public class FileManager {
 				partitionsOffset, partitionsImage, bootOffset, bootImage, appOffset, appImage, spiffsOffset,
 				spiffsImage };
 
-		listenOnProcess(esptoolPath.endsWith(".py") ? mergeCommand : mergeWindowsCommand);
+		int ret = listenOnProcess(esptoolPath.endsWith(".py") ? mergeCommand : mergeWindowsCommand);
 
-		return true;
+		boolean success = ret != -1;
+
+		if( success && onSuccess != null ) onSuccess.run();
+
+		return success;
 	}
 
 	public boolean uploadMergedBin() {
@@ -596,9 +626,13 @@ public class FileManager {
 		String mcu = settings.get("build.mcu");
 		String mergedImage = buildPath + "/" + sketchName + ".merged.bin";
 
-
 		if( Files.notExists( Paths.get(mergedImage) ) ) {
-			if( ! createMergedBin() ) return false;
+			return createMergedBin(new Runnable() {
+				@Override
+				public void run() {
+					uploadMergedBin();
+				}
+			});
 		}
 
 		if (buildPath == null || Files.notExists(Paths.get(buildPath))) {
@@ -663,7 +697,7 @@ public class FileManager {
 	}
 
 	private int listenOnProcess(String[] arguments) {
-		System.out.println("Running command:\n" + Arrays.toString(arguments));
+		System.out.println("Running command:\n" + String.join(" ", arguments));
 		try {
 			Runtime runtime = Runtime.getRuntime();
 			final Process p = runtime.exec(arguments);
@@ -687,7 +721,7 @@ public class FileManager {
 			thread.start();
 			int res = p.waitFor();
 			thread.join();
-			System.out.println("Thread finished");
+			//System.out.println("Thread finished");
 			return res;
 		} catch (Exception e) {
 			System.out.println("Thread errored: " + e.getMessage() );

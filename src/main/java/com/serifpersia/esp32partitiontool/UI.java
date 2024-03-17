@@ -29,13 +29,26 @@ public class UI extends JPanel {
 	int flashSizeMB = 4;
 
 	private JFrame frame;
+	private String frameTitle;
 
 	JFrame getFrame() {
 		return frame;
 	}
 
-	public void setFrame( JFrame frame ) {
+	public void setFrame( JFrame frame, String title ) {
 		this.frame = frame;
+		this.frameTitle = title;
+		setFrameTitleNeedsSaving( false );
+	}
+
+	public void setFrameTitleNeedsSaving(boolean needs_saving) {
+		if( needs_saving ) {
+			//System.out.println("Document needs saving!");
+			frame.setTitle( "(*) " + frameTitle );
+			settings.clean();
+		} else {
+			frame.setTitle( frameTitle );
+		}
 	}
 
 	private UIController controller;
@@ -162,6 +175,7 @@ public class UI extends JPanel {
 
 	public void renderCSVRows() {
 		csvPanel.removeAll();
+		csvPanel.repaint();
 		int layoutSize = csvRows.size() + 2 < MIN_ITEMS + 1 ? MIN_ITEMS + 1 : csvRows.size() + 2;
 		csvPanel.setLayout(new GridLayout(layoutSize, 0, 0, 0));
 		addTitleCSVRow(); // add column titles
@@ -171,6 +185,10 @@ public class UI extends JPanel {
 		for (int i = 0; i < csvRows.size(); i++) {
 			csvPanel.add(getCSVRow(i), BorderLayout.CENTER);
 		}
+
+		csvPanel.revalidate();
+		csvPanel.repaint();
+
 	}
 
 	public void addTitleCSVRow() {

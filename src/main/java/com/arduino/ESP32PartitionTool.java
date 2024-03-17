@@ -45,6 +45,9 @@ import com.serifpersia.esp32partitiontool.FileManager;
 import com.serifpersia.esp32partitiontool.UI;
 import com.serifpersia.esp32partitiontool.UIController;
 
+
+
+
 @SuppressWarnings("serial")
 public class ESP32PartitionTool extends JFrame implements Tool {
 
@@ -65,7 +68,7 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 	}
 
 	public void addUI(UI contentPane) {
-		contentPane.setFrame( frame );
+		contentPane.setFrame( frame, "ESP32 Partition Tool (Arduino IDE)" );
 		frame.add(contentPane);
 	}
 
@@ -89,7 +92,7 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 		}
 
 		if (frame == null) {
-			frame = new JFrame("ESP32 Partition Tool (Arduino IDE)");
+			frame = new JFrame();
 
 			frame.setSize(1024, 640);
 			frame.setResizable(false);

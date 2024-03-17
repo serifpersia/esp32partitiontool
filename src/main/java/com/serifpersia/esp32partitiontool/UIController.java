@@ -1,7 +1,6 @@
 package com.serifpersia.esp32partitiontool;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.awt.Component;
 import java.awt.Frame;
 import javax.swing.*;
@@ -45,6 +44,7 @@ public class UIController implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+
 		if (e.getSource() == ui.getImportCSVButton()) {
 			// Handle CSV export
 			fileManager.importCSV(null);
@@ -62,6 +62,11 @@ public class UIController implements ActionListener {
 		} else if (e.getSource() == ui.getAboutButton()) {
 			handleAboutButton();
 		}
+
+		if( ui.settings.changed()	) {
+			ui.setFrameTitleNeedsSaving(true);
+		}
+
 	}
 
 	private void handleCheckBoxAction(JCheckBox checkBox) {
@@ -102,6 +107,7 @@ public class UIController implements ActionListener {
 		ui.calculateSizeHex();
 		ui.calculateOffsets();
 		ui.updatePartitionFlashVisual();
+		ui.settings.setChanged();
 	}
 
 	private void handleTextFieldAction(JTextField textField) {
@@ -116,6 +122,7 @@ public class UIController implements ActionListener {
 		} else {
 			ui.updatePartitionFlashVisual();
 		}
+		ui.settings.setChanged();
 	}
 
 	private void handleComboBoxAction(JComboBox<?> comboBox) {
@@ -132,6 +139,8 @@ public class UIController implements ActionListener {
 
 			if (ui.flashSizeMB == 4 || ui.flashSizeMB == 8 || ui.flashSizeMB == 16 || ui.flashSizeMB == 32) {
 			}
+
+			ui.settings.setChanged();
 		}
 	}
 
