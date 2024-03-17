@@ -35,7 +35,6 @@ package com.platformio;
 
 import javax.swing.*;
 import javax.swing.border.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
@@ -44,7 +43,7 @@ import com.serifpersia.esp32partitiontool.FileManager;
 import com.serifpersia.esp32partitiontool.UI;
 import com.serifpersia.esp32partitiontool.UIController;
 
-import javax.swing.ImageIcon;
+//import javax.swing.ImageIcon;
 
 // local implementation of rounded borders to overwrite global styles
 @SuppressWarnings("serial")
@@ -124,6 +123,20 @@ public class ESP32PartitionToolStandalone {
 					frame.setVisible(false);
 				}
 			});
+
+			// [esc] key closes the app
+			frame.addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyPressed(KeyEvent e) {
+					if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
+						frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+					}
+				}
+			});
+
+			frame.setFocusable(true);
+			frame.requestFocus();
+
 		} else {
 			// If the frame is already open, bring it to the front and make it visible
 			frame.toFront();

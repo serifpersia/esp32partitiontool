@@ -32,6 +32,7 @@ import java.awt.event.*;
 
 
 import com.serifpersia.esp32partitiontool.AppSettings;
+import com.serifpersia.esp32partitiontool.FSPanel;
 
 public class AppSettingsArduino extends AppSettings {
 
@@ -91,7 +92,6 @@ public class AppSettingsArduino extends AppSettings {
 		}
 	}
 
-
 	@Override
 	public void clean() {
 		try {
@@ -104,7 +104,7 @@ public class AppSettingsArduino extends AppSettings {
 	@Override
 	public void build(JProgressBar progressBar, Runnable onSuccess) {
 
-		ProgressListener progressListener = new ProgressListener(progressBar);// {{ }};
+		CompileProgressListener progressListener = new CompileProgressListener(progressBar);
 		progressBar.setIndeterminate(true);
 		progressBar.setVisible(true);
 
@@ -114,6 +114,7 @@ public class AppSettingsArduino extends AppSettings {
 				boolean success = build( progressListener );
 				progressBar.setIndeterminate(false);
 				progressBar.setVisible(false);
+				progressBar.getParent().repaint();
 				if( success ) onSuccess.run();
 			}
 		});
@@ -271,12 +272,11 @@ public class AppSettingsArduino extends AppSettings {
 		return null;
 	}
 
-
-	private class ProgressListener implements CompilerProgressListener {
+	private class CompileProgressListener implements CompilerProgressListener {
 
 		JProgressBar progressBar;
 
-		public ProgressListener(JProgressBar progressBar) {
+		public CompileProgressListener(JProgressBar progressBar) {
 			this.progressBar = progressBar;
 			progressBar.setValue(0);
 		}
@@ -287,7 +287,7 @@ public class AppSettingsArduino extends AppSettings {
 		}
 	}
 
-	private boolean build(ProgressListener progressListener ) {
+	private boolean build(CompileProgressListener progressListener ) {
 		try {
 			boolean deleteTemp = false;
 			File pathToSketch = editor.getSketch().getPrimaryFile().getFile();
@@ -321,7 +321,5 @@ public class AppSettingsArduino extends AppSettings {
 		}
 		return true;
 	}
-
-
 
 }

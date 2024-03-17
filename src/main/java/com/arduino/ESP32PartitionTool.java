@@ -36,10 +36,12 @@ package com.arduino;
 import processing.app.Editor;
 import processing.app.tools.Tool;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.*;
 import javax.swing.*;
+import javax.swing.border.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.*;
+
 
 import com.serifpersia.esp32partitiontool.FileManager;
 import com.serifpersia.esp32partitiontool.UI;
@@ -112,6 +114,20 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 					frame.setVisible(false);
 				}
 			});
+
+			// [esc] key hides the app
+			frame.addKeyListener(new KeyAdapter() {
+				@Override
+				public void keyPressed(KeyEvent e) {
+					if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
+						frame.setVisible(false);
+					}
+				}
+			});
+
+			frame.setFocusable(true);
+			frame.requestFocus();
+
 		} else {
 			frame.toFront();
 		}

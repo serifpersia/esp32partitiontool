@@ -13,6 +13,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.lang.Process;
 import java.lang.Runtime;
 import java.io.*;
+import javax.swing.*;
 
 public class FileManager {
 
@@ -32,8 +33,20 @@ public class FileManager {
 		ui.setController(controller);
 	}
 
+	public void emitMessage(String msg) {
+		if( settings.hasFSPanel ) {
+			ui.fsPanel.emitMessage( msg, false );
+		} else {
+			System.out.println(msg);
+		}
+	}
+
 	public void emitError(String msg) {
-		System.err.println(msg);
+		if( settings.hasFSPanel ) {
+			ui.fsPanel.emitMessage( msg, true );
+		} else {
+			System.err.println(msg);
+		}
 	}
 
 	public void loadDefaultCSV() {
@@ -342,7 +355,7 @@ public class FileManager {
 
 		if (Files.notExists(Paths.get(csvFilePath))) {
 		  // TODO: prompt user to hit the "Export CSV" in the applet, and "compile" button in Arduino IDE
-			settings.build( ui.fsPanel.progressBar, new Runnable(){
+			settings.build( ui.fsPanel.getProgressBar(), new Runnable(){
 				@Override
 				public void run() {
 					// prevent recursion
@@ -696,35 +709,50 @@ public class FileManager {
 		return true;
 	}
 
+
 	private int listenOnProcess(String[] arguments) {
 		System.out.println("Running command:\n" + String.join(" ", arguments));
 		try {
-			Runtime runtime = Runtime.getRuntime();
-			final Process p = runtime.exec(arguments);
+			// Start the process
+			ProcessBuilder processBuilder = new ProcessBuilder(arguments);
+			Process p = processBuilder.start();
+
+			// Create a thread to capture the process output
 			Thread thread = new Thread() {
 				public void run() {
 					try {
+						// Read the process output stream
 						InputStreamReader reader = new InputStreamReader(p.getInputStream());
 						int c;
-						while ((c = reader.read()) != -1)
-							System.out.print((char) c);
+						StringBuilder outputBuilder = new StringBuilder();
+						while ((c = reader.read()) != -1) {
+							outputBuilder.append((char) c);
+						}
 						reader.close();
 
+						// Read the process error stream
 						reader = new InputStreamReader(p.getErrorStream());
-						while ((c = reader.read()) != -1)
-							System.err.print((char) c);
+						while ((c = reader.read()) != -1) {
+							outputBuilder.append((char) c);
+						}
 						reader.close();
-					} catch (Exception e) {
+
+						// // Set the text of ui.console_logField with the output
+						emitMessage( outputBuilder.toString() );
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
 				}
 			};
 			thread.start();
+
+			// Wait for the process to finish
 			int res = p.waitFor();
 			thread.join();
-			//System.out.println("Thread finished");
+
 			return res;
-		} catch (Exception e) {
-			System.out.println("Thread errored: " + e.getMessage() );
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
 			return -1;
 		}
 	}
