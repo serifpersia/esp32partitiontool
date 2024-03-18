@@ -175,7 +175,6 @@ public class UI extends JPanel {
 
 	public void renderCSVRows() {
 		csvPanel.removeAll();
-		csvPanel.repaint();
 		int layoutSize = csvRows.size() + 2 < MIN_ITEMS + 1 ? MIN_ITEMS + 1 : csvRows.size() + 2;
 		csvPanel.setLayout(new GridLayout(layoutSize, 0, 0, 0));
 		addTitleCSVRow(); // add column titles
@@ -188,6 +187,8 @@ public class UI extends JPanel {
 
 		csvPanel.revalidate();
 		csvPanel.repaint();
+		csvScrollPanel.revalidate();
+		csvScrollPanel.repaint();
 
 	}
 
@@ -667,7 +668,7 @@ public class UI extends JPanel {
 				continue;
 			JTextField partitionSubType = getPartitionSubType(i);
 			if (partitionSubType != null && (
-					   partitionSubType.getText().equals("spiffs")
+						 partitionSubType.getText().equals("spiffs")
 					|| partitionSubType.getText().equals("littlefs")
 					|| partitionSubType.getText().equals("fatfs")
 					|| partitionSubType.getText().equals("ffat")

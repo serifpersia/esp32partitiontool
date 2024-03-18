@@ -132,7 +132,9 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 			frame.toFront();
 		}
 
-		fileManager.loadDefaultCSV();
+		// prevent repaint problem when reloading CSV
+		EventQueue.invokeLater( () -> fileManager.loadDefaultCSV() );
+
 		frame.setVisible(true);
 	}
 

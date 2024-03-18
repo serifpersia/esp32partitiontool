@@ -15,6 +15,8 @@ import java.lang.Runtime;
 import java.io.*;
 import javax.swing.*;
 
+
+
 public class FileManager {
 
 	private UI ui; // Reference to the UI instance
@@ -218,11 +220,7 @@ public class FileManager {
 	}
 
 	public static String basename(String path) {
-		String filename = path.substring(path.lastIndexOf('/') + 1);
-		if (filename == null || filename.equalsIgnoreCase("")) {
-			filename = "";
-		}
-		return filename;
+		return new File(path).getName();
 	}
 
 	private long stringToDec(String value) {
@@ -261,7 +259,6 @@ public class FileManager {
 		}
 	}
 
-
 	public boolean saveCSV( File file ) {
 		calculateCSV();
 
@@ -279,30 +276,29 @@ public class FileManager {
 		return false;
 	}
 
-
-
 	public boolean saveCSV() {
 		String sketchDir = settings.get("sketchDir.path");
 
 		if( sketchDir == null ) {
-		  sketchDir = new File(FileManager.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
+			sketchDir = new File(FileManager.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
 			System.out.println("Forced sketchDir to " + sketchDir );
 		}
 
-    FilenameFilter csvFilter = new FilenameFilter() {
+		FilenameFilter csvFilter = new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.toLowerCase().endsWith(".csv");
 			}
-    };
-    FileDialog filedialog = new FileDialog(ui.getFrame(), "Save partitions.csv", FileDialog.SAVE);
-    filedialog.setDirectory(sketchDir);
-    filedialog.setFile("partitions.csv");
-    filedialog.setFilenameFilter(csvFilter);
-    filedialog.setVisible(true);
+		};
+		FileDialog filedialog = new FileDialog(ui.getFrame(), "Save partitions.csv", FileDialog.SAVE);
+		filedialog.setDirectory(sketchDir);
+		filedialog.setFile("partitions.csv");
+		filedialog.setFilenameFilter(csvFilter);
+		filedialog.setVisible(true);
 
-    if (filedialog.getFile() == null) {
+		if (filedialog.getFile() == null) {
 			// aborted by user
+			System.out.println("File selection aborted by user");
 			return false;
 		}
 
@@ -325,17 +321,21 @@ public class FileManager {
 		return false;
 	}
 
-	public boolean createSPIFFS( Runnable onSuccess ) {
+	// called internally either by createMergedBin() or uploadSPIFFS()
+	public void createSPIFFS( AppSettings.EventCallback callbacks ) {
 		settings.load();
 
-		if( ! settings.hasFSPanel ) return false;
+		if( ! settings.hasFSPanel ) return;
 
 		String buildPath = settings.get("build.path");
 		String sketchDir = settings.get("sketchDir.path");
 		String sketchName = settings.get("sketch.name");
 
 		// TODO: check if folder exists, prompt user to compile from the Arduino IDE
-		if( buildPath == null || sketchDir == null || sketchName == null ) return false;
+		if( buildPath == null || sketchDir == null || sketchName == null ) {
+			callbacks.onFail();
+			return;
+		}
 
 		long spiStart = 0;
 		long spiSize = 0;
@@ -348,25 +348,30 @@ public class FileManager {
 
 		if (mkFsPath == null || Files.notExists(Paths.get(mkFsPath))) {
 			emitError(mkFsBinName + " path not found");
-			return false;
+			callbacks.onFail();
+			return;
 		}
 
 		String csvFilePath = buildPath + "/partitions.csv";
 
 		if (Files.notExists(Paths.get(csvFilePath))) {
-		  // TODO: prompt user to hit the "Export CSV" in the applet, and "compile" button in Arduino IDE
-			settings.build( ui.fsPanel.getProgressBar(), new Runnable(){
-				@Override
-				public void run() {
-					// prevent recursion
-					if( !createSPIFFS( onSuccess ) ) {
-						emitError(csvFilePath + " path not found, compile the sketch first?");
-						return;
-					}
-				}
-			});
-			return false;
+			// TODO: prompt user to hit the "Export CSV" in the applet, and "compile" button in Arduino IDE
+			Runnable onSuccess = () -> createSPIFFS( callbacks );
+			Runnable onFail = () -> {
+				emitError("Build failed, check Arduino console for logs");
+				callbacks.onFail();
+			};
+			final AppSettings.EventCallback buildCallbacks = new AppSettings.EventCallback(
+				callbacks.onBefore,
+				callbacks.onAfter,
+				onSuccess,
+				onFail
+			);
+			settings.build( ui.fsPanel.getProgressBar(), buildCallbacks);
+			return;
 		}
+
+		settings.set("spiffs.addr", null );
 
 		// Read the partitions.csv file
 		try (BufferedReader partitionsReader = new BufferedReader(new FileReader(csvFilePath))) {
@@ -380,16 +385,20 @@ public class FileManager {
 						String pSize = partitionsData[4].trim(); // Size value
 						spiStart = Long.parseLong(pStart.substring(2), 16); // Convert hex to int
 						spiSize = Long.parseLong(pSize.substring(2), 16); // Convert hex to int
+						settings.set("spiffs.addr", pStart );
+						System.out.println("settings spiffs.addr at offset " + pStart);
 					}
 				}
 			}
 			if (spiSize == 0) {
 				emitError(fsName + " Error: partition size could not be found!");
-				return false;
+				callbacks.onFail();
+				return;
 			}
 		} catch (Exception e) {
 			emitError(e.toString());
-			return false;
+			callbacks.onFail();
+			return;
 		}
 
 		// load a list of all files in the data folder, if any
@@ -425,6 +434,8 @@ public class FileManager {
 		System.out.println("[" + fsName + "] page   : " + spiPage);
 		System.out.println("[" + fsName + "] block  : " + spiBlock);
 
+		callbacks.onBefore();
+
 		try {
 
 			String baseMkFsArgs[] = { mkFsPath, "-c", dataPath, "-p", spiPage + "", "-b", spiBlock + "", "-s",
@@ -435,28 +446,34 @@ public class FileManager {
 
 			if (listenOnProcess(mkFsArgs) != 0) {
 				emitError("Failed to create " + fsName + "!");
-				return false;
+				callbacks.onFail();
+				return;
 			}
 			System.out.println("Completed creating " + fsName);
 			System.out.println("[" + fsName + "] Data partition successfully written at " + imagePath);
 		} catch (Exception e) {
 			emitError("Failed to create " + fsName + "!");
-			return false;
+			callbacks.onFail();
+			return;
 		} finally {
 
 		}
 
 		boolean success = Files.exists(Paths.get(imagePath));
 
-		if( success && onSuccess != null ) onSuccess.run();
+		if( success ) {
+			callbacks.onSuccess();
+		} else {
+			callbacks.onFail();
+		}
 
-		return success;
+		callbacks.onAfter();
 	}
 
-	public boolean uploadSPIFFS() {
+	public void uploadSPIFFS(final AppSettings.EventCallback callbacks) {
 		settings.load();
 
-		if( !settings.hasFSPanel ) return false;
+		if( !settings.hasFSPanel ) return;
 
 		String fsName = ui.fsPanel.getPartitionFlashTypes().getSelectedItem().toString();
 		String espotaPath = settings.get("espota.path");
@@ -476,13 +493,28 @@ public class FileManager {
 		boolean isNetwork = serialPort!=null && (serialPort.split("\\.").length == 4);
 
 		if( Files.notExists(Paths.get(imagePath)) ) {
-			return createSPIFFS( new Runnable() {
-				@Override
-				public void run() {
-					uploadSPIFFS();
-				}
-			});
+
+			Runnable onSuccess = () -> uploadSPIFFS(callbacks);
+			Runnable onFail = () -> {
+				emitError("spiffs.bin creation failed, check Arduino console for logs");
+				callbacks.onFail();
+			};
+			final AppSettings.EventCallback createSPIFFSCallbacks = new AppSettings.EventCallback(
+				callbacks.onBefore,
+				callbacks.onAfter,
+				onSuccess,
+				onFail
+			);
+			createSPIFFS(createSPIFFSCallbacks);
+			return;
 		}
+
+		if( spiStart == null ) {
+			emitError("This no spiffs partition offset detected in csv data :(");
+			callbacks.onFail();
+			return;
+		}
+
 		// if( ! createSPIFFS() ) return false;
 
 		System.out.println("Uploading " + fsName + "...");
@@ -490,28 +522,33 @@ public class FileManager {
 
 		if (isNetwork == false && serialPort == null ) {
 			emitError("serialPort not found, try to close and reopen the applet");
-			return false;
+			callbacks.onFail();
+			return;
 		}
+
+		callbacks.onBefore();
 
 		if (isNetwork) {
 
 			if (espotaPath == null || Files.notExists(Paths.get(espotaPath))) {
 				emitError("espota tool not found");
-				return false;
+				callbacks.onFail();
+				return;
 			}
 
 			System.out.println("[" + fsName + "] IP     : " + serialPort);
 			System.out.println();
 
 			if (espotaPath.endsWith(".py"))
-				sysExec(new String[] { pythonCmd, espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", imagePath });
+				listenOnProcess(new String[] { pythonCmd, espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", imagePath });
 			else
-				sysExec(new String[] { espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", imagePath });
+				listenOnProcess(new String[] { espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", imagePath });
 		} else {
 
 			if (esptoolPath == null || Files.notExists(Paths.get(esptoolPath))) {
 				emitError("esptool path not found");
-				return false;
+				callbacks.onFail();
+				return;
 			}
 
 			System.out.println("[" + fsName + "] address: " + spiStart);
@@ -521,29 +558,30 @@ public class FileManager {
 			System.out.println("[" + fsName + "] freq   : " + flashFreq);
 			System.out.println();
 			if (esptoolPath.endsWith(".py"))
-				sysExec(new String[] { pythonCmd, esptoolPath, "--chip", mcu, "--baud", uploadSpeed, "--port",
+				listenOnProcess(new String[] { pythonCmd, esptoolPath, "--chip", mcu, "--baud", uploadSpeed, "--port",
 						serialPort, "--before", "default_reset", "--after", "hard_reset", "write_flash", "-z",
 						"--flash_mode", flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", "" + spiStart,
 						imagePath });
 			else
-				sysExec(new String[] { esptoolPath, "--chip", mcu, "--baud", uploadSpeed, "--port", serialPort,
+				listenOnProcess(new String[] { esptoolPath, "--chip", mcu, "--baud", uploadSpeed, "--port", serialPort,
 						"--before", "default_reset", "--after", "hard_reset", "write_flash", "-z", "--flash_mode",
 						flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", "" + spiStart, imagePath });
 		}
 
-		return true;
+		callbacks.onAfter();
+		return;
 	}
 
-	public boolean createMergedBin( Runnable onSuccess ) {
+	public void createMergedBin( final AppSettings.EventCallback callbacks ) {
 		settings.load();
 
-		if( ! settings.hasFSPanel ) return false;
+		if( ! settings.hasFSPanel ) return;
 
 		String buildPath = settings.get("build.path");
 
 		if (Files.notExists(Paths.get(buildPath))) {
 			emitError("Please compile the sketch in Arduino IDE first!");
-			return false;
+			return;
 		}
 
 		String fsName = ui.fsPanel.getPartitionFlashTypes().getSelectedItem().toString();
@@ -565,16 +603,24 @@ public class FileManager {
 
 		if (esptoolPath == null || Files.notExists(Paths.get(esptoolPath))) {
 			emitError("esptool path not found");
-			return false;
+			callbacks.onFail();
+			return;
 		}
 
 		if (Files.notExists(Paths.get(spiffsImage))) {
-			return createSPIFFS( new Runnable() {
-				@Override
-				public void run() {
-					createMergedBin( onSuccess );
-				}
-			});
+			Runnable onSuccess = () -> createMergedBin(callbacks);
+			Runnable onFail = () ->  {
+				emitError("spiffs.bin creation failed, check Arduino console for logs");
+				callbacks.onFail();
+			};
+			final AppSettings.EventCallback createSPIFFSCallbacks = new AppSettings.EventCallback(
+				callbacks.onBefore,
+				callbacks.onAfter,
+				onSuccess,
+				onFail
+			);
+			createSPIFFS(createSPIFFSCallbacks);
+			return;
 		}
 
 		// check that all necessary files are in place
@@ -583,7 +629,8 @@ public class FileManager {
 			if ( checkFiles[i] == null || Files.notExists(Paths.get(checkFiles[i]))) {
 				System.out.printf("Missing file #%d: %s. Forgot to compile the sketch?", i, checkFiles[i] );
 				//emitError("Missing file: " + checkFiles[i] + ". Forgot to compile the sketch?");
-				return false;
+				callbacks.onFail();
+				return;
 			}
 		}
 
@@ -611,16 +658,21 @@ public class FileManager {
 				partitionsOffset, partitionsImage, bootOffset, bootImage, appOffset, appImage, spiffsOffset,
 				spiffsImage };
 
+		callbacks.onBefore();
+
 		int ret = listenOnProcess(esptoolPath.endsWith(".py") ? mergeCommand : mergeWindowsCommand);
 
 		boolean success = ret != -1;
 
-		if( success && onSuccess != null ) onSuccess.run();
-
-		return success;
+		if( success ) {
+			callbacks.onSuccess();
+		} else {
+			callbacks.onFail();
+		}
+		callbacks.onAfter();
 	}
 
-	public boolean uploadMergedBin() {
+	public void uploadMergedBin(final AppSettings.EventCallback callbacks) {
 
 		settings.load();
 
@@ -640,32 +692,43 @@ public class FileManager {
 		String mergedImage = buildPath + "/" + sketchName + ".merged.bin";
 
 		if( Files.notExists( Paths.get(mergedImage) ) ) {
-			return createMergedBin(new Runnable() {
-				@Override
-				public void run() {
-					uploadMergedBin();
-				}
-			});
+			Runnable onSuccess = () -> uploadMergedBin(callbacks);
+			Runnable onFail = () -> {
+				emitError("Merged bin creation failed, check Arduino console for logs");
+				callbacks.onFail();
+			};
+			final AppSettings.EventCallback createMergedBinCallbacks = new AppSettings.EventCallback(
+				callbacks.onBefore,
+				callbacks.onAfter,
+				onSuccess,
+				onFail
+			);
+			createMergedBin(createMergedBinCallbacks);
+			return;
 		}
 
 		if (buildPath == null || Files.notExists(Paths.get(buildPath))) {
 			emitError("Please compile the sketch in Arduino IDE first!");
-			return false;
+			callbacks.onFail();
+			return;
 		}
 
 		if (espotaPath == null || Files.notExists(Paths.get(espotaPath))) {
 			emitError("espota tool not found");
-			return false;
+			callbacks.onFail();
+			return;
 		}
 		if (esptoolPath == null || Files.notExists(Paths.get(esptoolPath))) {
 			emitError("esptool path not found");
-			return false;
+			callbacks.onFail();
+			return;
 		}
 
 		// make sure the serial port or IP is defined
 		if (serialPort == null || serialPort.isEmpty()) {
-			emitError(fsName + " Error: serial port not defined!");
-			return false;
+			emitError("Error: serial port not defined!");
+			callbacks.onFail();
+			return;
 		}
 
 		// find espota if IP else find esptool
@@ -676,6 +739,10 @@ public class FileManager {
 		System.out.println("Creating merged binary...");
 		System.out.println("[Merged binary] creation:");
 
+		int cmdres;
+
+		callbacks.onBefore();
+
 		if (isNetwork) {
 
 			System.out.println("[Merged bin] IP: " + serialPort);
@@ -684,7 +751,7 @@ public class FileManager {
 					mergedImage };
 			String[] writeFlashCmdWindows = { espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", mergedImage };
 
-			listenOnProcess(espotaPath.endsWith(".py") ? writeFlashCmdLinux : writeFlashCmdWindows);
+			cmdres = listenOnProcess(espotaPath.endsWith(".py") ? writeFlashCmdLinux : writeFlashCmdWindows);
 
 		} else {
 
@@ -702,11 +769,19 @@ public class FileManager {
 					"--before", "default_reset", "--after", "hard_reset", "write_flash", "-z", "--flash_mode",
 					flashMode, "--flash_freq", flashFreq, "--flash_size", "detect", mergedOffset, mergedImage };
 
-			listenOnProcess(esptoolPath.endsWith(".py") ? writeFlashCmdLinux : writeFlashCmdWindows);
+			cmdres = listenOnProcess(esptoolPath.endsWith(".py") ? writeFlashCmdLinux : writeFlashCmdWindows);
 
 		}
 
-		return true;
+		if( cmdres != -1 ) {
+			callbacks.onSuccess();
+		} else {
+			callbacks.onFail();
+		}
+
+		callbacks.onAfter();
+
+		return;
 	}
 
 
@@ -727,18 +802,34 @@ public class FileManager {
 						StringBuilder outputBuilder = new StringBuilder();
 						while ((c = reader.read()) != -1) {
 							outputBuilder.append((char) c);
+							if( c == '\n' ) {
+								emitMessage( outputBuilder.toString().trim() );
+								outputBuilder.setLength(0);
+							}
 						}
 						reader.close();
+						if( outputBuilder.length() > 0 ) {
+							emitMessage( outputBuilder.toString().trim() );
+							outputBuilder.setLength(0);
+						}
 
 						// Read the process error stream
 						reader = new InputStreamReader(p.getErrorStream());
 						while ((c = reader.read()) != -1) {
 							outputBuilder.append((char) c);
+							if( c == '\n' ) {
+								emitError( outputBuilder.toString().trim() );
+								outputBuilder.setLength(0);
+							}
 						}
 						reader.close();
+						if( outputBuilder.length() > 0 ) {
+							emitError( outputBuilder.toString().trim() );
+							outputBuilder.setLength(0);
+						}
 
 						// // Set the text of ui.console_logField with the output
-						emitMessage( outputBuilder.toString() );
+						//emitMessage( outputBuilder.toString() );
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -756,21 +847,5 @@ public class FileManager {
 			return -1;
 		}
 	}
-
-	private void sysExec(final String[] arguments) {
-		Thread thread = new Thread() {
-			public void run() {
-				try {
-					if (listenOnProcess(arguments) != 0) {
-					} else {
-						System.out.println("Uploaded!");
-					}
-				} catch (Exception e) {
-				}
-			}
-		};
-		thread.start();
-	}
-
 
 }

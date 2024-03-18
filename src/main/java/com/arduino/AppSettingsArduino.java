@@ -102,22 +102,20 @@ public class AppSettingsArduino extends AppSettings {
 	}
 
 	@Override
-	public void build(JProgressBar progressBar, Runnable onSuccess) {
-
+	public void build(JProgressBar progressBar, final AppSettings.EventCallback callbacks) {
 		CompileProgressListener progressListener = new CompileProgressListener(progressBar);
-		progressBar.setIndeterminate(true);
-		progressBar.setVisible(true);
 
-		EventQueue.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				boolean success = build( progressListener );
-				progressBar.setIndeterminate(false);
-				progressBar.setVisible(false);
-				progressBar.getParent().repaint();
-				if( success ) onSuccess.run();
+		final Runnable buildRunner = () -> {
+			callbacks.onBefore();
+			if( build( progressListener ) ) {
+				callbacks.onSuccess();
+			} else {
+				callbacks.onFail();
 			}
-		});
+			callbacks.onAfter();
+		};
+
+		new Thread(buildRunner).start();
 	}
 
 	@Override
@@ -137,7 +135,7 @@ public class AppSettingsArduino extends AppSettings {
 		set("build.path", getBuildFolderPath() );
 		set("bootloader.path", getBootloaderImagePath() );
 		set("upload.speed", BaseNoGui.getBoardPreferences().get("upload.speed") );
-		set("serial.port", BaseNoGui.getBoardPreferences().get("serial.port") );
+		set("serial.port", PreferencesData.get("serial.port") );
 		set("build.bootloader_addr", BaseNoGui.getBoardPreferences().get("build.bootloader_addr") );
 		set("build.mcu", BaseNoGui.getBoardPreferences().get("build.mcu") );
 		set("flashMode", BaseNoGui.getBoardPreferences().get("build.flash_mode") );
@@ -279,11 +277,12 @@ public class AppSettingsArduino extends AppSettings {
 		public CompileProgressListener(JProgressBar progressBar) {
 			this.progressBar = progressBar;
 			progressBar.setValue(0);
+			progressBar.setIndeterminate(true);
 		}
 		public void progress(int value) {
+			progressBar.setIndeterminate(false);
 			progressBar.setValue( value );
 			progressBar.repaint();
-			//System.out.printf("Progress: %d\n", value );
 		}
 	}
 

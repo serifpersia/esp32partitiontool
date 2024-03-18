@@ -236,7 +236,7 @@ public class FSPanel extends JPanel {
 			msgArea.setEditable(false); // Make the text area read-only
 			msgArea.setLineWrap(true); // Enable line wrapping
 			msgArea.setWrapStyleWord(true); // Wrap at word boundaries
-			msgArea.setText( msg +"\n" );
+			msgArea.setText( msg );
 			msgArea.setAlignmentY(JPanel.TOP_ALIGNMENT);
 			consoleLogPanel.add( msgArea, consoleGBC );
 			consoleLogPanel.revalidate();
@@ -269,36 +269,42 @@ public class FSPanel extends JPanel {
 			}
 		});
 
+		final Runnable onBefore = () -> {
+			getProgressBar().setVisible(true);
+			getProgressBar().setIndeterminate(true);
+			cleanLogsButton.setVisible(false);
+		};
+
+		final Runnable onAfter = () -> {
+			getProgressBar().setIndeterminate(false);
+			getProgressBar().setVisible(false);
+			cleanLogsButton.setVisible(true);
+		};
+
+		final AppSettings.EventCallback DefaultEventCallbacks = new AppSettings.EventCallback(onBefore, onAfter, null, null);
+
+		final Runnable onUploadSPIFFS = () -> fileManager.uploadSPIFFS( DefaultEventCallbacks );
+		final Runnable onCreateMergedBin = () -> fileManager.createMergedBin( DefaultEventCallbacks );
+		final Runnable onUploadMergedBin = () -> fileManager.uploadMergedBin( DefaultEventCallbacks );
+
 		getUploadFSBtn().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				EventQueue.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						fileManager.uploadSPIFFS();
-					}
-				});
+				ui.settings.clean();
+				new Thread(onUploadSPIFFS).start();
 			}
 		});
 
 		getMergeBinBtn().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				EventQueue.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						fileManager.createMergedBin(null);
-					}
-				});
+				ui.settings.clean();
+				new Thread(onCreateMergedBin).start();
 			}
 		});
 
 		getUploadMergedBinBtn().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				EventQueue.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						fileManager.uploadMergedBin();
-					}
-				});
+				ui.settings.clean();
+				new Thread(onUploadMergedBin).start();
 			}
 		});
 

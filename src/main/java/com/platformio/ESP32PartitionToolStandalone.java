@@ -48,14 +48,14 @@ import com.serifpersia.esp32partitiontool.UIController;
 // local implementation of rounded borders to overwrite global styles
 @SuppressWarnings("serial")
 final class CustomBorder extends AbstractBorder {
-    @Override
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-        super.paintBorder(c, g, x, y, width, height);
-        Graphics2D g2d = (Graphics2D)g;
-        g2d.setPaint( new Color(0xcc, 0xcc, 0xcc) );
-        Shape shape = new RoundRectangle2D.Float(1, 1, c.getWidth()-2, c.getHeight()-2, 5, 5);
-        g2d.draw(shape);
-    }
+	@Override
+	public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+		super.paintBorder(c, g, x, y, width, height);
+		Graphics2D g2d = (Graphics2D)g;
+		g2d.setPaint( new Color(0xcc, 0xcc, 0xcc) );
+		Shape shape = new RoundRectangle2D.Float(1, 1, c.getWidth()-2, c.getHeight()-2, 5, 5);
+		g2d.draw(shape);
+	}
 }
 
 
