@@ -77,6 +77,12 @@ public class AppSettings {
 		return have_changed;
 	}
 
+	public void reload() {
+		clean();
+		load();
+	}
+
+
 	// this method is overriden from AppSettingsStandalone or AppSettingsArduino classes
 	public void load() {
 

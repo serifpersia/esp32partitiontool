@@ -95,13 +95,13 @@ public class FileManager {
 		ui.setFrameTitleNeedsSaving(true);
 	}
 
-	public void importCSV(String file) {
+	public void importCSV(String fileName) {
 		File readerFile = null;
 
 		String directory;
 
-		if (file == null) { // show a dialog
-			FileDialog filedialog = new FileDialog(ui.getFrame(), "Select CSV File", FileDialog.LOAD);
+		if (fileName == null) { // show a dialog
+			FileDialog filedialog = new FileDialog(ui.getFrame(), "Select CSV file to import", FileDialog.LOAD);
 			FilenameFilter csvFilter = new FilenameFilter() {
 				@Override
 				public boolean accept(File dir, String name) {
@@ -123,13 +123,13 @@ public class FileManager {
 				return;
 			//settings.set("csvDir.path", directory );
 			//System.out.println("dialog returned CSV Dir: " + settings.get("csvDir.path") );
-			file = filedialog.getFile();
+			fileName = filedialog.getFile();
 			filedialog.dispose();
-			if (file == null || file.isEmpty())
+			if (fileName == null || fileName.isEmpty())
 				return;
-			readerFile = new File(directory, file);
+			readerFile = new File(directory, fileName);
 		} else {
-			readerFile = new File(file);
+			readerFile = new File(fileName);
 			directory = readerFile.getParent();
 			// update last csvDir
 			// settings.set("csvDir.path", readerFile.getParent() );
@@ -137,8 +137,8 @@ public class FileManager {
 
 		try (BufferedReader reader = new BufferedReader(new FileReader(readerFile))) {
 			processCSV(reader);
-			settings.set("csvFile.path", directory + "/" + basename(file) );
-			ui.updatePartitionLabel( basename(file) );
+			settings.set("csvFile.path", directory + "/" + basename(fileName) );
+			ui.updatePartitionLabel( fileName );
 
 		} catch (IOException e) {
 			emitError("Error reading CSV file: " + e.getMessage());
@@ -223,6 +223,10 @@ public class FileManager {
 		return new File(path).getName();
 	}
 
+	public static String dirname(String path) {
+		return new File(path).getParent();
+	}
+
 	private long stringToDec(String value) {
 		if (value.toLowerCase().startsWith("0x")) {
 			return Long.decode(value);
@@ -262,6 +266,10 @@ public class FileManager {
 	public boolean saveCSV( File file ) {
 		calculateCSV();
 
+		if( file == null ) {
+			file = new File( settings.get("sketchDir.path"), "/partitions.csv" );
+		}
+
 		try {
 			FileWriter writer = new FileWriter(file);
 			for (String partitionData : createdPartitionsData) {
@@ -276,7 +284,7 @@ public class FileManager {
 		return false;
 	}
 
-	public boolean saveCSV() {
+	public boolean exportCSV() {
 		String sketchDir = settings.get("sketchDir.path");
 
 		if( sketchDir == null ) {
@@ -290,9 +298,15 @@ public class FileManager {
 				return name.toLowerCase().endsWith(".csv");
 			}
 		};
-		FileDialog filedialog = new FileDialog(ui.getFrame(), "Save partitions.csv", FileDialog.SAVE);
+
+		String csvName = ui.getPartitionLabel();
+		if( !csvName.endsWith(".csv")) {
+			csvName = "partitions.csv";
+		}
+
+		FileDialog filedialog = new FileDialog(ui.getFrame(), "Export as CSV", FileDialog.SAVE);
 		filedialog.setDirectory(sketchDir);
-		filedialog.setFile("partitions.csv");
+		filedialog.setFile(csvName);
 		filedialog.setFilenameFilter(csvFilter);
 		filedialog.setVisible(true);
 
@@ -323,8 +337,6 @@ public class FileManager {
 
 	// called internally either by createMergedBin() or uploadSPIFFS()
 	public void createSPIFFS( AppSettings.EventCallback callbacks ) {
-		settings.load();
-
 		if( ! settings.hasFSPanel ) return;
 
 		String buildPath = settings.get("build.path");
@@ -471,8 +483,6 @@ public class FileManager {
 	}
 
 	public void uploadSPIFFS(final AppSettings.EventCallback callbacks) {
-		settings.load();
-
 		if( !settings.hasFSPanel ) return;
 
 		String fsName = ui.fsPanel.getPartitionFlashTypes().getSelectedItem().toString();
@@ -573,8 +583,6 @@ public class FileManager {
 	}
 
 	public void createMergedBin( final AppSettings.EventCallback callbacks ) {
-		settings.load();
-
 		if( ! settings.hasFSPanel ) return;
 
 		String buildPath = settings.get("build.path");
@@ -673,9 +681,6 @@ public class FileManager {
 	}
 
 	public void uploadMergedBin(final AppSettings.EventCallback callbacks) {
-
-		settings.load();
-
 		String buildPath = settings.get("build.path");
 
 		String fsName = ui.fsPanel.getPartitionFlashTypes().getSelectedItem().toString();

@@ -1,25 +1,48 @@
 package com.serifpersia.esp32partitiontool;
 
 import java.util.ArrayList;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.*;
+import javax.swing.border.*;
 
 @SuppressWarnings("serial")
 
 public class UI extends JPanel {
 
-	final class JTransparentPanel extends JPanel {
+	public static final class JTransparentPanel extends JPanel {
+		public JTransparentPanel(Color color) {
+			if( color.getAlpha() >= 0xff ) {
+				// force alpha 0.5
+				color = new Color( color.getRed(), color.getGreen(), color.getBlue(), 0x80 );
+			}
+			setBackground( color );
+		}
 		public JTransparentPanel() {
 			setOpaque(false);
 		}
 	}
+
+	public static final class JButtonIcon extends JButton {
+		public JButtonIcon( String title, String iconPath) {
+			try {
+				ImageIcon icon = new ImageIcon(getClass().getResource(iconPath));
+				setIcon(icon);
+				setBorder(null);
+				//setRolloverIcon(icon);
+				//setBorderPainted(false);
+				//setContentAreaFilled(false);
+				//setFocusPainted(false);
+				setOpaque( false );
+				setPreferredSize( new Dimension( 36, 32 ) );
+				setToolTipText(" " + title + " ");
+			} catch (Exception ex) {
+				setText(" " + title + " ");
+			}
+		}
+	}
+
+	private static Color transparentColor = new Color( 0xff, 0xff, 0xff, 0x80 );
 
 	private static final long serialVersionUID = 1L;
 	public static final int MIN_ITEMS = 15;
@@ -62,21 +85,30 @@ public class UI extends JPanel {
 
 	private JPanel csvGenPanel;
 	private JPanel csvPanel;
-	private JPanel csvPartitionsVisual;
+	private JPanel csvBottomPanel;
 	private JPanel partitionsUtilButtonsPanel;
 	private JPanel csvpartitionsCenterVisualPanel;
+	private JPanel flashSizeFieldSetPanel;
+	private JPanel actionButtonsPanel;
 	private JLabel partitionFlashFreeSpace;
+	private JLabel flashSizeLabel;
 	private JLabel csvGenLabel;
-	private JComboBox<?> partitions_FlashSizes;
+	private JPanel tableWrapperPanel;
 
+	private JComboBox<?> flashSizesComboBox;
 	private JButton aboutBtn;
 	private JButton importCsvBtn;
+	private JButton saveCsvBtn;
 	private JButton exporCsvBtn;
 	private JButton helpButton;
 
 	private ArrayList<CSVRow> csvRows = new ArrayList<CSVRow>();
 
-	public UI() {
+	public UI(JFrame frame, String title) {
+		// Show tool tips immediately
+		ToolTipManager.sharedInstance().setInitialDelay(0);
+
+		setFrame( frame, title );
 		setLayout(new BorderLayout(0, 0));
 		setOpaque(false); // transparent background!
 		init();
@@ -176,35 +208,51 @@ public class UI extends JPanel {
 	public void renderCSVRows() {
 		csvPanel.removeAll();
 		int layoutSize = csvRows.size() + 2 < MIN_ITEMS + 1 ? MIN_ITEMS + 1 : csvRows.size() + 2;
-		csvPanel.setLayout(new GridLayout(layoutSize, 0, 0, 0));
-		addTitleCSVRow(); // add column titles
+		csvPanel.setLayout(new GridLayout(layoutSize-1, 0, 0, 0));
 		while (csvRows.size() < layoutSize - 1) {
 			addCSVRow(null);
 		}
 		for (int i = 0; i < csvRows.size(); i++) {
-			csvPanel.add(getCSVRow(i), BorderLayout.CENTER);
+			if( getCSVRow(i) != null )
+				csvPanel.add(getCSVRow(i), BorderLayout.CENTER);
 		}
 
-		csvPanel.revalidate();
-		csvPanel.repaint();
-		csvScrollPanel.revalidate();
-		csvScrollPanel.repaint();
-
+		Component it = csvPanel;
+		while( it != frame ) {
+			it.revalidate();
+			it.repaint();
+			it = it.getParent();
+		}
 	}
 
-	public void addTitleCSVRow() {
+	public JPanel getTitleCSVRow() {
 		JPanel titleLinePanel = new JTransparentPanel();
-		titleLinePanel.setLayout(new GridLayout(0, 7, 0, 0));
 
-		String labels[] = { "Enable", "Name", "Type", "SubType", "Size(kB)", "Size(hex)", "Offset(hex)" };
+		titleLinePanel.setLayout( new BoxLayout(titleLinePanel, BoxLayout.LINE_AXIS) );
+		titleLinePanel.setBorder( BorderFactory.createEmptyBorder(5, 0, 5, 0) );
+
+		JLabel enabledLabel = new JLabel("Enable");
+		enabledLabel.setPreferredSize( new Dimension(50, 12) );
+		enabledLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		titleLinePanel.add(enabledLabel);
+
+		JPanel remainingTitles = new JTransparentPanel();
+		remainingTitles.setLayout(new GridLayout(0, 6, 0, 0));
+
+		String labels[] = { "Name", "Type", "SubType", "Size(kB)", "Size(hex)", "Offset(hex)" };
 		for (int i = 0; i < labels.length; i++) {
 			JLabel label = new JLabel(labels[i]);
 			label.setOpaque(false);
 			label.setHorizontalAlignment(SwingConstants.CENTER);
-			titleLinePanel.add(label, BorderLayout.NORTH);
+			final Font currFont = label.getFont();
+			label.setFont(label.getFont().deriveFont(Font.BOLD, currFont.getSize()));
+			remainingTitles.add(label, BorderLayout.NORTH);
 		}
-		csvPanel.add(titleLinePanel);
+		titleLinePanel.add(remainingTitles);
+		return titleLinePanel;
 	}
+
+
 
 	private void createPanels() {
 
@@ -216,7 +264,7 @@ public class UI extends JPanel {
 
 		add(csvGenPanel);
 		csvGenPanel.setLayout(new BorderLayout(0, 0));
-		csvGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		csvGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 0));
 
 		csvGenLabel = new JLabel("Partitions");
 		csvGenLabel.setOpaque(false);
@@ -224,59 +272,76 @@ public class UI extends JPanel {
 		csvGenLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		csvGenPanel.add(csvGenLabel, BorderLayout.NORTH);
 
-		csvPanel = new JTransparentPanel();
+		csvPanel = new JTransparentPanel(/*Color.BLUE*/ );
+		csvPanel.setBorder( BorderFactory.createEmptyBorder(0, 0, 0, 0) );
+
 		csvScrollPanel = new JScrollPane(csvPanel);
 		csvScrollPanel.setViewportBorder(null);
-		csvScrollPanel.setOpaque(false);
-		csvScrollPanel.setBorder(null);
+		csvScrollPanel.setBorder( BorderFactory.createEmptyBorder(5, 0, 0, 5) );
 		csvScrollPanel.getViewport().setOpaque(false);
 		csvScrollPanel.getViewport().setBorder(null);
 		csvScrollPanel.getViewport().getInsets().set(0, 0, 0, 0);
 		csvScrollPanel.getVerticalScrollBar().setUnitIncrement(100); // prevent the scroll wheel from going sloth
 
-		csvGenPanel.add(csvScrollPanel, BorderLayout.CENTER);
+		tableWrapperPanel = new JTransparentPanel( /*Color.BLUE*/ );
+		tableWrapperPanel.setLayout( new BoxLayout(tableWrapperPanel, BoxLayout.PAGE_AXIS) );
+		tableWrapperPanel.setBorder( BorderFactory.createEmptyBorder(0, 0, 0, 0) );
 
-		csvPartitionsVisual = new JTransparentPanel();
-		csvGenPanel.add(csvPartitionsVisual, BorderLayout.SOUTH);
-		csvPartitionsVisual.setLayout(new BorderLayout(0, 0));
+		// column titles have fixed position
+		tableWrapperPanel.add(getTitleCSVRow(), BorderLayout.NORTH);
+		// only rows are scrollable
+		tableWrapperPanel.add(csvScrollPanel, BorderLayout.SOUTH);
+
+		csvBottomPanel = new JTransparentPanel(/*Color.GREEN*/);
+		csvBottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		csvBottomPanel.setLayout(new BorderLayout(0, 0));
+
+		csvGenPanel.add(tableWrapperPanel, BorderLayout.CENTER);
+		csvGenPanel.add(csvBottomPanel, BorderLayout.SOUTH);
 
 		partitionsUtilButtonsPanel = new JTransparentPanel();
-		csvPartitionsVisual.add(partitionsUtilButtonsPanel, BorderLayout.NORTH);
+		partitionsUtilButtonsPanel.setLayout(new BorderLayout(0,0));
+		csvBottomPanel.add(partitionsUtilButtonsPanel);
 
-		JLabel csv_FlashSizeLabel = new JLabel("Flash Size: MB");
-		csv_FlashSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		partitionsUtilButtonsPanel.add(csv_FlashSizeLabel);
+		actionButtonsPanel = new JTransparentPanel();
+		actionButtonsPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
+		actionButtonsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+		actionButtonsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+		importCsvBtn = new JButtonIcon("Import CSV", "/import.png");
+		actionButtonsPanel.add(importCsvBtn);
+		saveCsvBtn =  new JButtonIcon("Save CSV", "/save.png");
+		actionButtonsPanel.add(saveCsvBtn);
+		exporCsvBtn = new JButtonIcon("Export CSV", "/export2.png");
+		actionButtonsPanel.add(exporCsvBtn);
+		helpButton = new JButtonIcon("Help", "/help.png");
+		actionButtonsPanel.add(helpButton);
+		aboutBtn = new JButtonIcon("About", "/about.png");
+		actionButtonsPanel.add(aboutBtn);
+		csvBottomPanel.add(actionButtonsPanel, BorderLayout.WEST);
 
-		partitions_FlashSizes = new JComboBox<>(new String[] { "4", "8", "16", "32" });
-		partitionsUtilButtonsPanel.add(partitions_FlashSizes);
-
-		importCsvBtn = new JButton(" Import CSV ");
-		partitionsUtilButtonsPanel.add(importCsvBtn);
-
-		exporCsvBtn = new JButton(" Export CSV ");
-		partitionsUtilButtonsPanel.add(exporCsvBtn);
+		flashSizeFieldSetPanel = new JTransparentPanel();
+		flashSizeLabel = new JLabel("Flash Size: MB");
+		flashSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		flashSizeFieldSetPanel.add(flashSizeLabel);
+		flashSizesComboBox = new JComboBox<>(new String[] { " 4", " 8", "16", "32" });
+		flashSizeFieldSetPanel.add(flashSizesComboBox);
+		partitionsUtilButtonsPanel.add(flashSizeFieldSetPanel, BorderLayout.CENTER);
 
 		// free space box
 		partitionFlashFreeSpace = new JLabel("Free Space: not set");
-		partitionsUtilButtonsPanel.add(partitionFlashFreeSpace);
-
-		// help button
-		helpButton = new JButton(" Help ");
-		partitionsUtilButtonsPanel.add(helpButton);
-		// about button
-		aboutBtn = new JButton(" About ");
-		partitionsUtilButtonsPanel.add(aboutBtn);
+		partitionsUtilButtonsPanel.add(partitionFlashFreeSpace, BorderLayout.EAST);
 
 	}
 
 	private void createPartitionFlashVisualPanel() {
 		csvpartitionsCenterVisualPanel = new JTransparentPanel();
 		csvpartitionsCenterVisualPanel.setLayout(new GridBagLayout());
-		csvPartitionsVisual.add(csvpartitionsCenterVisualPanel, BorderLayout.SOUTH);
+		csvBottomPanel.add(csvpartitionsCenterVisualPanel, BorderLayout.SOUTH);
 	}
 
-	public void updatePartitionLabel(String label) {
-		csvGenLabel.setText(label);
+	public void updatePartitionLabel(String file) {
+		csvGenLabel.setText(FileManager.basename(file));
+		csvGenLabel.setToolTipText(file);
 	}
 
 	public void calculateSizeHex() {
@@ -307,7 +372,7 @@ public class UI extends JPanel {
 		}
 
 		// Update the free space label
-		getFlashFreeLabel().setText("Free Space: " + FlashSizeBytes / 1024 + " kB");
+		getFlashFreeLabel().setText("Free Space: " + FlashSizeBytes / 1024 + " KB");
 		getFlashFreeLabel().setForeground(FlashSizeBytes >= 0 ? Color.BLACK : Color.RED);
 
 		// Convert partition sizes to hexadecimal strings
@@ -465,6 +530,7 @@ public class UI extends JPanel {
 					String partName = getPartitionName(i).getText();
 					String partType = (String) getPartitionType(i).getSelectedItem();
 					String partSubType = getPartitionSubType(i).getText();
+					String partSizeKb = getPartitionSize(i).getText();
 
 					partColor = getPartitionColor(partName, partType, partSubType);
 
@@ -474,6 +540,7 @@ public class UI extends JPanel {
 					JLabel label = new JLabel(getPartitionSubType(i).getText());
 					label.setForeground(Color.WHITE);
 					partitionPanel.add(label);
+					partitionPanel.setToolTipText(partSizeKb+"KB");
 					partitionPanel.setBorder(BorderFactory.createEtchedBorder());
 					gbc.weightx = weight;
 					csvpartitionsCenterVisualPanel.add(partitionPanel, gbc);
@@ -508,6 +575,7 @@ public class UI extends JPanel {
 					String partName = getPartitionName(i).getText();
 					String partType = (String) getPartitionType(i).getSelectedItem();
 					String partSubType = getPartitionSubType(i).getText();
+					String partSizeKb = getPartitionSize(i).getText();
 
 					partColor = getPartitionColor(partName, partType, partSubType);
 
@@ -516,6 +584,7 @@ public class UI extends JPanel {
 					JLabel label = new JLabel(partSubType);
 					label.setForeground(Color.WHITE);
 					partitionPanel.add(label);
+					partitionPanel.setToolTipText(partSizeKb+"KB");
 
 					partitionPanel.setBorder(BorderFactory.createEtchedBorder());
 
@@ -564,7 +633,7 @@ public class UI extends JPanel {
 	}
 
 	public JComboBox<?> getFlashSize() {
-		return partitions_FlashSizes;
+		return flashSizesComboBox;
 	}
 
 	public JLabel getFlashFreeLabel() {
@@ -668,7 +737,7 @@ public class UI extends JPanel {
 				continue;
 			JTextField partitionSubType = getPartitionSubType(i);
 			if (partitionSubType != null && (
-						 partitionSubType.getText().equals("spiffs")
+						partitionSubType.getText().equals("spiffs")
 					|| partitionSubType.getText().equals("littlefs")
 					|| partitionSubType.getText().equals("fatfs")
 					|| partitionSubType.getText().equals("ffat")

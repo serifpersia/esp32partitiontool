@@ -3,6 +3,7 @@ package com.platformio;
 import java.nio.file.*;
 
 import com.serifpersia.esp32partitiontool.AppSettings;
+import com.serifpersia.esp32partitiontool.FileManager;
 
 public class AppSettingsStandalone extends AppSettings {
 
@@ -20,6 +21,7 @@ public class AppSettingsStandalone extends AppSettings {
 			for (int i = 0; i < args.length; i++) {
 				if (args[i].endsWith(".csv") && Files.exists(Paths.get(args[i]))) {
 					prefs.put("csvFile.path", args[i] );
+					prefs.put("sketchDir.path", FileManager.dirname( args[i ] ) );
 					//defaultCsvSaveDir = Paths.get(args[i]).getFileName().toString();
 					System.out.println("CSV File: " + args[i]);
 					//System.out.println("CSV Path: " + defaultCsvSaveDir);

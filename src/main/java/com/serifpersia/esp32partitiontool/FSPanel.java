@@ -12,12 +12,6 @@ import javax.swing.event.*;
 
 public class FSPanel extends JPanel {
 
-	final class JTransparentPanel extends JPanel {
-		public JTransparentPanel() {
-			setOpaque(false);
-		}
-	}
-
 	private String lastFsName;
 	public JPanel FSGenPanel;
 	public JLabel FSGenLabel;
@@ -85,6 +79,14 @@ public class FSPanel extends JPanel {
 		return consoleLogPanel;
 	}
 
+	public JPanel wrapButton( JButton button ) {
+		JPanel wrapper = new UI.JTransparentPanel();
+		wrapper.setLayout(new BorderLayout(0, 0));
+		wrapper.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
+		wrapper.add(button);
+		return wrapper;
+	}
+
 	public void initComponents() {
 		consoleGBC = new GridBagConstraints();
 		FSInnerLayout = new GridLayout(0, 2);
@@ -92,20 +94,20 @@ public class FSPanel extends JPanel {
 		mergeBoxLabel = new JLabel("Merge");
 		FSComboLabel = new JLabel("Filesystem:");
 		blockSizeLabel = new JLabel("Block Size:");
-		FSGenInnerPanel = new JTransparentPanel();
-		FSInnerPanel = new JTransparentPanel();
-		FSGenPanel = new JTransparentPanel();
-		FSMergeFlashPanel = new JTransparentPanel();
-		FSUploadPanel = new JTransparentPanel();
-		mergeBoxPanel = new JTransparentPanel();
-		mergeButtonsPanel = new JTransparentPanel();
-		mergeButtonsWrapper = new JTransparentPanel();
+		FSGenInnerPanel = new UI.JTransparentPanel( /*Color.MAGENTA*/ );
+		FSInnerPanel = new UI.JTransparentPanel();
+		FSGenPanel = new UI.JTransparentPanel();
+		FSMergeFlashPanel = new UI.JTransparentPanel();
+		FSUploadPanel = new UI.JTransparentPanel( /*Color.CYAN*/ );
+		mergeBoxPanel = new UI.JTransparentPanel( /*Color.ORANGE*/ );
+		mergeButtonsPanel = new UI.JTransparentPanel();
+		mergeButtonsWrapper = new UI.JTransparentPanel();
 		FSTypesComboBox = new JComboBox<>(new String[] { "SPIFFS", "LittleFS", "FatFS" });
 		FSBlockSize = new JTextField("4096");
-		FSUploadButton = new JButton("SPIFFS");
+		FSUploadButton = new JButton("Upload SPIFFS");
 		mergeBinButton = new JButton("Merge Binary");
 		uploadMergedBinButton = new JButton("Merge Binary & Upload");
-		cleanLogsButton = new JButton();
+		cleanLogsButton = new UI.JButtonIcon("Clear logs", "/clear.png");
 		consoleLogPanel = new JPanel();
 		consoleScrollPanel = new JScrollPane(consoleLogPanel);
 		progressBar = new JProgressBar(0, 100);
@@ -119,16 +121,16 @@ public class FSPanel extends JPanel {
 
 	public void addComponents() {
 		add(FSGenPanel);
-		FSUploadPanel.add(FSUploadButton);
 		buildWidgetsPanel.add( cleanLogsButton );
 		buildWidgetsPanel.add( progressBar );
-		mergeButtonsWrapper.add(mergeBinButton);
-		mergeButtonsWrapper.add(uploadMergedBinButton);
+		mergeButtonsWrapper.add(wrapButton(mergeBinButton));
+		mergeButtonsWrapper.add(wrapButton(uploadMergedBinButton));
 		mergeButtonsWrapper.add(buildWidgetsPanel);
 		mergeButtonsPanel.add(consoleScrollPanel, BorderLayout.CENTER);
 		mergeButtonsPanel.add(mergeButtonsWrapper, BorderLayout.NORTH);
 		mergeBoxPanel.add(mergeBoxLabel, BorderLayout.NORTH);
 		mergeBoxPanel.add(mergeButtonsPanel, BorderLayout.CENTER);
+		FSUploadPanel.add(wrapButton(FSUploadButton));
 		FSMergeFlashPanel.add(mergeBoxPanel, BorderLayout.CENTER);
 		FSMergeFlashPanel.add(FSUploadPanel, BorderLayout.NORTH);
 		FSInnerPanel.add(FSComboLabel);
@@ -154,7 +156,7 @@ public class FSPanel extends JPanel {
 		consoleGBC.fill = GridBagConstraints.HORIZONTAL;
 
 		FSGenPanel.setLayout(new BorderLayout(0, 0));
-		FSGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		FSGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 5));
 
 		FSGenLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		FSGenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
@@ -163,6 +165,7 @@ public class FSPanel extends JPanel {
 
 		FSInnerLayout.setHgap(5);
 		FSInnerPanel.setLayout(FSInnerLayout);
+		FSInnerPanel.setBorder(BorderFactory.createEmptyBorder(0, 5, 2, 5));
 
 		FSComboLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -175,8 +178,6 @@ public class FSPanel extends JPanel {
 		FSUploadPanel.setLayout(new BorderLayout(0, 0));
 
 		mergeBoxPanel.setLayout(new BorderLayout(0, 0));
-		mergeBoxPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-
 		mergeBoxLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		mergeBoxLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -190,22 +191,14 @@ public class FSPanel extends JPanel {
 		progressBar.setAlignmentX(CENTER_ALIGNMENT);
 		progressBar.setAlignmentY(0.5f);
 
-		try {
-			ImageIcon broomIcon = new ImageIcon(getClass().getResource("/mini-broom.png"));
-			cleanLogsButton.setIcon(broomIcon);
-			cleanLogsButton.setRolloverIcon(broomIcon);
-			cleanLogsButton.setMaximumSize( new Dimension( 16, 16 ) );
-		} catch (Exception ex) {
-			cleanLogsButton.setText("Clear logs");
-		}
 		cleanLogsButton.setVisible(false);
-		cleanLogsButton.setBorderPainted(false);
 		cleanLogsButton.setAlignmentX(RIGHT_ALIGNMENT);
 		cleanLogsButton.setAlignmentY(0.5f);
 
 		buildWidgetsPanel.setLayout(new OverlayLayout(buildWidgetsPanel));
 		buildWidgetsPanel.setOpaque(false);
 		buildWidgetsPanel.setMinimumSize( new Dimension(0, 16) );
+		buildWidgetsPanel.setBorder(BorderFactory.createEmptyBorder(0, 5, 2, 5));
 
 		consoleLogPanel.setLayout(new GridBagLayout());
 		consoleLogPanel.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
@@ -214,7 +207,8 @@ public class FSPanel extends JPanel {
 		consoleLogPanel.setFont(new Font("Monospaced", Font.PLAIN, 12)); // Set a monospaced font
 		consoleLogPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
 
-		consoleScrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		//consoleScrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		consoleScrollPanel.getVerticalScrollBar().setUnitIncrement(100);
 
 		addComponents();
 	}
@@ -289,21 +283,24 @@ public class FSPanel extends JPanel {
 
 		getUploadFSBtn().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ui.settings.clean();
+				ui.settings.reload();
+				fileManager.saveCSV(null);
 				new Thread(onUploadSPIFFS).start();
 			}
 		});
 
 		getMergeBinBtn().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ui.settings.clean();
+				ui.settings.reload();
+				fileManager.saveCSV(null);
 				new Thread(onCreateMergedBin).start();
 			}
 		});
 
 		getUploadMergedBinBtn().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ui.settings.clean();
+				ui.settings.reload();
+				fileManager.saveCSV(null);
 				new Thread(onUploadMergedBin).start();
 			}
 		});

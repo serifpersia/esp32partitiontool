@@ -26,7 +26,8 @@ public class UIController implements ActionListener {
 
 	private int getRowIndexForComponent(Component component) {
 		for (int i = 0; i < ui.getCSVRows().size(); i++) {
-			if (ui.getCSVRow(i) == component.getParent().getParent()) {
+		  CSVRow csvRow = ui.getCSVRow(i);
+			if (csvRow == component || csvRow == component.getParent()) {
 				return i;
 			}
 		}
@@ -50,7 +51,7 @@ public class UIController implements ActionListener {
 			fileManager.importCSV(null);
 		} else if (e.getSource() == ui.getExporCsvBtn()) {
 			// Handle CSV export
-			fileManager.saveCSV();
+			fileManager.exportCSV();
 		} else if (e.getSource() instanceof JCheckBox) {
 			handleCheckBoxAction((JCheckBox) e.getSource());
 		} else if (e.getSource() instanceof JTextField) {

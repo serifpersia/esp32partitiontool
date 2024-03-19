@@ -58,14 +58,60 @@ final class CustomBorder extends AbstractBorder {
 	}
 }
 
+@SuppressWarnings("serial")
+final class JFrameStandalone extends JFrame {
+	public JFrameStandalone() {
+		// apply some style fixes globally
+		CompoundBorder borderTextField = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(0, 0, 0, 0), new CustomBorder() );
+		CompoundBorder borderComboBox = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(2, 2, 2, 2), new CustomBorder() );
+
+		UIManager.put("TextField.background", Color.WHITE);
+		UIManager.put("TextField.border", borderTextField);
+
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		// Size and display the frame
+		setSize(1024, 640);
+		setResizable(false);
+
+		// Set frame position to the center of the screen
+		setLocationRelativeTo(null);
+
+		// Add background image
+		JLabel background = new JLabel(new ImageIcon(getClass().getResource("/bg.png")));
+		background.setLayout(new BorderLayout());
+		setContentPane(background);
+
+		JFrame frame = this;
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				// Just hide the frame instead of disposing
+				frame.setVisible(false);
+			}
+		});
+
+		// [esc] key closes the app
+		addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
+					frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+				}
+			}
+		});
+	}
+}
+
 
 public class ESP32PartitionToolStandalone {
 
-	private UI contentPane = new UI();
+	private JFrame frame = new JFrameStandalone();
+
+	private UI contentPane = new UI(frame, "ESP32 Partition Tool (Standalone)");
 	private FileManager fileManager; // FileManager instance
 	private AppSettingsStandalone settings;
-
-	private JFrame frame;
 
 	public static void main(String[] args) {
 		ESP32PartitionToolStandalone tool = new ESP32PartitionToolStandalone();
@@ -77,72 +123,13 @@ public class ESP32PartitionToolStandalone {
 	}
 
 	private void init(String[] args) {
-
-		// apply some style fixes globally
-
-		CompoundBorder borderTextField = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(0, 0, 0, 0), new CustomBorder() );
-		CompoundBorder borderComboBox = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(2, 2, 2, 2), new CustomBorder() );
-
-		UIManager.put("TextField.background", Color.WHITE);
-		UIManager.put("TextField.border", borderTextField);
-
-		UIManager.put("ComboBox.background", Color.WHITE);
-		UIManager.put("ComboBox.border", borderComboBox);
-
 		settings = new AppSettingsStandalone(args);
-
 		fileManager = new FileManager(contentPane, settings);
-
-		// Create and show the JFrame
-		if (frame == null) {
-			frame = new JFrame();
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-			// Size and display the frame
-			frame.setSize(1024, 640);
-			frame.setResizable(false);
-
-			// Set frame position to the center of the screen
-			frame.setLocationRelativeTo(null);
-
-			// Add background image
-			JLabel background = new JLabel(new ImageIcon(getClass().getResource("/bg.png")));
-			background.setLayout(new BorderLayout());
-			frame.setContentPane(background);
-
-			// Add panel to frame
-			addUI(contentPane);
-
-			// fileManager.setContext( args );
-			fileManager.setUIController(new UIController(contentPane, fileManager));
-
-			frame.addWindowListener(new WindowAdapter() {
-				@Override
-				public void windowClosing(WindowEvent e) {
-					// Just hide the frame instead of disposing
-					frame.setVisible(false);
-				}
-			});
-
-			// [esc] key closes the app
-			frame.addKeyListener(new KeyAdapter() {
-				@Override
-				public void keyPressed(KeyEvent e) {
-					if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
-						frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-					}
-				}
-			});
-
-			frame.setFocusable(true);
-			frame.requestFocus();
-
-		} else {
-			// If the frame is already open, bring it to the front and make it visible
-			frame.toFront();
-		}
-
-		contentPane.setFrame( frame, "ESP32 Partition Tool (standalone)" );
+		fileManager.setUIController(new UIController(contentPane, fileManager));
+		// Add panel to frame
+		addUI(contentPane);
+		frame.setFocusable(true);
+		frame.requestFocus();
 		fileManager.loadDefaultCSV();
 		frame.setVisible(true);
 	}

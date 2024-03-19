@@ -47,19 +47,50 @@ import com.serifpersia.esp32partitiontool.FileManager;
 import com.serifpersia.esp32partitiontool.UI;
 import com.serifpersia.esp32partitiontool.UIController;
 
+@SuppressWarnings("serial")
+final class JFrameArduino extends JFrame {
+	public JFrameArduino() {
 
+		JFrame frame = this;
+
+		setSize(1024, 640);
+		setResizable(false);
+
+		setLocationRelativeTo(null);
+
+		JLabel background = new JLabel(new ImageIcon(getClass().getResource("/bg.png")));
+		background.setLayout(new BorderLayout());
+		setContentPane(background);
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				frame.setVisible(false);
+			}
+		});
+
+		// [esc] key hides the app
+		addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
+					frame.setVisible(false);
+				}
+			}
+		});
+	}
+}
 
 
 @SuppressWarnings("serial")
 public class ESP32PartitionTool extends JFrame implements Tool {
 
+	private JFrame frame = new JFrameArduino();
 	private AppSettingsArduino settings;
-
-	private JFrame frame;
 	private Editor editor;
-
-	private UI contentPane = new UI();
+	private UI contentPane = new UI(frame, getMenuTitle() + " (Arduino IDE)");
 	private FileManager fileManager;
+	private boolean ui_loaded = false;
 
 	public void init(Editor editor) {
 		this.editor = editor;
@@ -70,7 +101,7 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 	}
 
 	public void addUI(UI contentPane) {
-		contentPane.setFrame( frame, "ESP32 Partition Tool (Arduino IDE)" );
+		fileManager.setUIController(new UIController(contentPane, fileManager));
 		frame.add(contentPane);
 	}
 
@@ -83,54 +114,17 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 		}
 
 		if (fileManager == null) {
-
-			// try {
-			// 	UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-			// } catch (Exception e) {
-			// 	// handle exception
-			// }
-
 			fileManager = new FileManager(contentPane, settings);
 		}
 
-		if (frame == null) {
-			frame = new JFrame();
-
-			frame.setSize(1024, 640);
-			frame.setResizable(false);
-
-			frame.setLocationRelativeTo(null);
-
-			JLabel background = new JLabel(new ImageIcon(getClass().getResource("/bg.png")));
-			background.setLayout(new BorderLayout());
-			frame.setContentPane(background);
-
+		if( ! ui_loaded ) {
 			addUI(contentPane);
-
-			fileManager.setUIController(new UIController(contentPane, fileManager));
-			frame.addWindowListener(new WindowAdapter() {
-				@Override
-				public void windowClosing(WindowEvent e) {
-					frame.setVisible(false);
-				}
-			});
-
-			// [esc] key hides the app
-			frame.addKeyListener(new KeyAdapter() {
-				@Override
-				public void keyPressed(KeyEvent e) {
-					if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
-						frame.setVisible(false);
-					}
-				}
-			});
-
-			frame.setFocusable(true);
-			frame.requestFocus();
-
-		} else {
-			frame.toFront();
+			ui_loaded = true;
 		}
+
+		frame.setFocusable(true);
+		frame.requestFocus();
+		frame.toFront();
 
 		// prevent repaint problem when reloading CSV
 		EventQueue.invokeLater( () -> fileManager.loadDefaultCSV() );

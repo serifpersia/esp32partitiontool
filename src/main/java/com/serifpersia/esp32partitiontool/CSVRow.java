@@ -1,14 +1,13 @@
 package com.serifpersia.esp32partitiontool;
 
-import java.awt.Component;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.GridLayout;
+import java.util.*;
+import java.awt.*;
+import java.awt.event.*;
 import javax.swing.*;
 
 import java.text.NumberFormat;
 import javax.swing.text.NumberFormatter;
+
 
 @SuppressWarnings("serial")
 public class CSVRow extends JPanel {
@@ -23,10 +22,12 @@ public class CSVRow extends JPanel {
 
 	public CSVRow(String values[]) {
 
-		setLayout(new GridLayout(0, 7, 0, 0));
+		setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 		setOpaque(false);
 
-		enabled = new JCheckBox("Enable");
+		enabled = new JCheckBox(/*"Enable"*/);
+		enabled.setPreferredSize( new Dimension(50, 12) );
+
 		name = new JTextField();
 		type = new JComboBox<>(new String[] { "data", "app" });
 		subtype = new JTextField();
@@ -35,6 +36,10 @@ public class CSVRow extends JPanel {
 		offset = new JTextField();
 
 		enabled.setOpaque(false);
+		enabled.setBorderPainted(false);
+		enabled.setRolloverEnabled(false);
+		enabled.setContentAreaFilled(true);
+		enabled.setFocusPainted(false);
 
 		// restrict the 'size' field to numbers, with the help of NumberFormat
 		NumberFormat format = NumberFormat.getInstance();
@@ -70,6 +75,7 @@ public class CSVRow extends JPanel {
 		offset.setBorder(
 				BorderFactory.createCompoundBorder(offset.getBorder(), BorderFactory.createEmptyBorder(0, 0, 0, 5)));
 
+		enabled.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()-1));
 		size.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
 		sizeHex.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
 		offset.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
@@ -79,6 +85,7 @@ public class CSVRow extends JPanel {
 
 		sizeHex.setBackground(new Color(240, 240, 240));
 		offset.setBackground(new Color(240, 240, 240));
+		enabled.setBackground(new Color(0xff,0xff,0xff,0x10));
 
 		if (values != null && values.length > 5) {
 			this.setRowName(values[0]);
@@ -92,10 +99,19 @@ public class CSVRow extends JPanel {
 			disableRow();
 		}
 
-		Component[] components = { enabled, name, type, subtype, size, sizeHex, offset };
+		// add checkbox separately as is doesn't need as much width as the other components
+		add(enabled);
+
+		// wrap the remaining components in a grid layout
+		JPanel dataPanel = new JPanel();
+		dataPanel.setLayout(new GridLayout(0, 6, 0, 0));
+
+		Component[] components = { name, type, subtype, size, sizeHex, offset };
 		for (int i = 0; i < components.length; i++) {
-			add(wrap(components[i]), BorderLayout.CENTER);
+			dataPanel.add(wrap(components[i]), BorderLayout.CENTER);
 		}
+
+		add(dataPanel);
 
 	}
 
