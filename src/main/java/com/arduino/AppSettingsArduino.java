@@ -94,12 +94,12 @@ public class AppSettingsArduino extends AppSettings {
 	}
 
 
-  // otherwise, if the Arduino IDE window is resized with the message label
-  // set to blank, it's preferredSize() will be fukered
-  private static final String EMPTY =
-    "                                                                     " +
-    "                                                                     " +
-    "                                                                     ";
+	// otherwise, if the Arduino IDE window is resized with the message label
+	// set to blank, it's preferredSize() will be fukered
+	private static final String EMPTY =
+		"                                                                     " +
+		"                                                                     " +
+		"                                                                     ";
 
 	@Override
 	public void load() {
