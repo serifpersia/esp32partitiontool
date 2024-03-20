@@ -136,7 +136,7 @@ public class UI extends JPanel {
 		if( settings.hasFSPanel ) {
 			frame.setSize(1024, 640);
 		} else {
-			frame.setSize(800, 600);
+			frame.setSize(800, 564);
 		}
 		fsPanel.setVisible( settings.hasFSPanel );
 	}
@@ -298,7 +298,7 @@ public class UI extends JPanel {
 
 		csvScrollPanel = new JScrollPane(csvPanel);
 		csvScrollPanel.setViewportBorder(null);
-		csvScrollPanel.setBorder( BorderFactory.createEmptyBorder(5, 0, 0, 5) );
+		csvScrollPanel.setBorder( BorderFactory.createEmptyBorder(0, 0, 0, 5) );
 		csvScrollPanel.getViewport().setOpaque(false);
 		csvScrollPanel.getViewport().setBorder(null);
 		csvScrollPanel.getViewport().getInsets().set(0, 0, 0, 0);
