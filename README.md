@@ -18,7 +18,7 @@ This tool aims to simplify the process of creating custom partition schemes for 
 - [x] Create partitions csv
 - [x] Import custom partitions csv
 - [x] Export custom partitions csv
-- [x] Create & upload custom SPIFFS image(SPIIFS, LittleFS or FATFS)
+- [x] Create & upload custom SPIFFS image(SPIFFS, LittleFS or FATFS)
 - [x] Create & upload merged binary(Serial ports only)
 
 ## Download
@@ -43,6 +43,8 @@ Note that anything newer will cause the Arduino IDE to crash since its only supp
 - Select Tools > Partition Scheme & select `Huge App (3MB APP/NO OTA/1MB SPIFFS)`*this will tell Arduino IDE to use our custom partitions.csv file that's located in sketch directory(export csv via the the tool first).
 - Compile the sketch.
 - Upload Sketch.
+- Use Upload SPIFFS to create and upload spiffs image
+- Use Merge binary & Upload to create and upload merged binary at 0x0 offset
 
 ## Installation (Platformio)
 
