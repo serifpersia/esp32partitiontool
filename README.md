@@ -11,7 +11,7 @@ The ESP32 Partition Tool is a utility designed to facilitate creating custom par
 This tool aims to simplify the process of creating custom partition schemes for ESP32 projects.
 ## Screenshots
 ![Screenshot 1](https://github.com/serifpersia/esp32partitiontool/assets/62844718/8724d57c-ebb5-404f-97f1-fe09134f53b5)
-![image](https://github.com/serifpersia/esp32partitiontool/assets/62844718/b52bfeaf-4cb6-49b9-acc0-6d4adde68652)
+![image](https://github.com/serifpersia/esp32partitiontool/assets/62844718/bdb4562d-91ac-4348-9de7-be7a20935240)
 ![image](https://github.com/serifpersia/esp32partitiontool/assets/62844718/700a5192-f3a7-4de7-af1b-3fc6c345a35e)
 
 ## Functionality
@@ -79,7 +79,7 @@ platform = espressif32
 board = esp32dev
 ; register the "tool-esp32partitiontool"
 ; remove url if you have own built tool in pacakges directory of platformio core directory
-platform_packages = tool-esp32partitiontool @ https://github.com/serifpersia/esp32partitiontool/releases/download/v1.4.0/esp32partitiontool-platformio.zip
+platform_packages = tool-esp32partitiontool @ https://github.com/serifpersia/esp32partitiontool/releases/download/v1.4.1/esp32partitiontool-platformio.zip
 ; register the "edit_partition" target
 extra_scripts = partition_manager.py
 
