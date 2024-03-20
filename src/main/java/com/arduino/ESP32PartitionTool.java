@@ -130,10 +130,12 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 		} else {
 			contentPane.reload();
 		}
-
-		frame.setFocusable(true);
-		frame.requestFocus();
-		frame.toFront();
+		
+		if (frame != null) {
+			frame.toFront();
+			frame.setFocusable(true);
+			frame.requestFocus();
+		}
 
 		// prevent repaint problem when reloading CSV
 		EventQueue.invokeLater( () -> fileManager.loadDefaultCSV() );
