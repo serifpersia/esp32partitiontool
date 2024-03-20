@@ -113,6 +113,13 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 			settings.init();
 		}
 
+		if( !settings.platformSupported  ) {
+			frame.setVisible(false);
+			System.err.println("Only ESP32 devices are supported!");
+			return;
+		}
+
+
 		if (fileManager == null) {
 			fileManager = new FileManager(contentPane, settings);
 		}
@@ -120,6 +127,8 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 		if( ! ui_loaded ) {
 			addUI(contentPane);
 			ui_loaded = true;
+		} else {
+			contentPane.reload();
 		}
 
 		frame.setFocusable(true);

@@ -11,6 +11,7 @@ public class AppSettingsStandalone extends AppSettings {
 
 	public AppSettingsStandalone(String[] args) {
 		this.args = args;
+		this.platformSupported = true; // can't verify yet
 		init();
 	}
 

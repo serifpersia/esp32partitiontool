@@ -48,7 +48,6 @@ public class AppSettingsArduino extends AppSettings {
 
 	public AppSettingsArduino(Editor editor) {
 		this.editor = editor;
-		this.hasFSPanel = true;
 		init();
 	}
 
@@ -60,30 +59,6 @@ public class AppSettingsArduino extends AppSettings {
 		genEsp32PartCmd = "gen_esp32part" + (isWindows ? ".exe" : ".py");
 
 		load();
-
-		set("csvDir.path", get("sketchDir.path") );
-
-		// check if the board uses a custom partition, could be stored in variants or
-		// tools folder
-
-		String partitionsPath = get("platform.path") + "/tools/partitions";
-		String csvPath = partitionsPath + "/" + get("build.partitions") + ".csv";
-		String variantCsvPath = null;
-
-		if (BaseNoGui.getBoardPreferences().containsKey("build.custom_partitions")) {
-			variantCsvPath = get("variant.path") + "/" + get("build.custom_partitions") + ".csv";
-		} else {
-			variantCsvPath = get("variant.path") + "/" + get("build.partitions") + ".csv";
-		}
-
-		String searchPaths[] = { get("sketchDir.path") + "/partitions.csv", variantCsvPath, csvPath };
-
-		for (int i = 0; i < searchPaths.length; i++) {
-			if (Files.exists(Paths.get(searchPaths[i]))) {
-				set("csvFile.path", searchPaths[i] );
-				break;
-			}
-		}
 
 		if( debug_ui ) {
 			prefs.forEach((key, value) -> {
@@ -118,8 +93,28 @@ public class AppSettingsArduino extends AppSettings {
 		new Thread(buildRunner).start();
 	}
 
+
+  // otherwise, if the Arduino IDE window is resized with the message label
+  // set to blank, it's preferredSize() will be fukered
+  private static final String EMPTY =
+    "                                                                     " +
+    "                                                                     " +
+    "                                                                     ";
+
 	@Override
 	public void load() {
+		this.platformSupported = PreferencesData.get("target_platform").contentEquals("esp32");
+
+		if( !this.platformSupported ) {
+			editor.statusError(" Error: unsupported platform!");
+			return;
+		}
+
+		this.hasFSPanel = true;
+
+
+		editor.statusNotice(EMPTY);
+
 		defaultSketchbookFolder = BaseNoGui.getDefaultSketchbookFolder();
 		toolsPathBase = BaseNoGui.getToolsPath();
 		platform = BaseNoGui.getTargetPlatform();
@@ -147,7 +142,8 @@ public class AppSettingsArduino extends AppSettings {
 
 		String espToolSearchPaths[] = {
 				PreferencesData.get("runtime.tools.esptool_py.path"), // preferences.txt
-				get("platform.path") + "/tools", get("platform.path") + "/tools/esptool_py", defaultSketchbookFolder + "/tools",
+				new File( get("platform.path"), "/tools").getAbsolutePath(),
+				get("platform.path") + "/tools/esptool_py", defaultSketchbookFolder + "/tools",
 				defaultSketchbookFolder + "/tools/esptool_py", toolsPathBase, toolsPathBase + "/tools/esptool_py" };
 
 		if (!findFile(esptoolCmd, espToolSearchPaths, "esptool")) {
@@ -189,6 +185,32 @@ public class AppSettingsArduino extends AppSettings {
 
 			findFile(toolExeName, searchPaths, toolBinName);
 		}
+
+		set("csvDir.path", get("sketchDir.path") );
+
+		// check if the board uses a custom partition, could be stored in variants or
+		// tools folder
+
+		String partitionsPath = get("platform.path") + "/tools/partitions";
+		String csvPath = partitionsPath + "/" + get("build.partitions") + ".csv";
+		String variantCsvPath = null;
+
+		if (BaseNoGui.getBoardPreferences().containsKey("build.custom_partitions")) {
+			variantCsvPath = get("variant.path") + "/" + get("build.custom_partitions") + ".csv";
+		} else {
+			variantCsvPath = get("variant.path") + "/" + get("build.partitions") + ".csv";
+		}
+
+		String searchPaths[] = { get("sketchDir.path") + "/partitions.csv", variantCsvPath, csvPath };
+
+		for (int i = 0; i < searchPaths.length; i++) {
+			if (Files.exists(Paths.get(searchPaths[i]))) {
+				set("csvFile.path", searchPaths[i] );
+				break;
+			}
+		}
+
+
 	}
 
 	private String getBootloaderImagePath() {

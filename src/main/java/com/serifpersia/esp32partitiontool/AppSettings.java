@@ -43,6 +43,7 @@ public class AppSettings {
 
 	}
 
+	public boolean platformSupported = false;
 	public boolean debug_settings = true;
 	public boolean hasFSPanel = false;
 	private boolean changed = false;

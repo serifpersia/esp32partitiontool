@@ -208,6 +208,7 @@ public class FSPanel extends JPanel {
 		consoleLogPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
 
 		//consoleScrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		consoleScrollPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		consoleScrollPanel.getVerticalScrollBar().setUnitIncrement(100);
 
 		addComponents();

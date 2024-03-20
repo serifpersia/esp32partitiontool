@@ -597,13 +597,13 @@ public class FileManager {
 		String platformPath = settings.get("platform.path");
 		String sketchName = settings.get("sketch.name");
 		String esptoolPath = settings.get("esptool.path");
-		String bootloaderImage = settings.get("bootloader.path");
 		String mcu = settings.get("build.mcu");
 		String flashMode = settings.get("flashMode");
 		String flashFreq = settings.get("flashFreq");
 		String pythonCmd = settings.get("pythonCmd");
 
 		String bootImage = platformPath + "/tools/partitions/boot_app0.bin";
+		String bootloaderImage = buildPath + "/" + sketchName + ".ino.bootloader.bin"; // settings.get("bootloader.path");
 		String partitionsImage = buildPath + "/" + sketchName + ".ino.partitions.bin";
 		String spiffsImage = buildPath + "/" + sketchName + ".spiffs.bin";
 		String mergedImage = buildPath + "/" + sketchName + ".merged.bin";

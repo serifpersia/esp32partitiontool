@@ -121,16 +121,35 @@ public class UI extends JPanel {
 		updatePartitionFlashVisual();
 	}
 
+	public void reload() {
+		settings.reload();
+		updateFrame();
+	}
+
+	public void updateFrame() {
+		if( !settings.platformSupported  ) {
+			System.out.println("Hiding app");
+			frame.setVisible(false);
+			return;
+		}
+
+		if( settings.hasFSPanel ) {
+			frame.setSize(1024, 640);
+		} else {
+			frame.setSize(800, 600);
+		}
+		fsPanel.setVisible( settings.hasFSPanel );
+	}
+
 	public void setController(UIController controller) {
 		this.controller = controller;
 	}
 
 	public void setAppSettings( FileManager fileManager, AppSettings settings ) {
 		this.settings = settings;
-		if( settings.hasFSPanel ) {
-			add(fsPanel, BorderLayout.EAST);
-			fsPanel.attachListeners( this, fileManager );
-		}
+		add(fsPanel, BorderLayout.EAST);
+		fsPanel.attachListeners( this, fileManager );
+		updateFrame();
 	}
 
 	public void addCSVRow(CSVRow line) {
@@ -259,6 +278,8 @@ public class UI extends JPanel {
 		helpPanel = new HelpPanel();
 		aboutPanel = new AboutPanel();
 		fsPanel = new FSPanel();
+
+		fsPanel.setVisible(false);
 
 		csvGenPanel = new JTransparentPanel();
 
