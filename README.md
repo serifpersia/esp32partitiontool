@@ -18,8 +18,8 @@ This tool aims to simplify the process of creating custom partition schemes for 
 - [x] Create partitions csv
 - [x] Import custom partitions csv
 - [x] Export custom partitions csv
-- ~~[x] Create & upload custom SPIFFS~~ *will be added back in future release
-- ~~[x] Create & upload merged binary~~ *will be added back in future release
+- [x] Create & upload custom SPIFFS image(SPIIFS, LittleFS or FATFS)
+- [x] Create & upload merged binary(Serial ports only)
 
 ## Download
  [![Release](https://img.shields.io/github/release/serifpersia/esp32partitiontool.svg?style=flat-square)](https://github.com/serifpersia/esp32partitiontool/releases)
