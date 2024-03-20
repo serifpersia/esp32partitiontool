@@ -1,10 +1,9 @@
 package com.serifpersia.esp32partitiontool;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.*;
+import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.event.*;
 
 @SuppressWarnings("serial")
 public class HelpPanel extends JPanel {
@@ -65,6 +64,7 @@ public class HelpPanel extends JPanel {
 		helpTipLabel.setVerticalAlignment(JLabel.TOP);
 		helpTipLabel.setVerticalTextPosition(JLabel.TOP);
 		helpTipLabel.setIcon(infoIcon);
+		helpTipLabel.setFont( UI.defaultFont.deriveFont(Font.PLAIN, 12) );
 
 		helpTipPanel.add(helpTipLabel);
 
@@ -72,10 +72,10 @@ public class HelpPanel extends JPanel {
 	}
 
 	private void setHelpPanelTip() {
+		helpTipLabel.setVisible(false);
 		helpTipIndex = helpTipIndex % helpTips.length;
 		helpTipLabel.setText("<html><p>" + helpTips[helpTipIndex] + "</p></html>");
-		helpTipLabel.revalidate();
-		helpTipLabel.repaint();
+		helpTipLabel.setVisible(true);
 	}
 
 	private void creatHelpPanel() {

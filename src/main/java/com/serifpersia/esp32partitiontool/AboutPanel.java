@@ -1,6 +1,8 @@
 package com.serifpersia.esp32partitiontool;
 
 import javax.swing.*;
+import java.awt.Font;
+
 
 @SuppressWarnings("serial")
 class AboutPanel extends JEditorPane {
@@ -10,6 +12,10 @@ class AboutPanel extends JEditorPane {
 	}
 
 	private void createPanel() {
+
+		setFont( UI.defaultFont.deriveFont(Font.PLAIN, 12) );
+
+		final String fontFace = "<font face=sans-serif>";
 		final String boxpadding = "padding-top: 0px;padding-right: 10px;padding-bottom: 10px;padding-left: 10px;";
 		final String titleSpanned = "<span style=\"background-color: #d7a631\">&nbsp;ESP32&nbsp;</span>"
 				+ "<span style=\"background-color: #bf457a\">&nbsp;Partition&nbsp;</span>"
@@ -23,9 +29,11 @@ class AboutPanel extends JEditorPane {
 		final String projectlink = "<p><b>Source:</b><br>https://github.com/serifpersia/esp32partitiontool</p>";
 		final String copyright = "<p><b>Copyright (c) 2024 @serifpersia</b><br>https://github.com/serifpersia</p>";
 		final String credits = "<p><b>Contributors:</b><br>serifpersia, tobozo</p>";
-		final String message = "<html>" + title + "<div style=\"" + boxpadding + "\">" + description + projectlink
+		final String message = "<html>" + fontFace + title + "<div style=\"" + boxpadding + "\">" + description + projectlink
 				+ copyright + credits + "</div></html>";
 
+		// fixes weird font problem with the standalone version
+		putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
 		setContentType("text/html");
 		setText(message);
 	}

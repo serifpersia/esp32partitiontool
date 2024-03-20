@@ -1,7 +1,6 @@
 package com.serifpersia.esp32partitiontool;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.awt.Component;
 import java.awt.Frame;
 import javax.swing.*;
@@ -9,7 +8,7 @@ import javax.swing.*;
 public class UIController implements ActionListener {
 	private static UIController instance;
 	private UI ui;
-	private FileManager fileManager;
+	public FileManager fileManager;
 
 	public UIController(UI ui, FileManager fileManager) {
 		this.ui = ui;
@@ -27,7 +26,8 @@ public class UIController implements ActionListener {
 
 	private int getRowIndexForComponent(Component component) {
 		for (int i = 0; i < ui.getCSVRows().size(); i++) {
-			if (ui.getCSVRow(i) == component.getParent().getParent()) {
+		  CSVRow csvRow = ui.getCSVRow(i);
+			if (csvRow == component || csvRow == component.getParent()) {
 				return i;
 			}
 		}
@@ -37,7 +37,7 @@ public class UIController implements ActionListener {
 	private void attachListeners() {
 		// Attach listener to the "Generate CSV" button
 		ui.getImportCSVButton().addActionListener(this);
-		ui.getCreatePartitionsCSV().addActionListener(this);
+		ui.getExporCsvBtn().addActionListener(this);
 		ui.getFlashSize().addActionListener(this);
 		ui.getHelpButton().addActionListener(this);
 		ui.getAboutButton().addActionListener(this);
@@ -45,12 +45,13 @@ public class UIController implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
+
 		if (e.getSource() == ui.getImportCSVButton()) {
 			// Handle CSV export
 			fileManager.importCSV(null);
-		} else if (e.getSource() == ui.getCreatePartitionsCSV()) {
+		} else if (e.getSource() == ui.getExporCsvBtn()) {
 			// Handle CSV export
-			fileManager.generateCSV();
+			fileManager.exportCSV();
 		} else if (e.getSource() instanceof JCheckBox) {
 			handleCheckBoxAction((JCheckBox) e.getSource());
 		} else if (e.getSource() instanceof JTextField) {
@@ -62,6 +63,11 @@ public class UIController implements ActionListener {
 		} else if (e.getSource() == ui.getAboutButton()) {
 			handleAboutButton();
 		}
+
+		if( ui.settings.changed()	) {
+			ui.setFrameTitleNeedsSaving(true);
+		}
+
 	}
 
 	private void handleCheckBoxAction(JCheckBox checkBox) {
@@ -102,6 +108,7 @@ public class UIController implements ActionListener {
 		ui.calculateSizeHex();
 		ui.calculateOffsets();
 		ui.updatePartitionFlashVisual();
+		ui.settings.setChanged();
 	}
 
 	private void handleTextFieldAction(JTextField textField) {
@@ -116,6 +123,7 @@ public class UIController implements ActionListener {
 		} else {
 			ui.updatePartitionFlashVisual();
 		}
+		ui.settings.setChanged();
 	}
 
 	private void handleComboBoxAction(JComboBox<?> comboBox) {
@@ -132,6 +140,8 @@ public class UIController implements ActionListener {
 
 			if (ui.flashSizeMB == 4 || ui.flashSizeMB == 8 || ui.flashSizeMB == 16 || ui.flashSizeMB == 32) {
 			}
+
+			ui.settings.setChanged();
 		}
 	}
 

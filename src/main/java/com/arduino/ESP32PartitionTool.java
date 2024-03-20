@@ -36,25 +36,61 @@ package com.arduino;
 import processing.app.Editor;
 import processing.app.tools.Tool;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.*;
 import javax.swing.*;
+import javax.swing.border.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.*;
+
 
 import com.serifpersia.esp32partitiontool.FileManager;
 import com.serifpersia.esp32partitiontool.UI;
 import com.serifpersia.esp32partitiontool.UIController;
 
 @SuppressWarnings("serial")
+final class JFrameArduino extends JFrame {
+	public JFrameArduino() {
+
+		JFrame frame = this;
+
+		setSize(1024, 640);
+		//setResizable(false);
+
+		setLocationRelativeTo(null);
+
+		JLabel background = new JLabel(new ImageIcon(getClass().getResource("/bg.png")));
+		background.setLayout(new BorderLayout());
+		setContentPane(background);
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				frame.setVisible(false);
+			}
+		});
+
+		// [esc] key hides the app
+		addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
+					frame.setVisible(false);
+				}
+			}
+		});
+	}
+}
+
+
+@SuppressWarnings("serial")
 public class ESP32PartitionTool extends JFrame implements Tool {
 
+	private JFrame frame = new JFrameArduino();
 	private AppSettingsArduino settings;
-
-	private JFrame frame;
 	private Editor editor;
-
-	private UI contentPane = new UI();
+	private UI contentPane = new UI(frame, getMenuTitle() + " (Arduino IDE)");
 	private FileManager fileManager;
+	private boolean ui_loaded = false;
 
 	public void init(Editor editor) {
 		this.editor = editor;
@@ -65,6 +101,7 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 	}
 
 	public void addUI(UI contentPane) {
+		fileManager.setUIController(new UIController(contentPane, fileManager));
 		frame.add(contentPane);
 	}
 
@@ -72,41 +109,35 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 
 		if (settings == null) {
 			settings = new AppSettingsArduino(editor);
+		} else {
+			settings.init();
 		}
 
-		settings.load();
+		if( !settings.platformSupported  ) {
+			frame.setVisible(false);
+			System.err.println("Only ESP32 devices are supported!");
+			return;
+		}
+
 
 		if (fileManager == null) {
 			fileManager = new FileManager(contentPane, settings);
 		}
 
-		if (frame == null) {
-			frame = new JFrame("ESP32 Partition Tool");
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-			frame.setSize(1024, 640);
-			frame.setResizable(false);
-
-			frame.setLocationRelativeTo(null);
-
-			JLabel background = new JLabel(new ImageIcon(getClass().getResource("/bg.png")));
-			background.setLayout(new BorderLayout());
-			frame.setContentPane(background);
-
+		if( ! ui_loaded ) {
 			addUI(contentPane);
-
-			fileManager.setUIController(new UIController(contentPane, fileManager));
-			frame.addWindowListener(new WindowAdapter() {
-				@Override
-				public void windowClosing(WindowEvent e) {
-					frame.setVisible(false);
-				}
-			});
+			ui_loaded = true;
 		} else {
-			frame.toFront();
+			contentPane.reload();
 		}
 
-		fileManager.loadDefaultCSV();
+		frame.setFocusable(true);
+		frame.requestFocus();
+		frame.toFront();
+
+		// prevent repaint problem when reloading CSV
+		EventQueue.invokeLater( () -> fileManager.loadDefaultCSV() );
+
 		frame.setVisible(true);
 	}
 

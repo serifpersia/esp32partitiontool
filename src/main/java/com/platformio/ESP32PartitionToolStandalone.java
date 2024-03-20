@@ -33,25 +33,85 @@
 
 package com.platformio;
 
-import java.awt.BorderLayout;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
+import javax.swing.*;
+import javax.swing.border.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.*;
 
 import com.serifpersia.esp32partitiontool.FileManager;
 import com.serifpersia.esp32partitiontool.UI;
 import com.serifpersia.esp32partitiontool.UIController;
 
-import javax.swing.ImageIcon;
+//import javax.swing.ImageIcon;
+
+// local implementation of rounded borders to overwrite global styles
+@SuppressWarnings("serial")
+final class CustomBorder extends AbstractBorder {
+	@Override
+	public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+		super.paintBorder(c, g, x, y, width, height);
+		Graphics2D g2d = (Graphics2D)g;
+		g2d.setPaint( new Color(0xcc, 0xcc, 0xcc) );
+		Shape shape = new RoundRectangle2D.Float(1, 1, c.getWidth()-2, c.getHeight()-2, 5, 5);
+		g2d.draw(shape);
+	}
+}
+
+@SuppressWarnings("serial")
+final class JFrameStandalone extends JFrame {
+	public JFrameStandalone() {
+		// apply some style fixes globally
+		CompoundBorder borderTextField = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(0, 0, 0, 0), new CustomBorder() );
+		CompoundBorder borderComboBox = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(2, 2, 2, 2), new CustomBorder() );
+
+		UIManager.put("TextField.background", Color.WHITE);
+		UIManager.put("TextField.border", borderTextField);
+
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		// Size and display the frame
+		setSize(800, 564);
+		//setResizable(false);
+
+		// Set frame position to the center of the screen
+		setLocationRelativeTo(null);
+
+		// Add background image
+		JLabel background = new JLabel(new ImageIcon(getClass().getResource("/bg.png")));
+		background.setLayout(new BorderLayout());
+		setContentPane(background);
+
+		JFrame frame = this;
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				// Just hide the frame instead of disposing
+				frame.setVisible(false);
+			}
+		});
+
+		// [esc] key closes the app
+		addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
+					frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+				}
+			}
+		});
+	}
+}
+
 
 public class ESP32PartitionToolStandalone {
 
-	private UI contentPane = new UI();
+	private JFrame frame = new JFrameStandalone();
+
+	private UI contentPane = new UI(frame, "ESP32 Partition Tool (Standalone)");
 	private FileManager fileManager; // FileManager instance
 	private AppSettingsStandalone settings;
-
-	private JFrame frame;
 
 	public static void main(String[] args) {
 		ESP32PartitionToolStandalone tool = new ESP32PartitionToolStandalone();
@@ -63,47 +123,13 @@ public class ESP32PartitionToolStandalone {
 	}
 
 	private void init(String[] args) {
-
 		settings = new AppSettingsStandalone(args);
-		settings.load();
-
 		fileManager = new FileManager(contentPane, settings);
-
-		// Create and show the JFrame
-		if (frame == null) {
-			frame = new JFrame("ESP32 Partition Tool");
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-			// Size and display the frame
-			frame.setSize(1024, 640);
-			frame.setResizable(false);
-
-			// Set frame position to the center of the screen
-			frame.setLocationRelativeTo(null);
-
-			// Add background image
-			JLabel background = new JLabel(new ImageIcon(getClass().getResource("/bg.png")));
-			background.setLayout(new BorderLayout());
-			frame.setContentPane(background);
-
-			// Add panel to frame
-			addUI(contentPane);
-
-			// fileManager.setContext( args );
-			fileManager.setUIController(new UIController(contentPane, fileManager));
-
-			frame.addWindowListener(new WindowAdapter() {
-				@Override
-				public void windowClosing(WindowEvent e) {
-					// Just hide the frame instead of disposing
-					frame.setVisible(false);
-				}
-			});
-		} else {
-			// If the frame is already open, bring it to the front and make it visible
-			frame.toFront();
-		}
-
+		fileManager.setUIController(new UIController(contentPane, fileManager));
+		// Add panel to frame
+		addUI(contentPane);
+		frame.setFocusable(true);
+		frame.requestFocus();
 		fileManager.loadDefaultCSV();
 		frame.setVisible(true);
 	}
