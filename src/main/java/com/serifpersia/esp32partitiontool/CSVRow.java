@@ -75,10 +75,16 @@ public class CSVRow extends JPanel {
 		offset.setBorder(
 				BorderFactory.createCompoundBorder(offset.getBorder(), BorderFactory.createEmptyBorder(0, 0, 0, 5)));
 
-		enabled.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()-1));
-		size.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
-		sizeHex.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
-		offset.setFont(new Font(Font.MONOSPACED, currFont.getStyle(), currFont.getSize()));
+		//Font cellFont = UI.monotypeFont.deriveFont(Font.PLAIN, 12)
+
+		enabled.setFont(UI.condensedFont.deriveFont(Font.PLAIN, 13));
+		size.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
+		sizeHex.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
+		offset.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
+		name.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
+		type.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
+		subtype.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
+
 
 		sizeHex.setEditable(false);
 		offset.setEditable(false);

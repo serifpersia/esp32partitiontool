@@ -64,7 +64,7 @@ public class HelpPanel extends JPanel {
 		helpTipLabel.setVerticalAlignment(JLabel.TOP);
 		helpTipLabel.setVerticalTextPosition(JLabel.TOP);
 		helpTipLabel.setIcon(infoIcon);
-		helpTipLabel.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		helpTipLabel.setFont( UI.defaultFont.deriveFont(Font.PLAIN, 12) );
 
 		helpTipPanel.add(helpTipLabel);
 

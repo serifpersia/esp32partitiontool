@@ -1,19 +1,18 @@
 package com.serifpersia.esp32partitiontool;
 
 import java.awt.*;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.swing.JTextField;
-import javax.swing.JFileChooser;
+import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
 import java.lang.Process;
 import java.lang.Runtime;
-import java.io.*;
-import javax.swing.*;
+
 
 
 

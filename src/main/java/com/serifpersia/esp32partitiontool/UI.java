@@ -1,6 +1,7 @@
 package com.serifpersia.esp32partitiontool;
 
 import java.util.ArrayList;
+import java.io.*;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.*;
@@ -34,7 +35,7 @@ public class UI extends JPanel {
 				//setContentAreaFilled(false);
 				//setFocusPainted(false);
 				setOpaque( false );
-				setPreferredSize( new Dimension( 36, 32 ) );
+				setPreferredSize( new Dimension( 36, 26 ) );
 				setToolTipText(" " + title + " ");
 			} catch (Exception ex) {
 				setText(" " + title + " ");
@@ -102,11 +103,46 @@ public class UI extends JPanel {
 	private JButton exporCsvBtn;
 	private JButton helpButton;
 
+	static Font defaultFont;
+	static Font condensedFont;
+	static Font monotypeFont;
+	static Font monotypeBoldFont;
+
 	private ArrayList<CSVRow> csvRows = new ArrayList<CSVRow>();
+
+	private Font loadFont(String fontBaseName, int defaultSize, int fallbackType) { // no path no extension
+		try {
+			InputStream is = getClass().getResourceAsStream("/Fonts/"+fontBaseName+".ttf");
+			Font matchedFont = Font.createFont(Font.TRUETYPE_FONT, is);
+			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+			ge.registerFont(matchedFont);
+			System.out.printf("Registered font %s size %d type %d\n", fontBaseName, defaultSize, fallbackType);
+			return matchedFont;
+		} catch (IOException e) {
+				e.printStackTrace();
+		} catch (FontFormatException e) {
+				e.printStackTrace();
+		}
+		System.err.println("Failed to load font " + fontBaseName );
+		switch( fallbackType ) {
+			case 0: return new Font("Tahoma", Font.PLAIN, defaultSize);
+			case 1: return new Font("Monospaced", Font.PLAIN, defaultSize);
+			case 2: return new Font("Tahoma", Font.BOLD, defaultSize);
+			case 3: return new Font("Monospaced", Font.BOLD, defaultSize);
+			default:
+				System.err.printf("Error font fallbackType %d unsupported\n", fallbackType );
+				return new Font("Tahoma", Font.PLAIN, defaultSize);
+		}
+	}
 
 	public UI(JFrame frame, String title) {
 		// Show tool tips immediately
 		ToolTipManager.sharedInstance().setInitialDelay(0);
+
+		defaultFont = this.loadFont("DejaVuSans", 12, 0);
+		monotypeFont = this.loadFont("DejaVuSansMono", 12, 1);
+		monotypeBoldFont = this.loadFont("DejaVuSansMono-Bold", 12, 3);
+		condensedFont= this.loadFont("DejaVuSansCondensed", 12, 1);
 
 		setFrame( frame, title );
 		setLayout(new BorderLayout(0, 0));
@@ -136,7 +172,7 @@ public class UI extends JPanel {
 		if( settings.hasFSPanel ) {
 			frame.setSize(1024, 640);
 		} else {
-			frame.setSize(800, 564);
+			frame.setSize(800, 556);
 		}
 		fsPanel.setVisible( settings.hasFSPanel );
 	}
@@ -249,9 +285,11 @@ public class UI extends JPanel {
 
 		titleLinePanel.setLayout( new BoxLayout(titleLinePanel, BoxLayout.LINE_AXIS) );
 		titleLinePanel.setBorder( BorderFactory.createEmptyBorder(5, 0, 5, 0) );
+		titleLinePanel.setMaximumSize( new Dimension( frame.getSize().width, 24 ) ); // restrict panel height to 24px, inherit width
 
 		JLabel enabledLabel = new JLabel("Enable");
 		enabledLabel.setPreferredSize( new Dimension(50, 12) );
+		enabledLabel.setFont( condensedFont.deriveFont(Font.BOLD, 13));
 		enabledLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		titleLinePanel.add(enabledLabel);
 
@@ -264,7 +302,7 @@ public class UI extends JPanel {
 			label.setOpaque(false);
 			label.setHorizontalAlignment(SwingConstants.CENTER);
 			final Font currFont = label.getFont();
-			label.setFont(label.getFont().deriveFont(Font.BOLD, currFont.getSize()));
+			label.setFont( defaultFont.deriveFont(Font.BOLD, 13) );
 			remainingTitles.add(label, BorderLayout.NORTH);
 		}
 		titleLinePanel.add(remainingTitles);
@@ -289,7 +327,7 @@ public class UI extends JPanel {
 
 		csvGenLabel = new JLabel("Partitions");
 		csvGenLabel.setOpaque(false);
-		csvGenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
+		csvGenLabel.setFont(defaultFont.deriveFont(Font.PLAIN, 20));
 		csvGenLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		csvGenPanel.add(csvGenLabel, BorderLayout.NORTH);
 
@@ -342,14 +380,17 @@ public class UI extends JPanel {
 
 		flashSizeFieldSetPanel = new JTransparentPanel();
 		flashSizeLabel = new JLabel("Flash Size: MB");
+		flashSizeLabel.setFont(defaultFont.deriveFont(Font.PLAIN, 13));
 		flashSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		flashSizeFieldSetPanel.add(flashSizeLabel);
 		flashSizesComboBox = new JComboBox<>(new String[] { " 4", " 8", "16", "32" });
+		flashSizesComboBox.setFont(UI.defaultFont.deriveFont(Font.PLAIN, 13));
 		flashSizeFieldSetPanel.add(flashSizesComboBox);
 		partitionsUtilButtonsPanel.add(flashSizeFieldSetPanel, BorderLayout.CENTER);
 
 		// free space box
 		partitionFlashFreeSpace = new JLabel("Free Space: not set");
+		partitionFlashFreeSpace.setFont(defaultFont.deriveFont(Font.PLAIN, 13));
 		partitionsUtilButtonsPanel.add(partitionFlashFreeSpace, BorderLayout.EAST);
 
 	}
@@ -523,7 +564,8 @@ public class UI extends JPanel {
 
 		JPanel initialPanel = new JTransparentPanel();
 		initialPanel.setLayout(new BorderLayout());
-		JLabel initialLabel = new JLabel("0x9000");
+		JLabel initialLabel = new JLabel("0x9000 ");
+		initialLabel.setFont(monotypeBoldFont.deriveFont(Font.PLAIN, 12));
 		GridBagConstraints gbc = new GridBagConstraints();
 
 		initialLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -559,6 +601,7 @@ public class UI extends JPanel {
 
 					// Set the text color to white
 					JLabel label = new JLabel(getPartitionSubType(i).getText());
+					label.setFont(monotypeBoldFont.deriveFont(Font.PLAIN, 12));
 					label.setForeground(Color.WHITE);
 					partitionPanel.add(label);
 					partitionPanel.setToolTipText(partSizeKb+"KB");
@@ -576,6 +619,7 @@ public class UI extends JPanel {
 			// Set the text color to white
 			JLabel label = new JLabel("Free Space");
 			label.setForeground(Color.BLACK);
+			label.setFont(monotypeBoldFont.deriveFont(Font.PLAIN, 12));
 			unusedSpacePanel.add(label);
 
 			csvpartitionsCenterVisualPanel.add(unusedSpacePanel, gbc);
@@ -603,6 +647,7 @@ public class UI extends JPanel {
 					partitionPanel.setBackground(partColor);
 					// Set the text color to white
 					JLabel label = new JLabel(partSubType);
+					label.setFont(monotypeBoldFont.deriveFont(Font.PLAIN, 12));
 					label.setForeground(Color.WHITE);
 					partitionPanel.add(label);
 					partitionPanel.setToolTipText(partSizeKb+"KB");

@@ -72,7 +72,7 @@ final class JFrameStandalone extends JFrame {
 
 		// Size and display the frame
 		setSize(800, 564);
-		setResizable(false);
+		//setResizable(false);
 
 		// Set frame position to the center of the screen
 		setLocationRelativeTo(null);

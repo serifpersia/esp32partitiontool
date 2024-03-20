@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import javax.swing.*;
 import javax.swing.event.*;
 
+
 @SuppressWarnings("serial")
 
 
@@ -159,7 +160,7 @@ public class FSPanel extends JPanel {
 		FSGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 5));
 
 		FSGenLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		FSGenLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
+		FSGenLabel.setFont(UI.defaultFont.deriveFont(Font.PLAIN, 20));
 
 		FSGenInnerPanel.setLayout(new BorderLayout(0, 0));
 
@@ -168,8 +169,12 @@ public class FSPanel extends JPanel {
 		FSInnerPanel.setBorder(BorderFactory.createEmptyBorder(0, 5, 2, 5));
 
 		FSComboLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		FSComboLabel.setFont(UI.defaultFont.deriveFont(Font.PLAIN, 13));
+
+		FSTypesComboBox.setFont(UI.defaultFont.deriveFont(Font.PLAIN, 13));
 
 		blockSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		blockSizeLabel.setFont(UI.defaultFont.deriveFont(Font.PLAIN, 13));
 
 		FSBlockSize.setEditable(false);
 
@@ -178,8 +183,8 @@ public class FSPanel extends JPanel {
 		FSUploadPanel.setLayout(new BorderLayout(0, 0));
 
 		mergeBoxPanel.setLayout(new BorderLayout(0, 0));
-		mergeBoxLabel.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		mergeBoxLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		mergeBoxLabel.setFont(UI.defaultFont.deriveFont(Font.PLAIN, 20));
 
 		mergeButtonsPanel.setLayout(new BorderLayout(0, 0));
 
@@ -204,7 +209,7 @@ public class FSPanel extends JPanel {
 		consoleLogPanel.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 		consoleLogPanel.setForeground(Color.WHITE);
 		consoleLogPanel.setBackground(Color.BLACK);
-		consoleLogPanel.setFont(new Font("Monospaced", Font.PLAIN, 12)); // Set a monospaced font
+		consoleLogPanel.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
 		consoleLogPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
 
 		//consoleScrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -227,7 +232,7 @@ public class FSPanel extends JPanel {
 			JTextArea msgArea = new JTextArea(0,0);
 			msgArea.setForeground(is_error ? Color.RED : Color.WHITE);
 			msgArea.setBackground(Color.BLACK);
-			msgArea.setFont(new Font("Monospaced", Font.PLAIN, 12)); // Set a monospaced font
+			msgArea.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
 			msgArea.setEditable(false); // Make the text area read-only
 			msgArea.setLineWrap(true); // Enable line wrapping
 			msgArea.setWrapStyleWord(true); // Wrap at word boundaries

@@ -54,7 +54,7 @@ final class JFrameArduino extends JFrame {
 		JFrame frame = this;
 
 		setSize(1024, 640);
-		setResizable(false);
+		//setResizable(false);
 
 		setLocationRelativeTo(null);
 

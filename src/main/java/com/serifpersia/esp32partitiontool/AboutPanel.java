@@ -13,6 +13,7 @@ class AboutPanel extends JEditorPane {
 
 	private void createPanel() {
 
+		setFont( UI.defaultFont.deriveFont(Font.PLAIN, 12) );
 
 		final String fontFace = "<font face=sans-serif>";
 		final String boxpadding = "padding-top: 0px;padding-right: 10px;padding-bottom: 10px;padding-left: 10px;";
