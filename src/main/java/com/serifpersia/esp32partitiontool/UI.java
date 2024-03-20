@@ -172,7 +172,7 @@ public class UI extends JPanel {
 		if( settings.hasFSPanel ) {
 			frame.setSize(1024, 640);
 		} else {
-			frame.setSize(800, 556);
+			frame.setSize(800, 564);
 		}
 		fsPanel.setVisible( settings.hasFSPanel );
 	}
@@ -281,34 +281,31 @@ public class UI extends JPanel {
 	}
 
 	public JPanel getTitleCSVRow() {
-		JPanel titleLinePanel = new JTransparentPanel();
+		JPanel partitionTitlePanel = new JTransparentPanel();
+		partitionTitlePanel.setLayout(new BorderLayout());
 
-		titleLinePanel.setLayout( new BoxLayout(titleLinePanel, BoxLayout.LINE_AXIS) );
-		titleLinePanel.setBorder( BorderFactory.createEmptyBorder(5, 0, 5, 0) );
-		titleLinePanel.setMaximumSize( new Dimension( frame.getSize().width, 24 ) ); // restrict panel height to 24px, inherit width
+		String labels[] = { "Enable", "Name", "Type", "SubType", "Size(kB)", "Size(hex)", "Offset(hex)" };
 
-		JLabel enabledLabel = new JLabel("Enable");
-		enabledLabel.setPreferredSize( new Dimension(50, 12) );
-		enabledLabel.setFont( condensedFont.deriveFont(Font.BOLD, 13));
-		enabledLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		titleLinePanel.add(enabledLabel);
+		JLabel enableLabel = new JLabel(labels[0]);
+		enableLabel.setFont( condensedFont.deriveFont(Font.BOLD, 13));
+		enableLabel.setPreferredSize(new Dimension(50, 12));
+		enableLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-		JPanel remainingTitles = new JTransparentPanel();
-		remainingTitles.setLayout(new GridLayout(0, 6, 0, 0));
+		partitionTitlePanel.add(enableLabel, BorderLayout.WEST);
 
-		String labels[] = { "Name", "Type", "SubType", "Size(kB)", "Size(hex)", "Offset(hex)" };
-		for (int i = 0; i < labels.length; i++) {
-			JLabel label = new JLabel(labels[i]);
-			label.setOpaque(false);
-			label.setHorizontalAlignment(SwingConstants.CENTER);
-			final Font currFont = label.getFont();
-			label.setFont( defaultFont.deriveFont(Font.BOLD, 13) );
-			remainingTitles.add(label, BorderLayout.NORTH);
+		JPanel labelsPanel = new JTransparentPanel();
+		labelsPanel.setLayout(new GridLayout(1, labels.length - 1, 0, 0));
+		for (int i = 1; i < labels.length; i++) {
+			JLabel titles = new JLabel(labels[i]);
+			titles.setFont( condensedFont.deriveFont(Font.BOLD, 13));
+			titles.setHorizontalAlignment(SwingConstants.CENTER);
+			labelsPanel.add(titles);
 		}
-		titleLinePanel.add(remainingTitles);
-		return titleLinePanel;
-	}
 
+		partitionTitlePanel.add(labelsPanel, BorderLayout.CENTER);
+
+		return partitionTitlePanel;
+	}
 
 
 	private void createPanels() {
@@ -343,13 +340,13 @@ public class UI extends JPanel {
 		csvScrollPanel.getVerticalScrollBar().setUnitIncrement(100); // prevent the scroll wheel from going sloth
 
 		tableWrapperPanel = new JTransparentPanel( /*Color.BLUE*/ );
-		tableWrapperPanel.setLayout( new BoxLayout(tableWrapperPanel, BoxLayout.PAGE_AXIS) );
 		tableWrapperPanel.setBorder( BorderFactory.createEmptyBorder(0, 0, 0, 0) );
+		tableWrapperPanel.setLayout(new BorderLayout(0, 0));
 
 		// column titles have fixed position
 		tableWrapperPanel.add(getTitleCSVRow(), BorderLayout.NORTH);
 		// only rows are scrollable
-		tableWrapperPanel.add(csvScrollPanel, BorderLayout.SOUTH);
+		tableWrapperPanel.add(csvScrollPanel);
 
 		csvBottomPanel = new JTransparentPanel(/*Color.GREEN*/);
 		csvBottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
@@ -383,7 +380,7 @@ public class UI extends JPanel {
 		flashSizeLabel.setFont(defaultFont.deriveFont(Font.PLAIN, 13));
 		flashSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		flashSizeFieldSetPanel.add(flashSizeLabel);
-		flashSizesComboBox = new JComboBox<>(new String[] { " 4", " 8", "16", "32" });
+		flashSizesComboBox = new JComboBox<>(new String[] { "4", "8", "16", "32" });
 		flashSizesComboBox.setFont(UI.defaultFont.deriveFont(Font.PLAIN, 13));
 		flashSizeFieldSetPanel.add(flashSizesComboBox);
 		partitionsUtilButtonsPanel.add(flashSizeFieldSetPanel, BorderLayout.CENTER);

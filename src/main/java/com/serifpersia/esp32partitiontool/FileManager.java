@@ -730,7 +730,7 @@ public class FileManager {
 
 		// make sure the serial port or IP is defined
 		if (serialPort == null || serialPort.isEmpty()) {
-			emitError("Error: serial port not defined!");
+			emitError("Error: serial/ota port not defined!");
 			callbacks.onFail();
 			return;
 		}
@@ -749,14 +749,10 @@ public class FileManager {
 
 		if (isNetwork) {
 
-			System.out.println("[Merged bin] IP: " + serialPort);
-			System.out.println();
-			String[] writeFlashCmdLinux = { pythonCmd, espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f",
-					mergedImage };
-			String[] writeFlashCmdWindows = { espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", mergedImage };
-
-			cmdres = listenOnProcess(espotaPath.endsWith(".py") ? writeFlashCmdLinux : writeFlashCmdWindows);
-
+			callbacks.onFail();
+			emitError("Can't upload merged binary on OTA ports, use Serial COM ports!");
+			return;
+			
 		} else {
 
 			System.out.println("[Merged binary] mcu: " + mcu);
