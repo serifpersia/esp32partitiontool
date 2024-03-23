@@ -12,9 +12,10 @@ This tool aims to simplify the process of creating custom partition schemes for 
 ## Screenshots
 ![Screenshot 1](https://github.com/serifpersia/esp32partitiontool/assets/62844718/8724d57c-ebb5-404f-97f1-fe09134f53b5)
 ![image](https://github.com/serifpersia/esp32partitiontool/assets/62844718/bdb4562d-91ac-4348-9de7-be7a20935240)
-![image](https://github.com/serifpersia/esp32partitiontool/assets/62844718/700a5192-f3a7-4de7-af1b-3fc6c345a35e)
+![Screenshot 2024-03-23 121910](https://github.com/serifpersia/esp32partitiontool/assets/62844718/a79bfaea-902d-471a-a1b1-d936c660284c)
 
 ## Functionality
+
 - [x] Create partitions csv
 - [x] Import custom partitions csv
 - [x] Export custom partitions csv
