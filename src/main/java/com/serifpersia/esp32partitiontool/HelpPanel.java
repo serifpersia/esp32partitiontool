@@ -15,12 +15,14 @@ public class HelpPanel extends JPanel {
 	private ImageIcon infoIcon;
 	private int helpTipIndex = 0;
 
-	private String[] helpTips = { "The default export path for partitions.csv is the sketch directory.",
-			"If no partitions.csv file is found is the sketch directory, then the partition selected under <b>Tools > Partition schemes</b> will be used.",
-			"Partitions like nvs or any other small partitions before the app partition need their value to be a multiple of 4.",
-			"Partitions before the first app partition should have a total of 28 kB so the offset for the first app partition will always be correct at 0x10000 offset. Any other configuration will cause the ESP32 board to not function properly.",
-			"The app partition needs to be at 0x10000, and following partitions have to be a multiple of 64.",
-			"The app partition needs to be a minimum of 1024 kB in size." };
+	private String[] helpTips = {
+		l10n.getString("helpPanel.tip1"),
+		l10n.getString("helpPanel.tip2"),
+		l10n.getString("helpPanel.tip3"),
+		l10n.getString("helpPanel.tip4"),
+		l10n.getString("helpPanel.tip5"),
+		l10n.getString("helpPanel.tip6")
+	};
 
 	public HelpPanel() {
 		createPanel();
@@ -85,7 +87,7 @@ public class HelpPanel extends JPanel {
 	}
 
 	private void createNextButton() {
-		nextButton = new JButton(" Next tip >> ");
+		nextButton = new JButton(" " + l10n.getString("helpPanel.nextTip") + " >> ");
 		nextButton.setAlignmentX(JComponent.CENTER_ALIGNMENT);
 		nextButton.addActionListener(new ActionListener() {
 			@Override
