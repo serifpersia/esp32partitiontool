@@ -4,8 +4,6 @@ import java.util.Map;
 import java.util.HashMap;
 import javax.swing.*;
 
-import com.serifpersia.esp32partitiontool.l10n;
-
 public class AppSettings {
 
 	static final public class EventCallback {
