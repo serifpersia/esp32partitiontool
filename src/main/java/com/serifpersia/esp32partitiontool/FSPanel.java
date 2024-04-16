@@ -49,7 +49,7 @@ public class FSPanel extends JPanel {
 
 	public void updatePartitionFlashTypeLabel() {
 		FSGenLabel.setText( getPartitionFlashTypes().getSelectedItem().toString() );
-		FSUploadButton.setText( "Upload " + getPartitionFlashTypes().getSelectedItem().toString() );
+		FSUploadButton.setText( l10n.getString("fsPanel.uploadButtonLabel") +" " + getPartitionFlashTypes().getSelectedItem().toString() );
 	}
 
 	public JComboBox<?> getPartitionFlashTypes() {
@@ -91,10 +91,10 @@ public class FSPanel extends JPanel {
 	public void initComponents() {
 		consoleGBC = new GridBagConstraints();
 		FSInnerLayout = new GridLayout(0, 2);
-		FSGenLabel = new JLabel("SPIFFS");
-		mergeBoxLabel = new JLabel("Merge");
-		FSComboLabel = new JLabel("Filesystem:");
-		blockSizeLabel = new JLabel("Block Size:");
+		FSGenLabel = new JLabel();
+		mergeBoxLabel = new JLabel(l10n.getString("fsPanel.mergeBoxLabel"));
+		FSComboLabel = new JLabel(l10n.getString("fsPanel.comboLabel")+":");
+		blockSizeLabel = new JLabel(l10n.getString("fsPanel.blockSizeLabel")+":");
 		FSGenInnerPanel = new UI.JTransparentPanel( /*Color.MAGENTA*/ );
 		FSInnerPanel = new UI.JTransparentPanel();
 		FSGenPanel = new UI.JTransparentPanel();
@@ -105,10 +105,10 @@ public class FSPanel extends JPanel {
 		mergeButtonsWrapper = new UI.JTransparentPanel();
 		FSTypesComboBox = new JComboBox<>(new String[] { "SPIFFS", "LittleFS", "FatFS" });
 		FSBlockSize = new JTextField("4096");
-		FSUploadButton = new JButton("Upload SPIFFS");
-		mergeBinButton = new JButton("Merge Binary");
-		uploadMergedBinButton = new JButton("Merge Binary & Upload");
-		cleanLogsButton = new UI.JButtonIcon("Clear logs", "/clear.png");
+		FSUploadButton = new JButton(l10n.getString("fsPanel.uploadButtonLabel"));
+		mergeBinButton = new JButton(l10n.getString("fsPanel.mergeBinButtonLabel"));
+		uploadMergedBinButton = new JButton(l10n.getString("fsPanel.uploadMergedBinButtonLabel"));
+		cleanLogsButton = new UI.JButtonIcon(l10n.getString("fsPanel.cleanLogsButtonLabel"), "/clear.png");
 		consoleLogPanel = new JPanel();
 		consoleScrollPanel = new JScrollPane(consoleLogPanel);
 		progressBar = new JProgressBar(0, 100);

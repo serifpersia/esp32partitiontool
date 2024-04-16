@@ -100,7 +100,7 @@ public class FileManager {
 		String directory;
 
 		if (fileName == null) { // show a dialog
-			FileDialog filedialog = new FileDialog(ui.getFrame(), "Select CSV file to import", FileDialog.LOAD);
+			FileDialog filedialog = new FileDialog(ui.getFrame(), l10n.getString("importCsv.dialogTitle"), FileDialog.LOAD);
 			FilenameFilter csvFilter = new FilenameFilter() {
 				@Override
 				public boolean accept(File dir, String name) {
@@ -303,7 +303,7 @@ public class FileManager {
 			csvName = "partitions.csv";
 		}
 
-		FileDialog filedialog = new FileDialog(ui.getFrame(), "Export as CSV", FileDialog.SAVE);
+		FileDialog filedialog = new FileDialog(ui.getFrame(), l10n.getString("exportCsv.dialogTitle"), FileDialog.SAVE);
 		filedialog.setDirectory(sketchDir);
 		filedialog.setFile(csvName);
 		filedialog.setFilenameFilter(csvFilter);

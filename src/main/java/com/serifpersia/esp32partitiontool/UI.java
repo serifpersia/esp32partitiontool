@@ -75,6 +75,7 @@ public class UI extends JPanel {
 		}
 	}
 
+	private l10n lang = new l10n();
 	private UIController controller;
 	public AppSettings settings;
 
@@ -136,6 +137,7 @@ public class UI extends JPanel {
 	}
 
 	public UI(JFrame frame, String title) {
+
 		// Show tool tips immediately
 		ToolTipManager.sharedInstance().setInitialDelay(0);
 
@@ -284,7 +286,15 @@ public class UI extends JPanel {
 		JPanel partitionTitlePanel = new JTransparentPanel();
 		partitionTitlePanel.setLayout(new BorderLayout());
 
-		String labels[] = { "Enable", "Name", "Type", "SubType", "Size(kB)", "Size(hex)", "Offset(hex)" };
+		String labels[] = {
+			l10n.getString("columnTitle.enable"),
+			l10n.getString("columnTitle.name"),
+			l10n.getString("columnTitle.type"),
+			l10n.getString("columnTitle.subtype"),
+			l10n.getString("columnTitle.sizekb"),
+			l10n.getString("columnTitle.sizehex"),
+			l10n.getString("columnTitle.offset")
+		};
 
 		JLabel enableLabel = new JLabel(labels[0]);
 		enableLabel.setFont( condensedFont.deriveFont(Font.BOLD, 13));
@@ -322,7 +332,7 @@ public class UI extends JPanel {
 		csvGenPanel.setLayout(new BorderLayout(0, 0));
 		csvGenPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 0));
 
-		csvGenLabel = new JLabel("Partitions");
+		csvGenLabel = new JLabel(l10n.getString("csvGenLabel.defaultLabel"));
 		csvGenLabel.setOpaque(false);
 		csvGenLabel.setFont(defaultFont.deriveFont(Font.PLAIN, 20));
 		csvGenLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -363,20 +373,20 @@ public class UI extends JPanel {
 		actionButtonsPanel.setAlignmentY(Component.CENTER_ALIGNMENT);
 		actionButtonsPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 		actionButtonsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-		importCsvBtn = new JButtonIcon("Import CSV", "/import.png");
+		importCsvBtn = new JButtonIcon(l10n.getString("importCsvButton.label"), "/import.png");
 		actionButtonsPanel.add(importCsvBtn);
-		saveCsvBtn =  new JButtonIcon("Save CSV", "/save.png");
+		saveCsvBtn =  new JButtonIcon(l10n.getString("saveCsvButton.label"), "/save.png");
 		actionButtonsPanel.add(saveCsvBtn);
-		exporCsvBtn = new JButtonIcon("Export CSV", "/export2.png");
+		exporCsvBtn = new JButtonIcon(l10n.getString("exportCsvButton.label"), "/export2.png");
 		actionButtonsPanel.add(exporCsvBtn);
-		helpButton = new JButtonIcon("Help", "/help.png");
+		helpButton = new JButtonIcon(l10n.getString("helpButton.label"), "/help.png");
 		actionButtonsPanel.add(helpButton);
-		aboutBtn = new JButtonIcon("About", "/about.png");
+		aboutBtn = new JButtonIcon(l10n.getString("aboutButton.label"), "/about.png");
 		actionButtonsPanel.add(aboutBtn);
 		csvBottomPanel.add(actionButtonsPanel, BorderLayout.WEST);
 
 		flashSizeFieldSetPanel = new JTransparentPanel();
-		flashSizeLabel = new JLabel("Flash Size: MB");
+		flashSizeLabel = new JLabel(l10n.getString("flashSize.label")+" (MB):");
 		flashSizeLabel.setFont(defaultFont.deriveFont(Font.PLAIN, 13));
 		flashSizeLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		flashSizeFieldSetPanel.add(flashSizeLabel);
@@ -386,7 +396,7 @@ public class UI extends JPanel {
 		partitionsUtilButtonsPanel.add(flashSizeFieldSetPanel, BorderLayout.CENTER);
 
 		// free space box
-		partitionFlashFreeSpace = new JLabel("Free Space: not set");
+		partitionFlashFreeSpace = new JLabel(l10n.getString("flash.freeSpace") + ": ...");
 		partitionFlashFreeSpace.setFont(defaultFont.deriveFont(Font.PLAIN, 13));
 		partitionsUtilButtonsPanel.add(partitionFlashFreeSpace, BorderLayout.EAST);
 
@@ -431,7 +441,7 @@ public class UI extends JPanel {
 		}
 
 		// Update the free space label
-		getFlashFreeLabel().setText("Free Space: " + FlashSizeBytes / 1024 + " KB");
+		getFlashFreeLabel().setText(l10n.getString("flash.freeSpace") + ": " + FlashSizeBytes / 1024 + " KB");
 		getFlashFreeLabel().setForeground(FlashSizeBytes >= 0 ? Color.BLACK : Color.RED);
 
 		// Convert partition sizes to hexadecimal strings
@@ -614,7 +624,7 @@ public class UI extends JPanel {
 			unusedSpacePanel.setBackground(new Color(130, 135, 145));
 			gbc.weightx = (double) remainingSpace / (FLASH_SIZE - RESERVED_SPACE);
 			// Set the text color to white
-			JLabel label = new JLabel("Free Space");
+			JLabel label = new JLabel(l10n.getString("flash.freeSpace"));
 			label.setForeground(Color.BLACK);
 			label.setFont(monotypeBoldFont.deriveFont(Font.PLAIN, 12));
 			unusedSpacePanel.add(label);
@@ -814,7 +824,7 @@ public class UI extends JPanel {
 			String partitionOffset = getPartitionOffsets(spiffsIndex).getText();
 			result = "0x" + partitionOffset;
 		} else {
-			result = "SPIFFS partition not found.";
+			result = l10n.getString("spiffs.partitionNotFound");
 		}
 		return result;
 	}

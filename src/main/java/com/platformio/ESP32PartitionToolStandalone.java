@@ -43,8 +43,6 @@ import com.serifpersia.esp32partitiontool.FileManager;
 import com.serifpersia.esp32partitiontool.UI;
 import com.serifpersia.esp32partitiontool.UIController;
 
-//import javax.swing.ImageIcon;
-
 // local implementation of rounded borders to overwrite global styles
 @SuppressWarnings("serial")
 final class CustomBorder extends AbstractBorder {

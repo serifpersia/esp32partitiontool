@@ -148,13 +148,13 @@ public class UIController implements ActionListener {
 	private void handleAboutButton() {
 		// modal dialog with icon
 		ImageIcon icon = new ImageIcon(getClass().getResource("/logo.png"));
-		JOptionPane.showConfirmDialog(null, ui.aboutPanel, "About ESP32PartitionTool", JOptionPane.DEFAULT_OPTION,
+		JOptionPane.showConfirmDialog(null, ui.aboutPanel, l10n.getString("aboutPanel.title"), JOptionPane.DEFAULT_OPTION,
 				JOptionPane.INFORMATION_MESSAGE, icon);
 	}
 
 	public void handleHelpButton() {
 		// modal dialog with minimal decoration
-		final JDialog dialog = new JDialog((Frame) null, "Help Tips", true);
+		final JDialog dialog = new JDialog((Frame) null, l10n.getString("helpPanel.title"), true);
 		dialog.add(ui.helpPanel);
 		dialog.pack();
 		dialog.setLocationRelativeTo(null);
