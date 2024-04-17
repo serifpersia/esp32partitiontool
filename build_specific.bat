@@ -1,6 +1,14 @@
 @echo off
 setlocal
 
+REM Check if Java JDK 8 is installed
+java -version 2>&1 | findstr /I "1.8." >nul
+if errorlevel 1 (
+    echo Failed to find Java JDK 8 installed on the user system
+    pause
+    exit /b 1
+)
+
 REM Define the resources directory
 set "resources_directory=src\main\resources"
 
@@ -103,4 +111,6 @@ del "%class_list%" || (
     exit /b 1
 )
 
-endlocal
+echo Build completed successfully.
+pause
+exit /b 0

@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Check if Java JDK 8 is installed
+java_version=$(java -version 2>&1 | grep version | awk '{print $3}')
+if [[ "$java_version" != *"1.8."* ]]; then
+    echo "Failed to find Java JDK 8 installed on the user system"
+    exit 1
+fi
+
 # Define the resources directory
 resources_directory="src/main/resources"
 
@@ -16,7 +23,7 @@ fi
 
 # Create necessary directory
 mkdir -p "bin" || { echo "Error creating 'bin' directory"; exit 1; }
-mkdir -p "build"  || { echo "Error creating 'build' directory"; exit 1; }
+mkdir -p "build" || { echo "Error creating 'build' directory"; exit 1; }
 
 # Find all Java files and export the list in a ClassList file
 find src/main/java/com -name "*.java" > "$class_list" || { echo "Error finding Java files"; exit 1; }
@@ -56,3 +63,6 @@ done
 rm -rf "bin" || { echo "Error removing 'bin' folder"; exit 1; }
 rm -rf "build" || { echo "Error removing 'build' folder"; exit 1; }
 rm "$class_list" || { echo "Error removing ClassList file"; exit 1; }
+
+echo "Build completed successfully."
+exit 0

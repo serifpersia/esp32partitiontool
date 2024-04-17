@@ -116,7 +116,7 @@ pio pkg install -e build-partition --no-save --tool /path/to/esp32partitiontool/
 
 ## Issues and Contributions
 Feel free to report any issues.
-
+Translation contributions are welcome if you find the current translations to be wrong, not adequate or you want to add support for another language. 
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
