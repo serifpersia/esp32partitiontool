@@ -26,6 +26,8 @@ jobs:
         java-version: '8'
     - name: "Build jar"
       run: |
+        php $GITHUB_WORKSPACE/.github/scripts/check_l10n.php src/main/resources/l10n
+        [ $? -eq 0 ] || die "Missing translations"
         jar_file="build/ESP32PartitionTool.jar"
         . $GITHUB_WORKSPACE/.github/scripts/build_jar.sh $jar_file
         [ $? -eq 0 ] || die "Jar creation failed"
