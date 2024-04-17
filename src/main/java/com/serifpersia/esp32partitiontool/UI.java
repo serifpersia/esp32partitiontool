@@ -117,7 +117,7 @@ public class UI extends JPanel {
 			Font matchedFont = Font.createFont(Font.TRUETYPE_FONT, is);
 			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 			ge.registerFont(matchedFont);
-			System.out.printf("Registered font %s size %d type %d\n", fontBaseName, defaultSize, fallbackType);
+			//System.out.printf("Registered font %s size %d type %d\n", fontBaseName, defaultSize, fallbackType);
 			return matchedFont;
 		} catch (IOException e) {
 				e.printStackTrace();
@@ -321,7 +321,12 @@ public class UI extends JPanel {
 	private void createPanels() {
 
 		helpPanel = new HelpPanel();
-		aboutPanel = new AboutPanel();
+		aboutPanel = new AboutPanel(){
+			// disallow parent scroll bar pane to use horizontal scrollbar
+			public boolean getScrollableTracksViewportWidth() {
+				return true;
+			}
+		};
 		fsPanel = new FSPanel();
 
 		fsPanel.setVisible(false);
