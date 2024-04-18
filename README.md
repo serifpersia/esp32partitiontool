@@ -82,7 +82,7 @@ platform = espressif32
 board = esp32dev
 ; register the "tool-esp32partitiontool"
 ; remove url if you have own built tool in pacakges directory of platformio core directory
-platform_packages = tool-esp32partitiontool @ https://github.com/serifpersia/esp32partitiontool/releases/download/v1.4.1/esp32partitiontool-platformio.zip
+platform_packages = tool-esp32partitiontool @ https://github.com/serifpersia/esp32partitiontool/releases/download/v1.4.2/esp32partitiontool-platformio.zip
 ; register the "edit_partition" target
 extra_scripts = partition_manager.py
 
@@ -115,8 +115,7 @@ pio pkg install -e build-partition --no-save --tool /path/to/esp32partitiontool/
 
 
 ## Issues and Contributions
-Feel free to report any issues.
-Translation contributions are welcome if you find the current translations to be wrong, not adequate or you want to add support for another language. 
+Feel free to report any [issues](https://github.com/serifpersia/esp32partitiontool/issues). Translation [contributions are welcome](https://github.com/serifpersia/esp32partitiontool/tree/main/src/main/resources/l10n) if you find the current translations to be wrong, not adequate or you want to add support for another language.
 
 ## License
 This project is licensed under the [MIT License](LICENSE).
