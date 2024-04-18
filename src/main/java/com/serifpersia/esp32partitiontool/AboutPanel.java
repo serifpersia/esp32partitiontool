@@ -35,7 +35,7 @@ class AboutPanel extends JEditorPane {
 		final String description = "<p>"+l10n.getString("aboutPanel.description")+"</p>";
 		final String projectlink = "<p><b>"+l10n.getString("aboutPanel.source")+":</b><br>https://github.com/serifpersia/esp32partitiontool</p>";
 		final String copyright = "<p><b>Copyright (c) 2024 @serifpersia</b><br>https://github.com/serifpersia</p>";
-		final String credits = "<p><b>"+l10n.getString("aboutPanel.contributors")+":</b><br>serifpersia, tobozo, SzyZuu</p>";
+		final String credits = "<p><b>"+l10n.getString("aboutPanel.contributors")+":</b><br>serifpersia, tobozo, SzyZuu, zeromem0</p>";
 		final String message = "<html>" + fontFace + title + "<div style=\"" + boxpadding + "\">" + description + projectlink
 				+ copyright + credits + "</div></html>";
 
