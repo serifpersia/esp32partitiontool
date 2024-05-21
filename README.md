@@ -82,7 +82,7 @@ platform = espressif32
 board = esp32dev
 ; register the "tool-esp32partitiontool"
 ; remove url if you have own built tool in pacakges directory of platformio core directory
-platform_packages = tool-esp32partitiontool @ https://github.com/serifpersia/esp32partitiontool/releases/download/v1.4.2/esp32partitiontool-platformio.zip
+platform_packages = tool-esp32partitiontool @ https://github.com/serifpersia/esp32partitiontool/releases/download/v1.4.3/esp32partitiontool-platformio.zip
 ; register the "edit_partition" target
 extra_scripts = partition_manager.py
 
