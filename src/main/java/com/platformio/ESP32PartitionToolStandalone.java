@@ -49,9 +49,9 @@ final class CustomBorder extends AbstractBorder {
 	@Override
 	public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
 		super.paintBorder(c, g, x, y, width, height);
-		Graphics2D g2d = (Graphics2D)g;
-		g2d.setPaint( new Color(0xcc, 0xcc, 0xcc) );
-		Shape shape = new RoundRectangle2D.Float(1, 1, c.getWidth()-2, c.getHeight()-2, 5, 5);
+		Graphics2D g2d = (Graphics2D) g;
+		g2d.setPaint(new Color(0xcc, 0xcc, 0xcc));
+		Shape shape = new RoundRectangle2D.Float(1, 1, c.getWidth() - 2, c.getHeight() - 2, 5, 5);
 		g2d.draw(shape);
 	}
 }
@@ -60,17 +60,16 @@ final class CustomBorder extends AbstractBorder {
 final class JFrameStandalone extends JFrame {
 	public JFrameStandalone() {
 		// apply some style fixes globally
-		CompoundBorder borderTextField = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(0, 0, 0, 0), new CustomBorder() );
-		CompoundBorder borderComboBox = BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder(2, 2, 2, 2), new CustomBorder() );
-
+		CompoundBorder borderTextField = BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0),
+				new CustomBorder());
 		UIManager.put("TextField.background", Color.WHITE);
 		UIManager.put("TextField.border", borderTextField);
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		// Size and display the frame
-		setSize(800, 564);
-		//setResizable(false);
+		setSize(1024, 567);
+		// setResizable(false);
 
 		// Set frame position to the center of the screen
 		setLocationRelativeTo(null);
@@ -101,7 +100,6 @@ final class JFrameStandalone extends JFrame {
 		});
 	}
 }
-
 
 public class ESP32PartitionToolStandalone {
 

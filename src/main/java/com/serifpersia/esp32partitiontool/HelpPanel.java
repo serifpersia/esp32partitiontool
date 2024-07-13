@@ -3,7 +3,6 @@ package com.serifpersia.esp32partitiontool;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.event.*;
 
 @SuppressWarnings("serial")
 public class HelpPanel extends JPanel {
@@ -15,14 +14,9 @@ public class HelpPanel extends JPanel {
 	private ImageIcon infoIcon;
 	private int helpTipIndex = 0;
 
-	private String[] helpTips = {
-		l10n.getString("helpPanel.tip1"),
-		l10n.getString("helpPanel.tip2"),
-		l10n.getString("helpPanel.tip3"),
-		l10n.getString("helpPanel.tip4"),
-		l10n.getString("helpPanel.tip5"),
-		l10n.getString("helpPanel.tip6")
-	};
+	private String[] helpTips = { l10n.getString("helpPanel.tip1"), l10n.getString("helpPanel.tip2"),
+			l10n.getString("helpPanel.tip3"), l10n.getString("helpPanel.tip4"), l10n.getString("helpPanel.tip5"),
+			l10n.getString("helpPanel.tip6") };
 
 	public HelpPanel() {
 		createPanel();
@@ -66,7 +60,7 @@ public class HelpPanel extends JPanel {
 		helpTipLabel.setVerticalAlignment(JLabel.TOP);
 		helpTipLabel.setVerticalTextPosition(JLabel.TOP);
 		helpTipLabel.setIcon(infoIcon);
-		helpTipLabel.setFont( UI.defaultFont.deriveFont(Font.PLAIN, 12) );
+		helpTipLabel.setFont(UI.defaultFont.deriveFont(Font.PLAIN, 12));
 
 		helpTipPanel.add(helpTipLabel);
 

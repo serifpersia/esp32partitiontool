@@ -17,27 +17,45 @@ public class AppSettings {
 		}
 
 		public EventCallback(Runnable onBefore, Runnable onAfter, Runnable onSuccess, Runnable onFail) {
-			this.onBefore  = onBefore;
-			this.onAfter   = onAfter;
+			this.onBefore = onBefore;
+			this.onAfter = onAfter;
 			this.onSuccess = onSuccess;
-			this.onFail    = onFail;
+			this.onFail = onFail;
 		}
 
-		public void onBefore () { if( this.onBefore  != null ) this.onBefore.run();  }
-		public void onAfter  () { if( this.onAfter   != null ) this.onAfter.run();   }
-		public void onSuccess() { if( this.onSuccess != null ) this.onSuccess.run(); }
-		public void onFail   () { if( this.onFail    != null ) this.onFail.run();    }
+		public void onBefore() {
+			if (this.onBefore != null)
+				this.onBefore.run();
+		}
 
-		public void onBefore( Runnable onBefore ) {
+		public void onAfter() {
+			if (this.onAfter != null)
+				this.onAfter.run();
+		}
+
+		public void onSuccess() {
+			if (this.onSuccess != null)
+				this.onSuccess.run();
+		}
+
+		public void onFail() {
+			if (this.onFail != null)
+				this.onFail.run();
+		}
+
+		public void onBefore(Runnable onBefore) {
 			this.onBefore = onBefore;
 		}
-		public void onAfter( Runnable onAfter ) {
+
+		public void onAfter(Runnable onAfter) {
 			this.onAfter = onAfter;
 		}
-		public void onSuccess( Runnable onSuccess ) {
+
+		public void onSuccess(Runnable onSuccess) {
 			this.onSuccess = onSuccess;
 		}
-		public void onFail( Runnable onFail ) {
+
+		public void onFail(Runnable onFail) {
 			this.onFail = onFail;
 		}
 
@@ -49,19 +67,20 @@ public class AppSettings {
 	private boolean changed = false;
 	public Map<String, String> prefs = new HashMap<>();
 
-	public String get( String key ) {
-		String value = prefs.get( key );
-		if( debug_settings && value == null ) {
-			System.out.printf("[debug] settings.%s is null\n", key );
+	public String get(String key) {
+		String value = prefs.get(key);
+		if (debug_settings && value == null) {
+			System.out.printf("[debug] settings.%s is null\n", key);
 		}
 		return value;
 	}
 
-	public String set( String key, String value ) {
-		String oldvalue = prefs.put( key, value );
-		if( debug_settings && oldvalue != null && value != null ) {
-			if( !oldvalue.equals(value) ) {
-				System.out.printf("[debug] Value change for settings.%s:\n  [old] %s\n  [new] %s\n", key, oldvalue, value );
+	public String set(String key, String value) {
+		String oldvalue = prefs.put(key, value);
+		if (debug_settings && oldvalue != null && value != null) {
+			if (!oldvalue.equals(value)) {
+				System.out.printf("[debug] Value change for settings.%s:\n  [old] %s\n  [new] %s\n", key, oldvalue,
+						value);
 				changed = true;
 			}
 		}
@@ -83,8 +102,8 @@ public class AppSettings {
 		load();
 	}
 
-
-	// this method is overriden from AppSettingsStandalone or AppSettingsArduino classes
+	// this method is overriden from AppSettingsStandalone or AppSettingsArduino
+	// classes
 	public void load() {
 
 	}
@@ -98,6 +117,5 @@ public class AppSettings {
 	public void clean() {
 
 	}
-
 
 }

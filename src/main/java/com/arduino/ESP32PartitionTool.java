@@ -37,12 +37,8 @@ import processing.app.Editor;
 import processing.app.tools.Tool;
 
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.*;
-
-
 import com.serifpersia.esp32partitiontool.FileManager;
 import com.serifpersia.esp32partitiontool.UI;
 import com.serifpersia.esp32partitiontool.UIController;
@@ -54,7 +50,7 @@ final class JFrameArduino extends JFrame {
 		JFrame frame = this;
 
 		setSize(1024, 640);
-		//setResizable(false);
+		// setResizable(false);
 
 		setLocationRelativeTo(null);
 
@@ -80,7 +76,6 @@ final class JFrameArduino extends JFrame {
 		});
 	}
 }
-
 
 @SuppressWarnings("serial")
 public class ESP32PartitionTool extends JFrame implements Tool {
@@ -113,24 +108,23 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 			settings.init();
 		}
 
-		if( !settings.platformSupported  ) {
+		if (!settings.platformSupported) {
 			frame.setVisible(false);
 			System.err.println("Only ESP32 devices are supported!");
 			return;
 		}
 
-
 		if (fileManager == null) {
 			fileManager = new FileManager(contentPane, settings);
 		}
 
-		if( ! ui_loaded ) {
+		if (!ui_loaded) {
 			addUI(contentPane);
 			ui_loaded = true;
 		} else {
 			contentPane.reload();
 		}
-		
+
 		if (frame != null) {
 			frame.toFront();
 			frame.setFocusable(true);
@@ -138,7 +132,7 @@ public class ESP32PartitionTool extends JFrame implements Tool {
 		}
 
 		// prevent repaint problem when reloading CSV
-		EventQueue.invokeLater( () -> fileManager.loadDefaultCSV() );
+		EventQueue.invokeLater(() -> fileManager.loadDefaultCSV());
 
 		frame.setVisible(true);
 	}

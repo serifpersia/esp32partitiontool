@@ -5,16 +5,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
 import java.lang.Process;
-import java.lang.Runtime;
-
-
-
 
 public class FileManager {
 
@@ -27,7 +19,7 @@ public class FileManager {
 	public FileManager(UI ui, AppSettings settings) {
 		this.ui = ui;
 		this.settings = settings;
-		ui.setAppSettings( this, settings );
+		ui.setAppSettings(this, settings);
 	}
 
 	public void setUIController(UIController controller) {
@@ -35,16 +27,16 @@ public class FileManager {
 	}
 
 	public void emitMessage(String msg) {
-		if( settings.hasFSPanel ) {
-			ui.fsPanel.emitMessage( msg, false );
+		if (settings.hasFSPanel) {
+			ui.fsPanel.emitMessage(msg, false);
 		} else {
 			System.out.println(msg);
 		}
 	}
 
 	public void emitError(String msg) {
-		if( settings.hasFSPanel ) {
-			ui.fsPanel.emitMessage( msg, true );
+		if (settings.hasFSPanel) {
+			ui.fsPanel.emitMessage(msg, true);
 		} else {
 			System.err.println(msg);
 		}
@@ -100,7 +92,8 @@ public class FileManager {
 		String directory;
 
 		if (fileName == null) { // show a dialog
-			FileDialog filedialog = new FileDialog(ui.getFrame(), l10n.getString("importCsv.dialogTitle"), FileDialog.LOAD);
+			FileDialog filedialog = new FileDialog(ui.getFrame(), l10n.getString("importCsv.dialogTitle"),
+					FileDialog.LOAD);
 			FilenameFilter csvFilter = new FilenameFilter() {
 				@Override
 				public boolean accept(File dir, String name) {
@@ -110,8 +103,8 @@ public class FileManager {
 			filedialog.setFilenameFilter(csvFilter);
 
 			if (settings.get("csvDir.path") != null) {
-				System.out.println("dialog open at last CSV Dir: " + settings.get("csvDir.path") );
-				filedialog.setDirectory( settings.get("csvDir.path") );
+				System.out.println("dialog open at last CSV Dir: " + settings.get("csvDir.path"));
+				filedialog.setDirectory(settings.get("csvDir.path"));
 			}
 			filedialog.setFile("*.csv");
 			filedialog.setAlwaysOnTop(true);
@@ -120,8 +113,9 @@ public class FileManager {
 			directory = filedialog.getDirectory();
 			if (directory == null || directory.isEmpty())
 				return;
-			//settings.set("csvDir.path", directory );
-			//System.out.println("dialog returned CSV Dir: " + settings.get("csvDir.path") );
+			// settings.set("csvDir.path", directory );
+			// System.out.println("dialog returned CSV Dir: " + settings.get("csvDir.path")
+			// );
 			fileName = filedialog.getFile();
 			filedialog.dispose();
 			if (fileName == null || fileName.isEmpty())
@@ -136,8 +130,8 @@ public class FileManager {
 
 		try (BufferedReader reader = new BufferedReader(new FileReader(readerFile))) {
 			processCSV(reader);
-			settings.set("csvFile.path", directory + "/" + basename(fileName) );
-			ui.updatePartitionLabel( fileName );
+			settings.set("csvFile.path", directory + "/" + basename(fileName));
+			ui.updatePartitionLabel(fileName);
 
 		} catch (IOException e) {
 			emitError("Error reading CSV file: " + e.getMessage());
@@ -163,7 +157,7 @@ public class FileManager {
 
 		String flashSizeString = String.valueOf(ui.flashSizeMB);
 		ui.getFlashSize().setSelectedItem(flashSizeString);
-		if( settings.hasFSPanel ) {
+		if (settings.hasFSPanel) {
 			ui.fsPanel.updatePartitionFlashTypeLabel();
 		}
 	}
@@ -262,11 +256,11 @@ public class FileManager {
 		}
 	}
 
-	public boolean saveCSV( File file ) {
+	public boolean saveCSV(File file) {
 		calculateCSV();
 
-		if( file == null ) {
-			file = new File( settings.get("sketchDir.path"), "/partitions.csv" );
+		if (file == null) {
+			file = new File(settings.get("sketchDir.path"), "/partitions.csv");
 		}
 
 		try {
@@ -275,7 +269,7 @@ public class FileManager {
 				writer.write(partitionData + "\n");
 			}
 			writer.close();
-			//System.out.println("partitions.csv written at: " + csvFile );
+			// System.out.println("partitions.csv written at: " + csvFile );
 			return true;
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -286,9 +280,10 @@ public class FileManager {
 	public boolean exportCSV() {
 		String sketchDir = settings.get("sketchDir.path");
 
-		if( sketchDir == null ) {
-			sketchDir = new File(FileManager.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
-			System.out.println("Forced sketchDir to " + sketchDir );
+		if (sketchDir == null) {
+			sketchDir = new File(FileManager.class.getProtectionDomain().getCodeSource().getLocation().getPath())
+					.getParent();
+			System.out.println("Forced sketchDir to " + sketchDir);
 		}
 
 		FilenameFilter csvFilter = new FilenameFilter() {
@@ -299,7 +294,7 @@ public class FileManager {
 		};
 
 		String csvName = ui.getPartitionLabel();
-		if( !csvName.endsWith(".csv")) {
+		if (!csvName.endsWith(".csv")) {
 			csvName = "partitions.csv";
 		}
 
@@ -319,31 +314,32 @@ public class FileManager {
 
 		filedialog.dispose();
 
-		File csvFile = new File( csvPath );
+		File csvFile = new File(csvPath);
 
-		boolean success = saveCSV( csvFile );
-		if( success ) {
-			//settings.set("csvFile.path", csvFile.toString() );
-			//settings.set("csvDir.path", csvFile.getParent() );
-			System.out.println("Saved file as " + csvPath );
+		boolean success = saveCSV(csvFile);
+		if (success) {
+			// settings.set("csvFile.path", csvFile.toString() );
+			// settings.set("csvDir.path", csvFile.getParent() );
+			System.out.println("Saved file as " + csvPath);
 			return true;
 		}
 
-		emitError("Failed to save file as " + csvPath );
+		emitError("Failed to save file as " + csvPath);
 
 		return false;
 	}
 
 	// called internally either by createMergedBin() or uploadSPIFFS()
-	public void createSPIFFS( AppSettings.EventCallback callbacks ) {
-		if( ! settings.hasFSPanel ) return;
+	public void createSPIFFS(AppSettings.EventCallback callbacks) {
+		if (!settings.hasFSPanel)
+			return;
 
 		String buildPath = settings.get("build.path");
 		String sketchDir = settings.get("sketchDir.path");
 		String sketchName = settings.get("sketch.name");
 
 		// TODO: check if folder exists, prompt user to compile from the Arduino IDE
-		if( buildPath == null || sketchDir == null || sketchName == null ) {
+		if (buildPath == null || sketchDir == null || sketchName == null) {
 			callbacks.onFail();
 			return;
 		}
@@ -366,23 +362,20 @@ public class FileManager {
 		String csvFilePath = buildPath + "/partitions.csv";
 
 		if (Files.notExists(Paths.get(csvFilePath))) {
-			// TODO: prompt user to hit the "Export CSV" in the applet, and "compile" button in Arduino IDE
-			Runnable onSuccess = () -> createSPIFFS( callbacks );
+			// TODO: prompt user to hit the "Export CSV" in the applet, and "compile" button
+			// in Arduino IDE
+			Runnable onSuccess = () -> createSPIFFS(callbacks);
 			Runnable onFail = () -> {
 				emitError("Build failed, check Arduino console for logs");
 				callbacks.onFail();
 			};
-			final AppSettings.EventCallback buildCallbacks = new AppSettings.EventCallback(
-				callbacks.onBefore,
-				callbacks.onAfter,
-				onSuccess,
-				onFail
-			);
-			settings.build( ui.fsPanel.getProgressBar(), buildCallbacks);
+			final AppSettings.EventCallback buildCallbacks = new AppSettings.EventCallback(callbacks.onBefore,
+					callbacks.onAfter, onSuccess, onFail);
+			settings.build(ui.fsPanel.getProgressBar(), buildCallbacks);
 			return;
 		}
 
-		settings.set("spiffs.addr", null );
+		settings.set("spiffs.addr", null);
 
 		// Read the partitions.csv file
 		try (BufferedReader partitionsReader = new BufferedReader(new FileReader(csvFilePath))) {
@@ -396,7 +389,7 @@ public class FileManager {
 						String pSize = partitionsData[4].trim(); // Size value
 						spiStart = Long.parseLong(pStart.substring(2), 16); // Convert hex to int
 						spiSize = Long.parseLong(pSize.substring(2), 16); // Convert hex to int
-						settings.set("spiffs.addr", pStart );
+						settings.set("spiffs.addr", pStart);
 						System.out.println("settings spiffs.addr at offset " + pStart);
 					}
 				}
@@ -416,7 +409,7 @@ public class FileManager {
 
 		int fileCount = 0;
 
-		File dataFolder = new File( sketchDir + "/data");
+		File dataFolder = new File(sketchDir + "/data");
 
 		if (!dataFolder.exists()) {
 			dataFolder.mkdirs();
@@ -472,7 +465,7 @@ public class FileManager {
 
 		boolean success = Files.exists(Paths.get(imagePath));
 
-		if( success ) {
+		if (success) {
 			callbacks.onSuccess();
 		} else {
 			callbacks.onFail();
@@ -482,7 +475,8 @@ public class FileManager {
 	}
 
 	public void uploadSPIFFS(final AppSettings.EventCallback callbacks) {
-		if( !settings.hasFSPanel ) return;
+		if (!settings.hasFSPanel)
+			return;
 
 		String fsName = ui.fsPanel.getPartitionFlashTypes().getSelectedItem().toString();
 		String espotaPath = settings.get("espota.path");
@@ -494,31 +488,26 @@ public class FileManager {
 		String flashFreq = settings.get("flashFreq");
 		String mcu = settings.get("build.mcu");
 		String buildPath = settings.get("build.path");
-		String sketchDir = settings.get("sketchDir.path");
 		String sketchName = settings.get("sketch.name");
 		String spiStart = settings.get("spiffs.addr");
 
 		String imagePath = buildPath + "/" + sketchName + ".spiffs.bin";
-		boolean isNetwork = serialPort!=null && (serialPort.split("\\.").length == 4);
+		boolean isNetwork = serialPort != null && (serialPort.split("\\.").length == 4);
 
-		if( Files.notExists(Paths.get(imagePath)) ) {
+		if (Files.notExists(Paths.get(imagePath))) {
 
 			Runnable onSuccess = () -> uploadSPIFFS(callbacks);
 			Runnable onFail = () -> {
 				emitError("spiffs.bin creation failed, check Arduino console for logs");
 				callbacks.onFail();
 			};
-			final AppSettings.EventCallback createSPIFFSCallbacks = new AppSettings.EventCallback(
-				callbacks.onBefore,
-				callbacks.onAfter,
-				onSuccess,
-				onFail
-			);
+			final AppSettings.EventCallback createSPIFFSCallbacks = new AppSettings.EventCallback(callbacks.onBefore,
+					callbacks.onAfter, onSuccess, onFail);
 			createSPIFFS(createSPIFFSCallbacks);
 			return;
 		}
 
-		if( spiStart == null ) {
+		if (spiStart == null) {
 			emitError("This no spiffs partition offset detected in csv data :(");
 			callbacks.onFail();
 			return;
@@ -529,7 +518,7 @@ public class FileManager {
 		System.out.println("Uploading " + fsName + "...");
 		System.out.println("[" + fsName + "] upload : " + imagePath);
 
-		if (isNetwork == false && serialPort == null ) {
+		if (isNetwork == false && serialPort == null) {
 			emitError("serialPort not found, try to close and reopen the applet");
 			callbacks.onFail();
 			return;
@@ -549,7 +538,8 @@ public class FileManager {
 			System.out.println();
 
 			if (espotaPath.endsWith(".py"))
-				listenOnProcess(new String[] { pythonCmd, espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", imagePath });
+				listenOnProcess(
+						new String[] { pythonCmd, espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", imagePath });
 			else
 				listenOnProcess(new String[] { espotaPath, "-i", serialPort, "-p", "3232", "-s", "-f", imagePath });
 		} else {
@@ -581,8 +571,9 @@ public class FileManager {
 		return;
 	}
 
-	public void createMergedBin( final AppSettings.EventCallback callbacks ) {
-		if( ! settings.hasFSPanel ) return;
+	public void createMergedBin(final AppSettings.EventCallback callbacks) {
+		if (!settings.hasFSPanel)
+			return;
 
 		String buildPath = settings.get("build.path");
 
@@ -590,8 +581,6 @@ public class FileManager {
 			emitError("Please compile the sketch in Arduino IDE first!");
 			return;
 		}
-
-		String fsName = ui.fsPanel.getPartitionFlashTypes().getSelectedItem().toString();
 
 		String platformPath = settings.get("platform.path");
 		String sketchName = settings.get("sketch.name");
@@ -616,16 +605,12 @@ public class FileManager {
 
 		if (Files.notExists(Paths.get(spiffsImage))) {
 			Runnable onSuccess = () -> createMergedBin(callbacks);
-			Runnable onFail = () ->  {
+			Runnable onFail = () -> {
 				emitError("spiffs.bin creation failed, check Arduino console for logs");
 				callbacks.onFail();
 			};
-			final AppSettings.EventCallback createSPIFFSCallbacks = new AppSettings.EventCallback(
-				callbacks.onBefore,
-				callbacks.onAfter,
-				onSuccess,
-				onFail
-			);
+			final AppSettings.EventCallback createSPIFFSCallbacks = new AppSettings.EventCallback(callbacks.onBefore,
+					callbacks.onAfter, onSuccess, onFail);
 			createSPIFFS(createSPIFFSCallbacks);
 			return;
 		}
@@ -633,9 +618,10 @@ public class FileManager {
 		// check that all necessary files are in place
 		String checkFiles[] = { bootloaderImage, partitionsImage, bootImage, appImage, spiffsImage };
 		for (int i = 0; i < checkFiles.length; i++) {
-			if ( checkFiles[i] == null || Files.notExists(Paths.get(checkFiles[i]))) {
-				System.out.printf("Missing file #%d: %s. Forgot to compile the sketch?", i, checkFiles[i] );
-				//emitError("Missing file: " + checkFiles[i] + ". Forgot to compile the sketch?");
+			if (checkFiles[i] == null || Files.notExists(Paths.get(checkFiles[i]))) {
+				System.out.printf("Missing file #%d: %s. Forgot to compile the sketch?", i, checkFiles[i]);
+				// emitError("Missing file: " + checkFiles[i] + ". Forgot to compile the
+				// sketch?");
 				callbacks.onFail();
 				return;
 			}
@@ -671,7 +657,7 @@ public class FileManager {
 
 		boolean success = ret != -1;
 
-		if( success ) {
+		if (success) {
 			callbacks.onSuccess();
 		} else {
 			callbacks.onFail();
@@ -681,8 +667,6 @@ public class FileManager {
 
 	public void uploadMergedBin(final AppSettings.EventCallback callbacks) {
 		String buildPath = settings.get("build.path");
-
-		String fsName = ui.fsPanel.getPartitionFlashTypes().getSelectedItem().toString();
 
 		String esptoolPath = settings.get("esptool.path");
 		String espotaPath = settings.get("espota.path");
@@ -695,18 +679,14 @@ public class FileManager {
 		String mcu = settings.get("build.mcu");
 		String mergedImage = buildPath + "/" + sketchName + ".merged.bin";
 
-		if( Files.notExists( Paths.get(mergedImage) ) ) {
+		if (Files.notExists(Paths.get(mergedImage))) {
 			Runnable onSuccess = () -> uploadMergedBin(callbacks);
 			Runnable onFail = () -> {
 				emitError("Merged bin creation failed, check Arduino console for logs");
 				callbacks.onFail();
 			};
-			final AppSettings.EventCallback createMergedBinCallbacks = new AppSettings.EventCallback(
-				callbacks.onBefore,
-				callbacks.onAfter,
-				onSuccess,
-				onFail
-			);
+			final AppSettings.EventCallback createMergedBinCallbacks = new AppSettings.EventCallback(callbacks.onBefore,
+					callbacks.onAfter, onSuccess, onFail);
 			createMergedBin(createMergedBinCallbacks);
 			return;
 		}
@@ -752,7 +732,7 @@ public class FileManager {
 			callbacks.onFail();
 			emitError("Can't upload merged binary on OTA ports, use Serial COM ports!");
 			return;
-			
+
 		} else {
 
 			System.out.println("[Merged binary] mcu: " + mcu);
@@ -773,7 +753,7 @@ public class FileManager {
 
 		}
 
-		if( cmdres != -1 ) {
+		if (cmdres != -1) {
 			callbacks.onSuccess();
 		} else {
 			callbacks.onFail();
@@ -783,7 +763,6 @@ public class FileManager {
 
 		return;
 	}
-
 
 	private int listenOnProcess(String[] arguments) {
 		System.out.println("Running command:\n" + String.join(" ", arguments));
@@ -802,14 +781,14 @@ public class FileManager {
 						StringBuilder outputBuilder = new StringBuilder();
 						while ((c = reader.read()) != -1) {
 							outputBuilder.append((char) c);
-							if( c == '\n' ) {
-								emitMessage( outputBuilder.toString().trim() );
+							if (c == '\n') {
+								emitMessage(outputBuilder.toString().trim());
 								outputBuilder.setLength(0);
 							}
 						}
 						reader.close();
-						if( outputBuilder.length() > 0 ) {
-							emitMessage( outputBuilder.toString().trim() );
+						if (outputBuilder.length() > 0) {
+							emitMessage(outputBuilder.toString().trim());
 							outputBuilder.setLength(0);
 						}
 
@@ -817,19 +796,19 @@ public class FileManager {
 						reader = new InputStreamReader(p.getErrorStream());
 						while ((c = reader.read()) != -1) {
 							outputBuilder.append((char) c);
-							if( c == '\n' ) {
-								emitError( outputBuilder.toString().trim() );
+							if (c == '\n') {
+								emitError(outputBuilder.toString().trim());
 								outputBuilder.setLength(0);
 							}
 						}
 						reader.close();
-						if( outputBuilder.length() > 0 ) {
-							emitError( outputBuilder.toString().trim() );
+						if (outputBuilder.length() > 0) {
+							emitError(outputBuilder.toString().trim());
 							outputBuilder.setLength(0);
 						}
 
 						// // Set the text of ui.console_logField with the output
-						//emitMessage( outputBuilder.toString() );
+						// emitMessage( outputBuilder.toString() );
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

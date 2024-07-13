@@ -1,15 +1,11 @@
 package com.serifpersia.esp32partitiontool;
 
-import java.util.ArrayList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
-import javax.swing.event.*;
-
 
 @SuppressWarnings("serial")
-
 
 public class FSPanel extends JPanel {
 
@@ -48,8 +44,9 @@ public class FSPanel extends JPanel {
 	}
 
 	public void updatePartitionFlashTypeLabel() {
-		FSGenLabel.setText( getPartitionFlashTypes().getSelectedItem().toString() );
-		FSUploadButton.setText( l10n.getString("fsPanel.uploadButtonLabel") +" " + getPartitionFlashTypes().getSelectedItem().toString() );
+		FSGenLabel.setText(getPartitionFlashTypes().getSelectedItem().toString());
+		FSUploadButton.setText(l10n.getString("fsPanel.uploadButtonLabel") + " "
+				+ getPartitionFlashTypes().getSelectedItem().toString());
 	}
 
 	public JComboBox<?> getPartitionFlashTypes() {
@@ -80,7 +77,7 @@ public class FSPanel extends JPanel {
 		return consoleLogPanel;
 	}
 
-	public JPanel wrapButton( JButton button ) {
+	public JPanel wrapButton(JButton button) {
 		JPanel wrapper = new UI.JTransparentPanel();
 		wrapper.setLayout(new BorderLayout(0, 0));
 		wrapper.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
@@ -93,14 +90,14 @@ public class FSPanel extends JPanel {
 		FSInnerLayout = new GridLayout(0, 2);
 		FSGenLabel = new JLabel();
 		mergeBoxLabel = new JLabel(l10n.getString("fsPanel.mergeBoxLabel"));
-		FSComboLabel = new JLabel(l10n.getString("fsPanel.comboLabel")+":");
-		blockSizeLabel = new JLabel(l10n.getString("fsPanel.blockSizeLabel")+":");
-		FSGenInnerPanel = new UI.JTransparentPanel( /*Color.MAGENTA*/ );
+		FSComboLabel = new JLabel(l10n.getString("fsPanel.comboLabel") + ":");
+		blockSizeLabel = new JLabel(l10n.getString("fsPanel.blockSizeLabel") + ":");
+		FSGenInnerPanel = new UI.JTransparentPanel( /* Color.MAGENTA */ );
 		FSInnerPanel = new UI.JTransparentPanel();
 		FSGenPanel = new UI.JTransparentPanel();
 		FSMergeFlashPanel = new UI.JTransparentPanel();
-		FSUploadPanel = new UI.JTransparentPanel( /*Color.CYAN*/ );
-		mergeBoxPanel = new UI.JTransparentPanel( /*Color.ORANGE*/ );
+		FSUploadPanel = new UI.JTransparentPanel( /* Color.CYAN */ );
+		mergeBoxPanel = new UI.JTransparentPanel( /* Color.ORANGE */ );
 		mergeButtonsPanel = new UI.JTransparentPanel();
 		mergeButtonsWrapper = new UI.JTransparentPanel();
 		FSTypesComboBox = new JComboBox<>(new String[] { "SPIFFS", "LittleFS", "FatFS" });
@@ -112,7 +109,7 @@ public class FSPanel extends JPanel {
 		consoleLogPanel = new JPanel();
 		consoleScrollPanel = new JScrollPane(consoleLogPanel);
 		progressBar = new JProgressBar(0, 100);
-		buildWidgetsPanel = new JPanel(){
+		buildWidgetsPanel = new JPanel() {
 			@Override
 			public boolean isOptimizedDrawingEnabled() {
 				return false;
@@ -122,8 +119,8 @@ public class FSPanel extends JPanel {
 
 	public void addComponents() {
 		add(FSGenPanel);
-		buildWidgetsPanel.add( cleanLogsButton );
-		buildWidgetsPanel.add( progressBar );
+		buildWidgetsPanel.add(cleanLogsButton);
+		buildWidgetsPanel.add(progressBar);
 		mergeButtonsWrapper.add(wrapButton(mergeBinButton));
 		mergeButtonsWrapper.add(wrapButton(uploadMergedBinButton));
 		mergeButtonsWrapper.add(buildWidgetsPanel);
@@ -153,7 +150,7 @@ public class FSPanel extends JPanel {
 		consoleGBC.gridwidth = 1;
 		consoleGBC.weightx = 1.0;
 		consoleGBC.weighty = 1.0;
-		consoleGBC.anchor = GridBagConstraints.NORTH;//GridBagConstraints.FIRST_LINE_START;
+		consoleGBC.anchor = GridBagConstraints.NORTH;// GridBagConstraints.FIRST_LINE_START;
 		consoleGBC.fill = GridBagConstraints.HORIZONTAL;
 
 		FSGenPanel.setLayout(new BorderLayout(0, 0));
@@ -202,7 +199,7 @@ public class FSPanel extends JPanel {
 
 		buildWidgetsPanel.setLayout(new OverlayLayout(buildWidgetsPanel));
 		buildWidgetsPanel.setOpaque(false);
-		buildWidgetsPanel.setMinimumSize( new Dimension(0, 16) );
+		buildWidgetsPanel.setMinimumSize(new Dimension(0, 16));
 		buildWidgetsPanel.setBorder(BorderFactory.createEmptyBorder(0, 5, 2, 5));
 
 		consoleLogPanel.setLayout(new GridBagLayout());
@@ -212,7 +209,7 @@ public class FSPanel extends JPanel {
 		consoleLogPanel.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
 		consoleLogPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
 
-		//consoleScrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		// consoleScrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		consoleScrollPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		consoleScrollPanel.getVerticalScrollBar().setUnitIncrement(100);
 
@@ -226,26 +223,27 @@ public class FSPanel extends JPanel {
 		consoleLogPanel.repaint();
 	}
 
-	public void emitMessage(String msg, boolean is_error ) {
-			msg = msg.trim();
-			if( msg.isEmpty() ) return;
-			JTextArea msgArea = new JTextArea(0,0);
-			msgArea.setForeground(is_error ? Color.RED : Color.WHITE);
-			msgArea.setBackground(Color.BLACK);
-			msgArea.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
-			msgArea.setEditable(false); // Make the text area read-only
-			msgArea.setLineWrap(true); // Enable line wrapping
-			msgArea.setWrapStyleWord(true); // Wrap at word boundaries
-			msgArea.setText( msg );
-			msgArea.setAlignmentY(JPanel.TOP_ALIGNMENT);
-			consoleLogPanel.add( msgArea, consoleGBC );
-			consoleLogPanel.revalidate();
-			consoleLogPanel.repaint();
-			msgArea.setCaretPosition(msgArea.getDocument().getLength());
-			cleanLogsButton.setVisible( true );
+	public void emitMessage(String msg, boolean is_error) {
+		msg = msg.trim();
+		if (msg.isEmpty())
+			return;
+		JTextArea msgArea = new JTextArea(0, 0);
+		msgArea.setForeground(is_error ? Color.RED : Color.WHITE);
+		msgArea.setBackground(Color.BLACK);
+		msgArea.setFont(UI.monotypeFont.deriveFont(Font.PLAIN, 13));
+		msgArea.setEditable(false); // Make the text area read-only
+		msgArea.setLineWrap(true); // Enable line wrapping
+		msgArea.setWrapStyleWord(true); // Wrap at word boundaries
+		msgArea.setText(msg);
+		msgArea.setAlignmentY(JPanel.TOP_ALIGNMENT);
+		consoleLogPanel.add(msgArea, consoleGBC);
+		consoleLogPanel.revalidate();
+		consoleLogPanel.repaint();
+		msgArea.setCaretPosition(msgArea.getDocument().getLength());
+		cleanLogsButton.setVisible(true);
 	}
 
-	public void attachListeners( UI ui, FileManager fileManager ) {
+	public void attachListeners(UI ui, FileManager fileManager) {
 		ui.getFlashSize().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				int spiffs_setBlockSize = 0;
@@ -281,11 +279,12 @@ public class FSPanel extends JPanel {
 			cleanLogsButton.setVisible(true);
 		};
 
-		final AppSettings.EventCallback DefaultEventCallbacks = new AppSettings.EventCallback(onBefore, onAfter, null, null);
+		final AppSettings.EventCallback DefaultEventCallbacks = new AppSettings.EventCallback(onBefore, onAfter, null,
+				null);
 
-		final Runnable onUploadSPIFFS = () -> fileManager.uploadSPIFFS( DefaultEventCallbacks );
-		final Runnable onCreateMergedBin = () -> fileManager.createMergedBin( DefaultEventCallbacks );
-		final Runnable onUploadMergedBin = () -> fileManager.uploadMergedBin( DefaultEventCallbacks );
+		final Runnable onUploadSPIFFS = () -> fileManager.uploadSPIFFS(DefaultEventCallbacks);
+		final Runnable onCreateMergedBin = () -> fileManager.createMergedBin(DefaultEventCallbacks);
+		final Runnable onUploadMergedBin = () -> fileManager.uploadMergedBin(DefaultEventCallbacks);
 
 		getUploadFSBtn().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {

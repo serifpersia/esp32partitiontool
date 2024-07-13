@@ -1,6 +1,5 @@
 package com.arduino;
 
-
 import processing.app.Editor;
 import processing.app.Sketch;
 import processing.app.PreferencesData;
@@ -17,22 +16,10 @@ import java.io.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import cc.arduino.Compiler;
 import cc.arduino.CompilerProgressListener;
-import cc.arduino.utils.Progress;
-
-import processing.app.helpers.PreferencesMapException;
-import processing.app.debug.RunnerException;
-
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-
-
 import com.serifpersia.esp32partitiontool.AppSettings;
-import com.serifpersia.esp32partitiontool.FSPanel;
 
 public class AppSettingsArduino extends AppSettings {
 
@@ -60,9 +47,9 @@ public class AppSettingsArduino extends AppSettings {
 
 		load();
 
-		if( debug_ui ) {
+		if (debug_ui) {
 			prefs.forEach((key, value) -> {
-				System.out.printf("%-24s : %s\n", key, value );
+				System.out.printf("%-24s : %s\n", key, value);
 			});
 		}
 	}
@@ -72,7 +59,7 @@ public class AppSettingsArduino extends AppSettings {
 		try {
 			deleteCompiledFiles();
 		} catch (IOException e) {
-			System.err.println( e.getMessage() );
+			System.err.println(e.getMessage());
 		}
 	}
 
@@ -82,7 +69,7 @@ public class AppSettingsArduino extends AppSettings {
 
 		final Runnable buildRunner = () -> {
 			callbacks.onBefore();
-			if( build( progressListener ) ) {
+			if (build(progressListener)) {
 				callbacks.onSuccess();
 			} else {
 				callbacks.onFail();
@@ -93,25 +80,22 @@ public class AppSettingsArduino extends AppSettings {
 		new Thread(buildRunner).start();
 	}
 
-
 	// otherwise, if the Arduino IDE window is resized with the message label
 	// set to blank, it's preferredSize() will be fukered
-	private static final String EMPTY =
-		"                                                                     " +
-		"                                                                     " +
-		"                                                                     ";
+	private static final String EMPTY = "                                                                     "
+			+ "                                                                     "
+			+ "                                                                     ";
 
 	@Override
 	public void load() {
 		this.platformSupported = PreferencesData.get("target_platform").contentEquals("esp32");
 
-		if( !this.platformSupported ) {
+		if (!this.platformSupported) {
 			editor.statusError(" Error: unsupported platform!");
 			return;
 		}
 
 		this.hasFSPanel = true;
-
 
 		editor.statusNotice(EMPTY);
 
@@ -119,41 +103,38 @@ public class AppSettingsArduino extends AppSettings {
 		toolsPathBase = BaseNoGui.getToolsPath();
 		platform = BaseNoGui.getTargetPlatform();
 
-		set("sketch.name", editor.getSketch().getName() );
-		set("sketch.path", editor.getSketch().getMainFilePath() );
-		set("sketchDir.path", editor.getSketch().getFolder().getAbsolutePath() );
-		set("platform.path", platform.getFolder().toString() );
-		set("build.partitions", BaseNoGui.getBoardPreferences().get("build.partitions") );
-		set("build.custom_partitions", BaseNoGui.getBoardPreferences().get("build.custom_partitions") );
-		set("build.variant", BaseNoGui.getBoardPreferences().get("build.variant") );
-		set("variant.path", get("platform.path") + "/variants/" + get("build.variant") );
-		set("build.path", getBuildFolderPath() );
-		set("bootloader.path", getBootloaderImagePath() );
-		set("upload.speed", BaseNoGui.getBoardPreferences().get("upload.speed") );
-		set("serial.port", PreferencesData.get("serial.port") );
-		set("build.bootloader_addr", BaseNoGui.getBoardPreferences().get("build.bootloader_addr") );
-		set("build.mcu", BaseNoGui.getBoardPreferences().get("build.mcu") );
-		set("flashMode", BaseNoGui.getBoardPreferences().get("build.flash_mode") );
-		set("flashFreq", BaseNoGui.getBoardPreferences().get("build.flash_freq") );
+		set("sketch.name", editor.getSketch().getName());
+		set("sketch.path", editor.getSketch().getMainFilePath());
+		set("sketchDir.path", editor.getSketch().getFolder().getAbsolutePath());
+		set("platform.path", platform.getFolder().toString());
+		set("build.partitions", BaseNoGui.getBoardPreferences().get("build.partitions"));
+		set("build.custom_partitions", BaseNoGui.getBoardPreferences().get("build.custom_partitions"));
+		set("build.variant", BaseNoGui.getBoardPreferences().get("build.variant"));
+		set("variant.path", get("platform.path") + "/variants/" + get("build.variant"));
+		set("build.path", getBuildFolderPath());
+		set("bootloader.path", getBootloaderImagePath());
+		set("upload.speed", BaseNoGui.getBoardPreferences().get("upload.speed"));
+		set("serial.port", PreferencesData.get("serial.port"));
+		set("build.bootloader_addr", BaseNoGui.getBoardPreferences().get("build.bootloader_addr"));
+		set("build.mcu", BaseNoGui.getBoardPreferences().get("build.mcu"));
+		set("flashMode", BaseNoGui.getBoardPreferences().get("build.flash_mode"));
+		set("flashFreq", BaseNoGui.getBoardPreferences().get("build.flash_freq"));
 		set("pythonCmd", isWindows ? "python3.exe" : "python3");
-		set("espotaCmd", espotaCmd );
-		set("esptoolCmd", esptoolCmd );
-		set("genEsp32PartCmd", genEsp32PartCmd );
+		set("espotaCmd", espotaCmd);
+		set("esptoolCmd", esptoolCmd);
+		set("genEsp32PartCmd", genEsp32PartCmd);
 
-		String espToolSearchPaths[] = {
-				PreferencesData.get("runtime.tools.esptool_py.path"), // preferences.txt
-				new File( get("platform.path"), "/tools").getAbsolutePath(),
-				get("platform.path") + "/tools/esptool_py", defaultSketchbookFolder + "/tools",
-				defaultSketchbookFolder + "/tools/esptool_py", toolsPathBase, toolsPathBase + "/tools/esptool_py" };
+		String espToolSearchPaths[] = { PreferencesData.get("runtime.tools.esptool_py.path"), // preferences.txt
+				new File(get("platform.path"), "/tools").getAbsolutePath(), get("platform.path") + "/tools/esptool_py",
+				defaultSketchbookFolder + "/tools", defaultSketchbookFolder + "/tools/esptool_py", toolsPathBase,
+				toolsPathBase + "/tools/esptool_py" };
 
 		if (!findFile(esptoolCmd, espToolSearchPaths, "esptool")) {
 			editor.statusError(" Error: esptool not found!");
 			this.hasFSPanel = false;
 		}
 
-		// search for esptool.[py|exe] in all the following folders
-		String otaToolSearchPaths[] = { //getProperty("espota.path"), // user.properties (always first)
-				get("platform.path") + "/tools", defaultSketchbookFolder + "/tools", toolsPathBase, };
+		get("platform.path");
 
 		if (!findFile(espotaCmd, espToolSearchPaths, "espota")) {
 			editor.statusError(" Error: espota not found!");
@@ -165,7 +146,7 @@ public class AppSettingsArduino extends AppSettings {
 			this.hasFSPanel = false;
 		}
 
-		String[] fsNames = {"SPIFFS", "LittleFS", "FatFS"};
+		String[] fsNames = { "SPIFFS", "LittleFS", "FatFS" };
 		int size = fsNames.length;
 
 		for (int i = 0; i < size; i++) {
@@ -186,7 +167,7 @@ public class AppSettingsArduino extends AppSettings {
 			findFile(toolExeName, searchPaths, toolBinName);
 		}
 
-		set("csvDir.path", get("sketchDir.path") );
+		set("csvDir.path", get("sketchDir.path"));
 
 		// check if the board uses a custom partition, could be stored in variants or
 		// tools folder
@@ -205,11 +186,10 @@ public class AppSettingsArduino extends AppSettings {
 
 		for (int i = 0; i < searchPaths.length; i++) {
 			if (Files.exists(Paths.get(searchPaths[i]))) {
-				set("csvFile.path", searchPaths[i] );
+				set("csvFile.path", searchPaths[i]);
 				break;
 			}
 		}
-
 
 	}
 
@@ -244,8 +224,8 @@ public class AppSettingsArduino extends AppSettings {
 		String full_path = findFile(fileName, searchPaths);
 		boolean found = full_path != null;
 		if (found) { // save found path in properties file
-			//if (debug_ui)
-			//	System.out.println("[" + propertyName + "] => " + full_path);
+			// if (debug_ui)
+			// System.out.println("[" + propertyName + "] => " + full_path);
 			set(propertyName + ".path", full_path);
 		} else {
 			if (debug_ui)
@@ -301,23 +281,23 @@ public class AppSettingsArduino extends AppSettings {
 			progressBar.setValue(0);
 			progressBar.setIndeterminate(true);
 		}
+
 		public void progress(int value) {
 			progressBar.setIndeterminate(false);
-			progressBar.setValue( value );
+			progressBar.setValue(value);
 			progressBar.repaint();
 		}
 	}
 
-	private boolean build(CompileProgressListener progressListener ) {
+	private boolean build(CompileProgressListener progressListener) {
 		try {
-			boolean deleteTemp = false;
 			File pathToSketch = editor.getSketch().getPrimaryFile().getFile();
 			try {
 				boolean save = true;
-				String ret = new Compiler(pathToSketch, editor.getSketch()).build(progressListener, save);
+				new Compiler(pathToSketch, editor.getSketch()).build(progressListener, save);
 			} finally {
 			}
-		} catch( Exception e ) {
+		} catch (Exception e) {
 			System.err.println(e.getMessage());
 			return false;
 		}
@@ -326,19 +306,18 @@ public class AppSettingsArduino extends AppSettings {
 
 	private boolean deleteCompiledFiles() throws IOException {
 		String buildFolderPath = getBuildFolderPath();
-		if( buildFolderPath == null ) return false;
-		Path tempBuildFolder = Paths.get( buildFolderPath );
-		List<File> tempFiles = Files.list(tempBuildFolder)
-			.map(Path::toFile)
-			.filter(File::isFile)
-			.collect(Collectors.toList());
+		if (buildFolderPath == null)
+			return false;
+		Path tempBuildFolder = Paths.get(buildFolderPath);
+		List<File> tempFiles = Files.list(tempBuildFolder).map(Path::toFile).filter(File::isFile)
+				.collect(Collectors.toList());
 
 		for (File tempFile : tempFiles) {
-			if( !tempFile.delete() ) {
-				System.err.println("Can't delete " + tempFile );
+			if (!tempFile.delete()) {
+				System.err.println("Can't delete " + tempFile);
 				return false;
 			}
-			System.out.println("Deleted " + tempFile );
+			System.out.println("Deleted " + tempFile);
 		}
 		return true;
 	}
