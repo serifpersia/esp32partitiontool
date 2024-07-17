@@ -1,4 +1,11 @@
 <div align="center">
+
+![logo-icon](https://github.com/user-attachments/assets/1463c312-1e81-4107-93be-0570c1b52532)
+    
+</div>
+
+
+<div align="center">
     <img src="https://img.shields.io/badge/ESP32-f8a631" height="50">
     <img src="https://img.shields.io/badge/Partition-bf457a" height="50">
     <img src="https://img.shields.io/badge/Tool-42b0f5" height="50">
