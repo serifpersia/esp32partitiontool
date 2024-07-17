@@ -150,6 +150,7 @@ public class UI extends JPanel {
 			frame.setSize(800, 567);
 		}
 		frame.setLocationRelativeTo(null);
+		frame.setIconImage(new ImageIcon(getClass().getResource("/logo-icon.png")).getImage());
 		fsPanel.setVisible(settings.hasFSPanel);
 	}
 
