@@ -32,10 +32,27 @@ This tool aims to simplify the process of creating custom partition schemes for 
 ## Download
  [![Release](https://img.shields.io/github/release/serifpersia/esp32partitiontool.svg?style=flat-square)](https://github.com/serifpersia/esp32partitiontool/releases)
 
-## Build Requirements
-To build the tool, you need JDK 8 installed. Select which version of the tool you want depending on the platform framework.
+# Build Instructions
 
-Note that anything newer will cause the Arduino IDE to crash since its only supporting java class files compiled with JDK 8 version of Java.
+## Build Requirements
+Ensure you have the following installed:
+- **Java JDK 8**: Required for compiling Java source files.
+- **Python 3.6+**: Required for running the build script.
+
+## Building the Tool
+
+1. **Clone the Repository**:
+   ```sh
+   git clone https://github.com/serifpersia/esp32partitiontool.git
+   cd esp32partitiontool
+## Run the Build Script
+
+- On **Unix-based systems** (Linux, macOS):
+  ```
+    python3 build_tool.py
+- On **Windows**:
+  ```
+    python build_tool.py
 
 
 ## Installation (Arduino IDE)
@@ -49,10 +66,9 @@ Note that anything newer will cause the Arduino IDE to crash since its only supp
 - Customize partition scheme.
 - Export the custom partitions CSV file to sketch directory.
 - Select Tools > Partition Scheme & select `Huge App (3MB APP/NO OTA/1MB SPIFFS)`*this will tell Arduino IDE to use our custom partitions.csv file that's located in sketch directory(export csv via the the tool first).
-- Compile the sketch.
-- Upload Sketch.
-- Use Upload SPIFFS to create and upload spiffs image
-- Use Merge binary & Upload to create and upload merged binary at 0x0 offset
+- Close and open the tool to automatically load csv located at the sketch directory or load csv manually with import csv button.
+- Configure Flash size and use the uploading buttons. Upload SPIFFS for filesystem spiffs binary, Upload Merge for uploading all binaries or Merge binary for just creating the merge binary file.
+* Merged binary can only be uploaded to ESP32 boards via serial ports, OTA uploading is not supported, spiffs upload is supported for uploading over OTA.
 
 ## Installation (Platformio)
 
