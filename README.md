@@ -46,6 +46,7 @@ Ensure you have the following installed:
    ```sh
    git clone https://github.com/serifpersia/esp32partitiontool.git
    cd esp32partitiontool
+   ```
 ## Run the Build Script
 
 - On **Unix-based systems** (Linux, macOS):
@@ -54,7 +55,7 @@ Ensure you have the following installed:
 - On **Windows**:
   ```
     python build_tool.py
-
+  ```
 
 ## Installation (Arduino IDE)
 - Download the tool from releases or build it yourself.
