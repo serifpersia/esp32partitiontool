@@ -330,7 +330,7 @@ public class FileManager {
 	}
 
 	// called internally either by createMergedBin() or uploadSPIFFS()
-	public void createSPIFFS(AppSettings.EventCallback callbacks) {
+	public void createSPIFFS(AppSettings.EventCallback callbacks, boolean fullBuild) {
 		if (!settings.hasFSPanel)
 			return;
 
@@ -338,8 +338,8 @@ public class FileManager {
 		String sketchDir = settings.get("sketchDir.path");
 		String sketchName = settings.get("sketch.name");
 
-		// TODO: check if folder exists, prompt user to compile from the Arduino IDE
 		if (buildPath == null || sketchDir == null || sketchName == null) {
+			emitError("Build path, sketch directory, or sketch name not set.");
 			callbacks.onFail();
 			return;
 		}
@@ -359,64 +359,75 @@ public class FileManager {
 			return;
 		}
 
-		String csvFilePath = buildPath + "/partitions.csv";
+		String buildCsvFilePath = buildPath + "/partitions.csv";
+		String sketchCsvFilePath = sketchDir + "/partitions.csv";
+		String csvFilePath = buildCsvFilePath;
 
-		if (Files.notExists(Paths.get(csvFilePath))) {
-			// TODO: prompt user to hit the "Export CSV" in the applet, and "compile" button
-			// in Arduino IDE
-			Runnable onSuccess = () -> createSPIFFS(callbacks);
-			Runnable onFail = () -> {
-				emitError("Build failed, check Arduino console for logs");
-				callbacks.onFail();
-			};
-			final AppSettings.EventCallback buildCallbacks = new AppSettings.EventCallback(callbacks.onBefore,
-					callbacks.onAfter, onSuccess, onFail);
-			settings.build(ui.fsPanel.getProgressBar(), buildCallbacks);
-			return;
+		// Check for CSV file existence with fallback
+		if (Files.notExists(Paths.get(buildCsvFilePath))) {
+			if (fullBuild) {
+				// Trigger full build if flag is true
+				Runnable onSuccess = () -> createSPIFFS(callbacks, fullBuild);
+				Runnable onFail = () -> {
+					emitError("Build failed, check Arduino console for logs");
+					callbacks.onFail();
+				};
+				final AppSettings.EventCallback buildCallbacks = new AppSettings.EventCallback(callbacks.onBefore,
+						callbacks.onAfter, onSuccess, onFail);
+				settings.build(ui.fsPanel.getProgressBar(), buildCallbacks);
+				return;
+			} else {
+				// Fallback to sketch directory CSV if fullBuild is false
+				if (Files.exists(Paths.get(sketchCsvFilePath))) {
+					csvFilePath = sketchCsvFilePath;
+					System.out.println("Using partitions.csv from sketch directory: " + sketchCsvFilePath);
+				} else {
+					emitError("partitions.csv not found in build or sketch directory and fullBuild is false");
+					callbacks.onFail();
+					return;
+				}
+			}
 		}
 
 		settings.set("spiffs.addr", null);
 
-		// Read the partitions.csv file
+		// Read the partitions.csv file (from either build or sketch directory)
 		try (BufferedReader partitionsReader = new BufferedReader(new FileReader(csvFilePath))) {
-			String partitionsLine = "";
+			String partitionsLine;
 			while ((partitionsLine = partitionsReader.readLine()) != null) {
 				if (partitionsLine.contains("spiffs") || partitionsLine.contains("littlefs")
 						|| partitionsLine.contains("ffat")) {
-					String[] partitionsData = partitionsLine.split(",\\s*"); // Split by comma with optional spaces
-					if (partitionsData.length >= 5) { // Ensure there are enough elements
-						String pStart = partitionsData[3].trim(); // Offset value
-						String pSize = partitionsData[4].trim(); // Size value
-						spiStart = Long.parseLong(pStart.substring(2), 16); // Convert hex to int
-						spiSize = Long.parseLong(pSize.substring(2), 16); // Convert hex to int
+					String[] partitionsData = partitionsLine.split(",\\s*");
+					if (partitionsData.length >= 5) {
+						String pStart = partitionsData[3].trim();
+						String pSize = partitionsData[4].trim();
+						spiStart = Long.parseLong(pStart.substring(2), 16);
+						spiSize = Long.parseLong(pSize.substring(2), 16);
 						settings.set("spiffs.addr", pStart);
 						System.out.println("settings spiffs.addr at offset " + pStart);
 					}
 				}
 			}
 			if (spiSize == 0) {
-				emitError(fsName + " Error: partition size could not be found!");
+				emitError(fsName + " Error: partition size could not be found in " + csvFilePath);
 				callbacks.onFail();
 				return;
 			}
 		} catch (Exception e) {
-			emitError(e.toString());
+			emitError("Error reading " + csvFilePath + ": " + e.toString());
 			callbacks.onFail();
 			return;
 		}
 
-		// load a list of all files in the data folder, if any
-
+		// Load files from data folder
 		int fileCount = 0;
-
 		File dataFolder = new File(sketchDir + "/data");
-
 		if (!dataFolder.exists()) {
 			dataFolder.mkdirs();
 		}
 		if (dataFolder.exists() && dataFolder.isDirectory()) {
 			File[] files = dataFolder.listFiles();
-			if (files.length > 0) {
+			if (files != null && files.length > 0) {
 				for (File file : files) {
 					if ((file.isDirectory() || file.isFile()) && !file.getName().startsWith("."))
 						fileCount++;
@@ -428,25 +439,23 @@ public class FileManager {
 		String imagePath = buildPath + "/" + sketchName + ".spiffs.bin";
 
 		if (fileCount == 0) {
-			System.out.println("No files have been found in your data folder, an empty image has been created");
+			System.out.println("No files found in data folder, creating an empty image");
 		}
 
 		System.out.println("Creating " + fsName + "...");
 		System.out.println("[" + fsName + "] data   : " + dataPath);
 		System.out.println("[" + fsName + "] start  : " + spiStart);
-		System.out.println("[" + fsName + "] size   : " + (spiSize));
+		System.out.println("[" + fsName + "] size   : " + spiSize);
 		System.out.println("[" + fsName + "] page   : " + spiPage);
 		System.out.println("[" + fsName + "] block  : " + spiBlock);
 
 		callbacks.onBefore();
 
 		try {
-
-			String baseMkFsArgs[] = { mkFsPath, "-c", dataPath, "-p", spiPage + "", "-b", spiBlock + "", "-s",
-					spiSize + "", imagePath };
-			String mkFatFsArgs[] = { mkFsPath, "-c", dataPath, "-s", spiSize + "", imagePath };
-
-			String mkFsArgs[] = fsName.equals("FatFS") ? mkFatFsArgs : baseMkFsArgs;
+			String[] baseMkFsArgs = { mkFsPath, "-c", dataPath, "-p", String.valueOf(spiPage), "-b",
+					String.valueOf(spiBlock), "-s", String.valueOf(spiSize), imagePath };
+			String[] mkFatFsArgs = { mkFsPath, "-c", dataPath, "-s", String.valueOf(spiSize), imagePath };
+			String[] mkFsArgs = fsName.equals("FatFS") ? mkFatFsArgs : baseMkFsArgs;
 
 			if (listenOnProcess(mkFsArgs) != 0) {
 				emitError("Failed to create " + fsName + "!");
@@ -456,15 +465,12 @@ public class FileManager {
 			System.out.println("Completed creating " + fsName);
 			System.out.println("[" + fsName + "] Data partition successfully written at " + imagePath);
 		} catch (Exception e) {
-			emitError("Failed to create " + fsName + "!");
+			emitError("Failed to create " + fsName + "!: " + e.getMessage());
 			callbacks.onFail();
 			return;
-		} finally {
-
 		}
 
 		boolean success = Files.exists(Paths.get(imagePath));
-
 		if (success) {
 			callbacks.onSuccess();
 		} else {
@@ -503,7 +509,7 @@ public class FileManager {
 			};
 			final AppSettings.EventCallback createSPIFFSCallbacks = new AppSettings.EventCallback(callbacks.onBefore,
 					callbacks.onAfter, onSuccess, onFail);
-			createSPIFFS(createSPIFFSCallbacks);
+			createSPIFFS(createSPIFFSCallbacks, false);
 			return;
 		}
 
@@ -611,7 +617,7 @@ public class FileManager {
 			};
 			final AppSettings.EventCallback createSPIFFSCallbacks = new AppSettings.EventCallback(callbacks.onBefore,
 					callbacks.onAfter, onSuccess, onFail);
-			createSPIFFS(createSPIFFSCallbacks);
+			createSPIFFS(createSPIFFSCallbacks, true);
 			return;
 		}
 

@@ -29,12 +29,12 @@ class AboutPanel extends JEditorPane {
 		final String titleSpanned = "<span style=\"background-color: #d7a631\">&nbsp;ESP32&nbsp;</span>"
 				+ "<span style=\"background-color: #bf457a\">&nbsp;Partition&nbsp;</span>"
 				+ "<span style=\"background-color: #42b0f5\">&nbsp;Tool&nbsp;</span>"
-				+ "<span style=\"background-color: #9a41c2\">&nbsp;v1.4&nbsp;</span>";
+				+ "<span style=\"background-color: #9a41c2\">&nbsp;v1.4.5&nbsp;</span>";
 		final String title = "<h2 align=center style=\"color: #ffffff;\">" + titleSpanned + "</h2>";
 		final String description = "<p>" + l10n.getString("aboutPanel.description") + "</p>";
 		final String projectlink = "<p><b>" + l10n.getString("aboutPanel.source")
 				+ ":</b><br>https://github.com/serifpersia/esp32partitiontool</p>";
-		final String copyright = "<p><b>Copyright (c) 2024 @serifpersia</b><br>https://github.com/serifpersia</p>";
+		final String copyright = "<p><b>Copyright (c) 2025 @serifpersia</b><br>https://github.com/serifpersia</p>";
 		final String credits = "<p><b>" + l10n.getString("aboutPanel.contributors")
 				+ ":</b><br>serifpersia, tobozo, SzyZuu, zeromem0</p>";
 		final String message = "<html>" + fontFace + title + "<div style=\"" + boxpadding + "\">" + description

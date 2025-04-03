@@ -9,7 +9,7 @@
     <img src="https://img.shields.io/badge/ESP32-f8a631" height="50">
     <img src="https://img.shields.io/badge/Partition-bf457a" height="50">
     <img src="https://img.shields.io/badge/Tool-42b0f5" height="50">
-    <a href="https://github.com/serifpersia/esp32partitiontool/releases/latest"><img src="https://img.shields.io/badge/v1.4-9a41c2" height="50"></a>
+    <a href="https://github.com/serifpersia/esp32partitiontool/releases/latest"><img src="https://img.shields.io/badge/v1.4.5-9a41c2" height="50"></a>
 </div>
 
 ## Overview
@@ -108,7 +108,7 @@ platform = espressif32
 board = esp32dev
 ; register the "tool-esp32partitiontool"
 ; remove url if you have own built tool in pacakges directory of platformio core directory
-platform_packages = tool-esp32partitiontool @ https://github.com/serifpersia/esp32partitiontool/releases/download/v1.4.4/esp32partitiontool-platformio.zip
+platform_packages = tool-esp32partitiontool @ https://github.com/serifpersia/esp32partitiontool/releases/download/v1.4.5/esp32partitiontool-platformio.zip
 ; register the "edit_partition" target
 extra_scripts = partition_manager.py
 
